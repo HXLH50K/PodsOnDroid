@@ -31,6 +31,9 @@ internal class AudioConnectionSessions {
         sessions.remove(address)
     }
 
+    @Synchronized
+    fun current(address: String): AudioConnectionEvent? = sessions[address]?.event
+
     /** Controller cleanup must reuse the A2DP teardown ID, not overtake a queued reconnect. */
     @Synchronized
     fun cancellationId(address: String, explicitId: Long?, nowId: Long): Long =

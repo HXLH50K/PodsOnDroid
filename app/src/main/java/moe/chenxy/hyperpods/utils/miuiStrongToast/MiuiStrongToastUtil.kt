@@ -19,6 +19,8 @@ import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.utils.AudioConnectionEvent
 import moe.chenxy.hyperpods.utils.AudioConnectionNotifications
 import moe.chenxy.hyperpods.utils.AudioConnectionSessions
+import moe.chenxy.hyperpods.utils.BatteryIslandContract
+import moe.chenxy.hyperpods.utils.BatteryNotificationSettings
 import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
 import moe.chenxy.hyperpods.utils.LowBatterySettings
 import moe.chenxy.hyperpods.utils.SystemApisUtils.isHyperOS
@@ -111,15 +113,35 @@ object MiuiStrongToastUtil {
         lowBatterySettings: LowBatterySettings = LowBatterySettings(),
         freshComponents: IntArray = intArrayOf(),
         modelNumber: String? = null,
+        batteryNotificationSettings: BatteryNotificationSettings = BatteryNotificationSettings(),
+        controlGeneration: Long = 0L,
     ) {
+        if (!batteryNotificationSettings.valid) {
+            Log.e("PODS-Battery", "Rejecting invalid notification thresholds before IPC")
+            return
+        }
         val intent = Intent("com.hxlh50k.pods.action.updatepodsnotification")
         intent.putExtra("batteryParams", batteryParams)
         intent.putExtra("device", device)
         intent.putExtra("lowBatterySettings", lowBatterySettings)
         intent.putExtra("freshComponents", freshComponents)
         intent.putExtra("modelNumber", modelNumber)
+        intent.putExtra(BatteryIslandContract.SETTINGS, batteryNotificationSettings)
+        intent.putExtra(BatteryIslandContract.CONTROL_GENERATION, controlGeneration)
+        intent.putExtra(BatteryIslandContract.OBSERVED_AT, SystemClock.elapsedRealtimeNanos())
+        audioSessions.current(device.address)?.let { event ->
+            intent.putExtra(AudioConnectionNotifications.EXTRA_EVENT_ID, event.id)
+            intent.putExtra(AudioConnectionNotifications.EXTRA_CONNECTED_AT, event.connectedAt)
+        }
         intent.`package` = HyperPodsBroadcasts.XIAOMI_BLUETOOTH
         HyperPodsBroadcasts.send(context, intent, HyperPodsBroadcasts.XIAOMI_BLUETOOTH)
+    }
+
+    fun notifyBatteryControlGap(context: Context?, device: BluetoothDevice) {
+        HyperPodsBroadcasts.send(context, Intent(BatteryIslandContract.ACTION_CONTROL_GAP)
+            .putExtra("device", device)
+            .putExtra(AudioConnectionNotifications.EXTRA_EVENT_ID, audioSessions.current(device.address)?.id ?: 0L),
+            HyperPodsBroadcasts.XIAOMI_BLUETOOTH)
     }
 
     fun cancelPodsNotificationByMiuiBt(

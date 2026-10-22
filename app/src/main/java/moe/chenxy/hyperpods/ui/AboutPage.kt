@@ -29,6 +29,7 @@ import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.ui.components.ConnectionDiagnostics
 import moe.chenxy.hyperpods.ui.components.LidObservationPanel
+import moe.chenxy.hyperpods.ui.components.BatteryNotificationSettingsPanel
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import moe.chenxy.hyperpods.ui.components.DashboardGroup as Card
 import moe.chenxy.hyperpods.ui.components.DashboardSection
@@ -74,6 +75,9 @@ fun AboutPage(
                         )
                     }
                 }
+            }
+            item(key = "battery_notifications") {
+                BatteryNotificationSettingsPanel()
             }
             item(key = "project") {
                 DashboardSection(stringResource(R.string.dashboard_project))

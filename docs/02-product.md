@@ -2,6 +2,8 @@
 
 Status: confirmed design baseline; imported functionality is not automatically verified P.O.D.S. functionality. API/build/restart changes are in progress. The app follows a Liquid Glass visual direction; system behavior should resemble native Xiaomi headphones, not recreate Apple's ecosystem. See [readiness](09-readiness.md).
 
+**2026-10-23 battery contract:** [Battery notification specification](10-battery-notification-spec.md) supersedes older notification/reminder details below. Alpha3's brief flash failed the requested visible five seconds. Alpha4 implements independent left/right colors, editable Low20/Medium50, separate switches, falling-edge reminders and first-read suppression, with no active case/implicit10% alert path. Per user instruction it is packaged without tests; real timing/rendering and behavioral acceptance remain open.
+
 **Latest manual feedback, 2026-10-22:** paired Xiaomi headphones reconnect silently when the case opens and show no extra insertion animation; discovery/first pairing displays a connect card. This is evidence for the user's tested model/ROM, not every Xiaomi device. P.O.D.S. intentionally differs on paired reconnect by showing one brief battery island, then **no ongoing island and no ongoing notification**. First-pairing popup work is provisionally deferred following the user's suggestion; it has not been permanently cancelled. The dedicated Interconnectivity control panel remains required.
 
 ## 1. Constraints
@@ -30,13 +32,13 @@ Target: AirPods 5 wireless-charging variant, user-reported firmware `1.0.0`; rea
 | Remove-to-pause / reinsert-to-resume | Preserve and regress | Adjustable policy | Inventory defaults; resume only the same media session actually paused by this policy |
 | Brief connection battery island | Required | Tiles/widgets | No persistent island or ordinary status notification after the initial window |
 | Device/firmware info and diagnostic export | Required | Compatibility summaries | Redact by default; sharing is manual |
-| Low-battery alert | M4 regression | Configurable thresholds | Independent alert policy; battery refresh is not a connection event |
+| Low/Medium battery reminders | Alpha4 implementation, untested | Joint verification still required | Defaults20/50, independent switches; initial-at/below readings establish a baseline without alerting |
 | Conversation awareness / personalized volume | Preserve and regress | Firmware fixes | Keep additional phone attenuation distinct from the headphone setting |
 | Long-press cycle, microphone, tones, swipes | Preserve and regress | More settings | Actual case variant/capabilities gate controls; sent is not confirmed |
 | Single-ear ANC / sleep pause | Preserve and regress | More firmware | Do not continually overwrite user operations |
 | Discovery/first-pairing connect popup | **Provisionally deferred** | Optional native quick-pairing enhancement | Initial pairing uses system Bluetooth settings; do not require continuous lid discovery for reconnect UX |
 | Dedicated Interconnectivity headphone panel | **Required, M3** | More quick controls | Real state/actions; neither full app nor Bluetooth-settings redirect |
-| Brief island connection alert | **Alpha3 corrective implementation** | Visual refinement | Alpha2 retained an unwanted status notification; remove it rather than just making it silent |
+| Dual-ear connection battery island | **Alpha4 reworked after alpha3's brief flash** | Verify native lifecycle and renderer jointly | Five seconds from observed dual-ear content, independent color indicators, then no persistent remainder |
 | Bluetooth details/battery integration | Regress applicable existing behavior | New privileges in M5 | No unnecessary KSU systemization package |
 | Head gestures | Keep experimental | Hardware verification | Not an initial completion claim; no default phone permission |
 | Rename | Preserve and regress | Naming consistency | Separate local alias and device name; explain possible re-pairing |
@@ -149,8 +151,9 @@ Share system scan events where possible; limit extra scanning/wakeups. Control f
 - A necessary presentation fallback must be transient and share the same original deadline. Missing native presentation cannot justify a persistent ordinary notification.
 - A brief island consumes a real new audio-connection event once. Socket recovery, page reopening, partial battery reports, and setting reports are not new connections.
 - Display valid battery values available during the initial window; unknown is `--`, not invented zero. Late battery updates may update that same window without replaying its animation or extending the deadline.
-- End the alert with bounded cancellation; post-expiry data must not post a replacement notification, a case-battery toast or another island.
-- Explicitly enabled low-battery warnings are distinct, bounded events, not a persistent connection/status entry.
+- Count five seconds of useful visibility, not the time since the underlying audio event; startup/data delay must not consume the visible window. See the battery spec for readiness limits and timing evidence.
+- End the alert with bounded cancellation; post-expiry data must not post a replacement notification, a case-battery toast or another island unless a genuine new threshold event qualifies.
+- Low/Medium reminders require a new downward crossing by an eligible ear. First values, repeated values, ordinary1% declines below a crossed threshold, settings edits and charging are not new reminder events.
 - On upgrade, clean only notifications proven to belong to this P.O.D.S. installation. A `BTHeadset` tag or Bluetooth UID alone is not ownership proof; independently running HyperPods and genuine Xiaomi notifications must not be deleted.
 - Denied notification permission is not control failure. Follow actual foreground-service rules if a service is required.
 - Keep legally required service notifications separate from island presentation; do not hide required notifications or emulate every system surface using overlay permission.

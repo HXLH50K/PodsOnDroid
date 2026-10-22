@@ -2,11 +2,13 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-**Latest manual feedback:** alpha2's brief island works, but an inherited-looking persistent island/notification follows it. Keeping a separate silent status entry was not the requested experience. Alpha3 now removes that routine publisher and its error fallback, as well as ordinary case-battery animations: **one brief battery island and then no routine notification at all**. Available readings may update the original five-second window without replaying it. Upgrade cleanup requires proven P.O.D.S. ownership and does not delete another application's notifications.
+**Alpha4 implementation, 2026-10-23:** the [battery notification specification](docs/10-battery-notification-spec.md) now has a new dual-ear renderer, Low20/Medium50 settings, independent reminder switches, per-ear downward-crossing state and initial-low suppression. Native dual-region pre-draw acknowledgment starts the five-second display timer; an unconfirmed presentation has a bounded watchdog. This addresses the earlier flash at the implementation level, **not as a verified hardware fix**.
+
+Per the user's request, this iteration runs **compilation/packaging only: no tests, Lint, device installation, radio capture or phone operations**. The APK is a development build; native timing, colors and reminder behavior remain for the next jointly agreed manual check.
 
 The user's Xiaomi comparison found silent paired reconnect/wearing and a quick-connect card in discovery/first-pairing mode. P.O.D.S. intentionally keeps the user's preferred brief battery island for reconnect. First-pairing popup work is **provisionally deferred**, not permanently cancelled; ordinary Android Bluetooth pairing remains available. The dedicated Interconnectivity control panel and Liquid Glass remain planned. See the [latest UX evidence](docs/07-device-and-native-integration.md#manual-xiaomi-comparison-and-ios-distinction) and [decisions](docs/05-decisions.md).
 
-The last device deployment was alpha2 (`03f18a5`). Alpha3 passed **55 focused JVM tests**, local debug assembly, and Lint with **0 errors / 117 warnings / 2 hints**; it has **not** been installed or hardware-accepted in this iteration. Physical acceptance remains a joint user-led step. Historical receipts remain in the [delivery plan](docs/04-delivery-plan.md).
+The last assistant-managed device deployment was alpha2 (`03f18a5`); alpha3 was built locally and handed to the user. Its **55 focused JVM tests**, assembly and Lint results do not override the subsequent failed manual presentation test. Physical acceptance remains a joint user-led step. Historical receipts remain in the [delivery plan](docs/04-delivery-plan.md).
 
 At the user's request, `main` now starts at the independent P.O.D.S. snapshot **`781b4b6`**, with an identical source tree and no HyperPods commit ancestry. The former local history, including preview implementation `5013f04`, was verified and archived outside the repository before rewriting. Historical receipt hashes refer to that archive, not the new branch ancestry.
 
@@ -27,10 +29,10 @@ Hardware-gated validation requires the user's AirPods 5 wireless-charging varian
 
 The debug app uses the same three declared scopes. Live restart behavior remains unverified. Alpha1's AboutPage automation was blocked by old Espresso reflection; test-only dependencies now use the official stable fix. No autonomous host-process restart or physical earbud manipulation is part of this iteration.
 
-## Manual testing handoff
+## Next manual check (not executed in this iteration)
 
 1. After installing the update, **reload all three scopes, normally by restarting the phone once**. The interface-only restart button cannot update the Bluetooth hosts.
-2. Connect AirPods 5. Confirm the battery island disappears after about five seconds and **no P.O.D.S. status notification or persistent island remains**. Ordinary battery/settings refresh must not bring either back.
+2. Jointly verify **five seconds of useful visible dual-ear battery content**, followed by no persistent island or ordinary status notification. A brief flash does not pass merely because it disappears within five seconds. If the host visibility callback cannot be observed, the new code logs an unconfirmed presentation instead of claiming success.
 3. If anything remains, report its app name and a screenshot before changing other modules. Do not assume inherited appearance proves a separately installed HyperPods is responsible, or delete another app's notifications.
 4. Lid observations are not required for this correction. The debug tool remains opt-in and is **not** a native popup. Do not expect the planned dedicated panel, Liquid Glass, or Bluetooth-inclusive restart.
 
@@ -46,6 +48,7 @@ Start with [readiness and stage boundaries](docs/09-readiness.md) and [confirmed
 | --- | --- |
 | [Research](docs/01-research.md) | Pinned evidence, platform limitations, and feasibility |
 | [Product](docs/02-product.md) | Required experience, supported scope, and honest state feedback |
+| [Battery notification specification](docs/10-battery-notification-spec.md) | Authoritative dual-ear colors, visible timing, downward crossings, initial-low suppression and joint acceptance cases |
 | [Architecture](docs/03-architecture.md) | Process ownership, protocol, IPC, and recovery |
 | [Delivery and acceptance](docs/04-delivery-plan.md) | Milestones, hardware gates, and measurable targets |
 | [Signing and maintenance](docs/06-signing-and-maintenance.md) | Independent identity, private delivery, rollback, and licensing |

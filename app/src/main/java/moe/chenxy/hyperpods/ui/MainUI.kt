@@ -33,6 +33,7 @@ import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AppPreferences
+import moe.chenxy.hyperpods.utils.BatteryNotificationSettings
 import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
 import moe.chenxy.hyperpods.utils.PodsSettings
 import moe.chenxy.hyperpods.utils.LowBatterySettings
@@ -42,6 +43,8 @@ import moe.chenxy.hyperpods.utils.data.HyperPodsAction
 import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey
 import moe.chenxy.hyperpods.ui.components.DashboardTopBar
 import moe.chenxy.hyperpods.ui.components.DashboardNavigation
+import moe.chenxy.hyperpods.ui.components.rememberBatteryNotificationPreferences
+import moe.chenxy.hyperpods.ui.components.saveBatteryNotificationSettings
 import top.yukonga.miuix.kmp.basic.Scaffold
 
 var currentPodsInfo by mutableStateOf<AACPManager.Companion.AirPodsInformation?>(null)
@@ -78,7 +81,7 @@ fun MainUI() {
     val settingFeedback = remember { mutableStateMapOf<String, String>() }
     var conversationPhoneVolume by remember { mutableStateOf(initialPolicy.conversationVolume) }
     var headGestures by remember { mutableStateOf(initialPolicy.headGestures) }
-    var lowBatterySettings by remember { mutableStateOf(initialPolicy.lowBattery) }
+    val batteryPolicy by rememberBatteryNotificationPreferences()
     var diagnostics by remember { mutableStateOf<Bundle?>(null) }
     val personlizedVolume = remember { mutableStateOf(false) }
     val adaptiveAudioLevel = remember { mutableFloatStateOf(0.5f) }
@@ -298,10 +301,9 @@ fun MainUI() {
             noiseCancellationSingleAirPod = noiseCancellationSingleAirPod.value,
             settings = settings.toMap(), pendingSettings = pendingSettings,
             settingFeedback = settingFeedback.toMap(),
-            lowBatterySettings = lowBatterySettings,
-            onLowBatterySettingsChange = {
-                if (savePolicy(AppPreferences.read(context).copy(lowBattery = it))) lowBatterySettings = it
-            },
+            batteryNotificationSettings = batteryPolicy.batteryNotifications,
+            batteryNotificationsMigrationRequired = batteryPolicy.batteryNotificationsMigrationRequired,
+            onBatteryNotificationSettingsSave = { saveBatteryNotificationSettings(context, it) },
             conversationPhoneVolume = conversationPhoneVolume,
             headGestures = headGestures,
             onHeadGesturesChange = {
@@ -358,6 +360,9 @@ fun AppHorizontalPager(
     onAllowOffChange: (Boolean) -> Unit = {},
     onSettingChange: (String, Int) -> Unit = { _, _ -> },
     diagnostics: Bundle? = null,
+    batteryNotificationSettings: BatteryNotificationSettings = BatteryNotificationSettings(),
+    batteryNotificationsMigrationRequired: Boolean = false,
+    onBatteryNotificationSettingsSave: (BatteryNotificationSettings) -> Boolean = { false },
 ) {
     HorizontalPager(
         state = pagerState,
@@ -369,7 +374,9 @@ fun AppHorizontalPager(
                             PodDetailPage(
                                 settings = settings, pendingSettings = pendingSettings, onAllowOffChange = onAllowOffChange,
                                 settingFeedback = settingFeedback, conversationPhoneVolume = conversationPhoneVolume,
-                                lowBatterySettings = lowBatterySettings, onLowBatterySettingsChange = onLowBatterySettingsChange,
+                                batteryNotificationSettings = batteryNotificationSettings,
+                                batteryNotificationsMigrationRequired = batteryNotificationsMigrationRequired,
+                                onBatteryNotificationSettingsSave = onBatteryNotificationSettingsSave,
                                 onConversationPhoneVolumeChange = onConversationPhoneVolumeChange,
                                 headGestures = headGestures, onHeadGesturesChange = onHeadGesturesChange,
                                 onSettingChange = onSettingChange, diagnostics = diagnostics,

@@ -68,14 +68,14 @@ object HeadsetStateDispatcher {
                 val connectedEvent = if (currState == BluetoothProfile.STATE_CONNECTED) {
                     audioSessions.connected(device.address, AudioConnectionEvent(eventId, SystemClock.elapsedRealtime()))
                 } else null
-                if (currState == BluetoothProfile.STATE_DISCONNECTING || currState == BluetoothProfile.STATE_DISCONNECTED) {
+                if (currState == BluetoothProfile.STATE_DISCONNECTED) {
                     // Invalidate queued direct/UUID callbacks before the service handler runs.
                     audioSessions.disconnected(device.address)
                 }
                 handler.post {
                     try {
                         Log.d("Art_Chen", "A2DP Connection State: $currState, isAirPod ${isPods(device)}")
-                        if (currState == BluetoothProfile.STATE_DISCONNECTING || currState == BluetoothProfile.STATE_DISCONNECTED) {
+                        if (currState == BluetoothProfile.STATE_DISCONNECTED) {
                             uuidDiscovery.disconnected(context, device)
                             runCatching { cancelPodsNotificationByMiuiBt(context, device, eventId) }
                                 .onFailure { Log.e("Art_Chen", "Unable to cancel audio notification", it) }

@@ -67,12 +67,13 @@ import moe.chenxy.hyperpods.ui.components.RenamePod
 import moe.chenxy.hyperpods.ui.components.ConnectionDiagnostics
 import moe.chenxy.hyperpods.ui.components.headGestureStatus
 import moe.chenxy.hyperpods.ui.components.HeadTrackingPage
+import moe.chenxy.hyperpods.ui.components.BatteryNotificationSettingsGroup
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AirPodsModels.getModelByModelNumber
 import moe.chenxy.hyperpods.utils.Capability
+import moe.chenxy.hyperpods.utils.BatteryNotificationSettings
 import moe.chenxy.hyperpods.utils.PodsSettings
 import moe.chenxy.hyperpods.utils.LowBatterySettings
-import moe.chenxy.hyperpods.utils.LowBatteryReminder
 import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey as Key
 import moe.chenxy.hyperpods.utils.data.BatteryParams
 import moe.chenxy.hyperpods.utils.data.EarDetectionParams
@@ -123,6 +124,9 @@ fun PodDetailPage(
     onAllowOffChange: (Boolean) -> Unit = {},
     onSettingChange: (String, Int) -> Unit = { _, _ -> },
     diagnostics: Bundle? = null,
+    batteryNotificationSettings: BatteryNotificationSettings = BatteryNotificationSettings(),
+    batteryNotificationsMigrationRequired: Boolean = false,
+    onBatteryNotificationSettingsSave: (BatteryNotificationSettings) -> Boolean = { false },
 ) {
     val model = podsInfo?.let { getModelByModelNumber(it.modelNumber) }
     fun ready(key: String) = PodsSettings.supports(key, model) && key !in pendingSettings &&
@@ -326,30 +330,13 @@ fun PodDetailPage(
                     }
                 }
 
-                item(key = "more_battery_reminders") {
-                    SmallTitle(stringResource(R.string.battery_reminder_title), modifier = titleModifier)
-                    Card(modifier = cardModifier) {
-                        SuperSwitch(title = stringResource(R.string.battery_reminder_ears),
-                            summary = stringResource(R.string.battery_reminder_ears_summary),
-                            checked = lowBatterySettings.earsEnabled,
-                            onCheckedChange = { onLowBatterySettingsChange(lowBatterySettings.copy(earsEnabled = it)) })
-                        SuperDropdown(title = stringResource(R.string.battery_reminder_ears_threshold),
-                            items = LowBatteryReminder.thresholds.map { "$it%" },
-                            selectedIndex = LowBatteryReminder.thresholds.indexOf(lowBatterySettings.earsThreshold),
-                            enabled = lowBatterySettings.earsEnabled,
-                            onSelectedIndexChange = { onLowBatterySettingsChange(lowBatterySettings.copy(earsThreshold = LowBatteryReminder.thresholds[it])) })
-                        SuperSwitch(title = stringResource(R.string.battery_reminder_case),
-                            summary = stringResource(R.string.battery_reminder_case_summary),
-                            checked = lowBatterySettings.caseEnabled,
-                            onCheckedChange = { onLowBatterySettingsChange(lowBatterySettings.copy(caseEnabled = it)) })
-                        SuperDropdown(title = stringResource(R.string.battery_reminder_case_threshold),
-                            items = LowBatteryReminder.thresholds.map { "$it%" },
-                            selectedIndex = LowBatteryReminder.thresholds.indexOf(lowBatterySettings.caseThreshold),
-                            enabled = lowBatterySettings.caseEnabled,
-                            onSelectedIndexChange = { onLowBatterySettingsChange(lowBatterySettings.copy(caseThreshold = LowBatteryReminder.thresholds[it])) })
-                        top.yukonga.miuix.kmp.basic.BasicComponent(title = stringResource(R.string.battery_reminder_rules),
-                            summary = stringResource(R.string.battery_reminder_rules_summary), enabled = false)
-                    }
+                item(key = "more_battery_notifications") {
+                    BatteryNotificationSettingsGroup(
+                        settings = batteryNotificationSettings,
+                        migrationRequired = batteryNotificationsMigrationRequired,
+                        onSave = onBatteryNotificationSettingsSave,
+                        modifier = cardModifier,
+                    )
                 }
 
                     // Press & Hold Settings

@@ -1,0 +1,11 @@
+<resources>
+    <string name="battery_island_channel">耳机短暂电量报告</string>
+    <string name="battery_island_left">左 %1$s</string>
+    <string name="battery_island_right">右 %1$s</string>
+    <string name="battery_island_connected">已连接</string>
+    <string name="battery_island_low">已下降至低电量阈值</string>
+    <string name="battery_island_medium">已下降至中电量阈值</string>
+    <string name="battery_island_both_ears">左右耳</string>
+    <string name="battery_island_left_ear">左耳</string>
+    <string name="battery_island_right_ear">右耳</string>
+</resources>

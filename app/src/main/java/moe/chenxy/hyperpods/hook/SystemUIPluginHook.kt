@@ -59,6 +59,7 @@ object SystemUIPluginHook {
     }
 
     private fun installPlugin(framework: XposedInterface, loader: ClassLoader) {
+        installHook("dual-ear battery visibility") { BatteryIslandVisibilityHook.install(framework, loader) }
         installHook("SystemUI device card") { DeviceCardHook.install(framework, loader) }
         optionalHook("focus footer", loader,
             "miui.systemui.notification.focus.moduleV3.ModuleTextButtonViewHolder") { type ->

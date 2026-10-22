@@ -1,5 +1,9 @@
 # 03 Architecture
 
+**Specification override, 2026-10-23:** the [battery notification spec](10-battery-notification-spec.md) is authoritative. Alpha4 separates audio-session identity, useful-data readiness and native first visibility, using a new per-ear color/crossing reducer. This is compiled implementation, not a verified resolution of alpha3's flash; the user explicitly requested no tests before this package.
+
+The active path is `BatteryNotificationSession` -> `BatteryNotificationHost` -> `BatteryIslandRenderer`. `BatteryIslandVisibilityHook` observes pre-draw of both native battery regions and reports a presentation token to the Xiaomi main-process owner; that acknowledgment starts the five-second deadline. The host watchdog cancels unconfirmed cards. Token/generation matching prevents old expiry callbacks from cancelling new cards. The old `LowBatteryReminder`/case/10% publisher is not invoked by this path. Shared settings are read by the Bluetooth host and passed with fresh per-ear observations and a control generation; settings edits rebaseline without generating battery events. A host with no proven audio-session continuity suppresses reminders until a genuine new connection.
+
 ## Notification iteration notes
 
 Alpha2 established a single notification owner in the Xiaomi Bluetooth **main process** and a five-second A2DP-derived deadline, but incorrectly retained a separate silent status entry. The user rejects both persistent surfaces. Alpha3 removes routine status publication altogether: battery/setting/AACP updates feed internal state, may refresh only the still-active original presentation without re-alerting, and post nothing after expiry. Existing owned status/legacy entries require verified ownership before cleanup; Bluetooth tags alone are insufficient. The Xiaomi `:ui` self-check remains distinct from the notification owner.

@@ -1,0 +1,11 @@
+<resources>
+    <string name="battery_island_channel">Brief headphone battery reports</string>
+    <string name="battery_island_left">L %1$s</string>
+    <string name="battery_island_right">R %1$s</string>
+    <string name="battery_island_connected">Connected</string>
+    <string name="battery_island_low">Low battery threshold reached</string>
+    <string name="battery_island_medium">Medium battery threshold reached</string>
+    <string name="battery_island_both_ears">Left and right</string>
+    <string name="battery_island_left_ear">Left ear</string>
+    <string name="battery_island_right_ear">Right ear</string>
+</resources>

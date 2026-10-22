@@ -8,6 +8,8 @@ Latest test feedback supersedes the older presentation assumptions: paired Xiaom
 
 **Latest instructions take precedence:** the repository is private; all coding documentation and commit messages are English; the app supports English and Simplified Chinese (`zh-CN`) only. The earlier public-release intention is superseded.
 
+**Battery requirements, 2026-10-23:** the user reports the current island only flashes and specifies five seconds of dual-ear battery, independently colored above Medium/below Low/between thresholds, editable Low20/Medium50 defaults, independent low/medium reminder switches, and one-shot downward crossings without initial-low alerts. See the authoritative [battery notification specification](10-battery-notification-spec.md). Its per-ear/per-category/per-connection budget and both-switches-on first-install defaults are explicitly proposed; clarification was unavailable. They are not retroactively presented as user answers, and no code changes are authorized merely by writing the draft.
+
 There is no unresolved product question blocking M0/M1-A. Source/history import has happened; API migration, identity/build changes, and restart implementation are in progress. Completion claims require their own evidence. See [stage boundaries](09-readiness.md).
 
 ## 1. Device and baseline decisions

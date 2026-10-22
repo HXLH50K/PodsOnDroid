@@ -1,5 +1,7 @@
 # 04 Delivery and acceptance plan
 
+**Current task, 2026-10-23:** after requesting the [battery notification specification](10-battery-notification-spec.md), the user requested implementation, packaging **without tests**, and then computer shutdown. Alpha4 follows that contract. Only compilation/packaging and artifact checks are permitted in this iteration; BAT-01 through BAT-36 and native timing/rendering remain unexecuted, not passed.
+
 Updated: 2026-10-22. The user accepted the basic alpha1 behavior and requested further development with independent Git history. Section 10 records the alpha2 notification/capture changes; section 9 preserves the original preview receipt. Native-window, live R01 and broader hardware acceptance remain incomplete. The release plan remains a future acceptance contract, not a completed-MVP claim.
 
 **Current scope override:** after the user's Xiaomi comparison, ordinary paired reconnect targets a brief battery island followed by **no persistent island or status notification**. The user is reconsidering first-pairing/discovery popups; that work is provisionally deferred, not permanently cancelled or marked accepted. The active path can proceed to the dedicated Interconnectivity panel without demanding another lid-capture round.
@@ -405,3 +407,32 @@ Focused local validation:
 Version: `0.1.0-alpha.3`, code3, isolated package `com.hxlh50k.pods.debug`. No ADB command, installation, scope restart, radio scan, or physical headphone interaction was performed for this iteration.
 
 The next agreed manual check is only: install/reload the new version, reconnect once, and confirm both the battery island and ordinary status notification are gone after the brief window. If a residual entry remains, collect its displayed application identity and screenshot before attributing it to another module. Do not require new lid captures, unpairing or headset reset for this fix.
+
+## 12. Battery specification after failed visibility test
+
+The subsequent user test reports a brief flash, not a useful five-second island. Record the alpha3 presentation as failed; source tests and notification-post success do not settle visible behavior.
+
+The new design requires:
+
+- no inherited persistent island or ordinary status notification;
+- left/right battery content visible for five seconds, independently colored using Low20/Medium50 by default;
+- separate low/medium reminder switches and edge detection of genuine percentage decreases crossing a threshold;
+- no threshold reminder from the first already-low reading of either ear;
+- explicit per-ear/category deduplication, initial-data readiness, settings migration and system-renderer timing evidence.
+
+The [specification](10-battery-notification-spec.md) distinguishes these confirmed requirements from proposed defaults (per-connection reminder budget, switch defaults, batching and data wait limits). Those defaults were chosen for a reviewable draft after clarification was unavailable, not represented as user-confirmed choices.
+
+Before implementation, use the spec as the single acceptance contract. The next joint round after a code change should address only actual five-second visibility, followed separately by color and threshold semantics. No device tests or production-code changes were made while writing this design.
+
+## 13. Alpha4: build-only battery specification implementation
+
+Implemented:
+
+- `BatteryNotificationSettings`: atomic valid Low/Medium pair, defaults20/50, independent reminder switches, per-ear red/yellow/green/unknown bands.
+- Settings in both the connected controls and always-accessible About page, with preview, EN/zh-CN validation, explicit migration notice and private recovery of legacy settings.
+- `BatteryNotificationSession`: fresh-ear-only baselines, downward crossings, per-connection category consumption, no initial-low alerts, no charging rearm, no hidden case/critical10% events.
+- `BatteryNotificationHost`: real audio-session ownership, readiness limits, fixed350ms batching, active-card merging, bounded startup, separate settings/control generations and safe owned-notification retirement.
+- `BatteryIslandRenderer`: native left/right template regions, independent colored battery indicators and percentages, no `dismissIsland=true` flag on creation/refresh, no ordinary persistent status card.
+- `BatteryIslandVisibilityHook`: scoped native pre-draw observation, dual-ear visibility token and first-visible timestamp; five-second expiry starts on the acknowledgment rather than A2DP connection. If that lifecycle cannot be confirmed, record `visibility_unconfirmed` and cancel by watchdog. The actual ROM behavior remains unverified.
+
+No unit tests, instrumentation tests, Lint, ADB, installation, scope restart, radio capture or earbud operation is performed. Build warnings and artifact metadata are recorded separately. The user's shutdown request is executed only after a successful package has been saved; no applications are forcibly terminated to make shutdown succeed.

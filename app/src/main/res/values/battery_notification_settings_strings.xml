@@ -1,0 +1,26 @@
+<resources>
+    <string name="battery_notifications_title">Battery notifications</string>
+    <string name="battery_notifications_summary">Phone-only settings; nothing is written to the earbuds. Thresholds set each ear’s color even when reminders are off. Connecting still shows a five-second battery report.</string>
+    <string name="battery_notifications_low_threshold" formatted="false">Low battery threshold (%)</string>
+    <string name="battery_notifications_medium_threshold" formatted="false">Medium battery threshold (%)</string>
+    <string name="battery_notifications_threshold_hint">Enter whole numbers from 1 to 99, with Low below Medium. Below Low is red, Low through Medium is yellow, and above Medium is green. Save applies both thresholds and switches together.</string>
+    <string name="battery_notifications_low_reminder">Low battery reminder</string>
+    <string name="battery_notifications_low_reminder_summary">Report when either ear falls to Low, at most once per ear per connection. An initial low reading does not trigger a reminder.</string>
+    <string name="battery_notifications_medium_reminder">Medium battery reminder</string>
+    <string name="battery_notifications_medium_reminder_summary">Report when either ear falls to Medium, at most once per ear per connection. This switch is independent of the Low reminder.</string>
+    <string name="battery_notifications_invalid">Not saved. Both thresholds must be whole numbers from 1 to 99, and Low must be less than Medium. Your saved settings are unchanged.</string>
+    <string name="battery_notifications_migration_notice" formatted="false">Your previous ear threshold cannot be combined with the new Medium threshold. The original configuration is retained for recovery; 20% Low and 50% Medium are in use for now. Review both thresholds and tap Save to confirm.</string>
+    <string name="battery_notifications_preview_title" formatted="false">Example preview · Left 18% / Right 72%</string>
+    <string name="battery_notifications_preview_summary">These are sample values, not live battery readings. Valid edits update each color independently. This preview never posts a notification.</string>
+    <string name="battery_notifications_preview_saved">The threshold pair is not valid yet. The preview uses your last saved thresholds.</string>
+    <string name="battery_notifications_left">Left</string>
+    <string name="battery_notifications_right">Right</string>
+    <string name="battery_notifications_band_low">Below Low · Red</string>
+    <string name="battery_notifications_band_medium">Low–Medium · Yellow</string>
+    <string name="battery_notifications_band_high">Above Medium · Green</string>
+    <string name="battery_notifications_band_unknown">Unknown · Neutral</string>
+    <string name="battery_notifications_preview_accessibility">Example %1$s ear, %2$d percent, %3$s</string>
+    <string name="battery_notifications_save">Save battery settings</string>
+    <string name="battery_notifications_saved">Battery notification settings saved</string>
+    <string name="battery_notifications_save_failed">Could not save battery notification settings on this phone. Your saved settings are unchanged. Try again.</string>
+</resources>
