@@ -1,0 +1,69 @@
+package moe.chenxy.hyperpods.ui.components
+
+import androidx.compose.runtime.Composable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import moe.chenxy.hyperpods.R
+import moe.chenxy.hyperpods.utils.AACPManager
+import moe.chenxy.hyperpods.utils.AirPodsModels.getModelByModelNumber
+import moe.chenxy.hyperpods.ui.components.DashboardGroup as Card
+import top.yukonga.miuix.kmp.basic.SmallTitle
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+
+@Composable
+fun InfoItem(title: String, summary: String, onClick: (() -> Unit)? = null) {
+    val modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp)) {
+        Text(title, fontSize = 13.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+        Text(summary, fontSize = 16.sp, modifier = Modifier.padding(top = 6.dp))
+    }
+}
+
+@Composable
+fun PodsInfoPage(titleModifier: Modifier,
+                 cardModifier: Modifier,
+                 info: AACPManager.Companion.AirPodsInformation
+) {
+    val podModel = getModelByModelNumber(info.modelNumber)
+    var expandSerialNumber by remember { mutableStateOf(false) }
+    SmallTitle(stringResource(R.string.about), modifier = titleModifier)
+    Card(
+        modifier = cardModifier
+    ) {
+        InfoItem(title = stringResource(R.string.product_manufacturer),
+            summary = info.manufacturer)
+
+        podModel?.let {
+            InfoItem(title = stringResource(R.string.product_name),
+                summary = podModel.name)
+        }
+
+        InfoItem(title = stringResource(R.string.model_name),
+            summary = info.modelNumber)
+
+        InfoItem(title = stringResource(R.string.serial_num),
+            summary = if (expandSerialNumber)
+                "${info.serialNumber}\nL: ${info.leftSerialNumber}\nR: ${info.rightSerialNumber}"
+            else
+                info.serialNumber,
+            onClick = {
+                expandSerialNumber = !expandSerialNumber
+            })
+
+        InfoItem(title = stringResource(R.string.version_num),
+            summary = info.version3)
+        InfoItem(title = stringResource(R.string.hw_version_num),
+            summary = info.hardwareRevision)
+    }
+}

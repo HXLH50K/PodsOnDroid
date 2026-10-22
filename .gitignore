@@ -1,0 +1,35 @@
+*.iml
+.gradle
+.kotlin/
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Local signing, device captures, and analysis artifacts
+*.jks
+*.keystore
+*.p12
+*.pfx
+keystore.properties
+signing.properties
+*.apk
+*.aab
+*.hprof
+captures/
+device-logs/
+local-analysis/
+.api102-inspect/
+
+# Ignore tmp file for yuki hook api
+assets/xposed_init
+resources/META-INF/yukihookapi_init

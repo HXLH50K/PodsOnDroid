@@ -1,0 +1,313 @@
+package moe.chenxy.hyperpods.pods;
+
+import android.os.Parcelable
+import android.util.Log
+import kotlinx.parcelize.Parcelize
+
+enum class Enums(val value: ByteArray) {
+    NOISE_CANCELLATION(Capabilities.NOISE_CANCELLATION),
+    CONVERSATION_AWARENESS(Capabilities.CONVERSATION_AWARENESS),
+    CUSTOMIZABLE_ADAPTIVE_TRANSPARENCY(Capabilities.CUSTOMIZABLE_ADAPTIVE_TRANSPARENCY),
+    PREFIX(byteArrayOf(0x04, 0x00, 0x04, 0x00)),
+    SETTINGS(byteArrayOf(0x09, 0x00)),
+    SUFFIX(byteArrayOf(0x00, 0x00, 0x00)),
+    NOTIFICATION_FILTER(byteArrayOf(0x0f)),
+    HANDSHAKE(byteArrayOf(0x00, 0x00, 0x04, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)),
+    SPECIFIC_FEATURES(byteArrayOf(0x4d)),
+    SET_SPECIFIC_FEATURES(PREFIX.value + SPECIFIC_FEATURES.value + byteArrayOf(0x00,
+        0xD7.toByte(), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)),
+    REQUEST_NOTIFICATIONS(PREFIX.value + NOTIFICATION_FILTER.value + byteArrayOf(0x00, 0xff.toByte(), 0xff.toByte(), 0xff.toByte(), 0xff.toByte())),
+    NOISE_CANCELLATION_PREFIX(PREFIX.value + SETTINGS.value + NOISE_CANCELLATION.value),
+    NOISE_CANCELLATION_OFF(NOISE_CANCELLATION_PREFIX.value + Capabilities.NoiseCancellation.OFF.value + SUFFIX.value),
+    NOISE_CANCELLATION_ON(NOISE_CANCELLATION_PREFIX.value + Capabilities.NoiseCancellation.ON.value + SUFFIX.value),
+    NOISE_CANCELLATION_TRANSPARENCY(NOISE_CANCELLATION_PREFIX.value + Capabilities.NoiseCancellation.TRANSPARENCY.value + SUFFIX.value),
+    NOISE_CANCELLATION_ADAPTIVE(NOISE_CANCELLATION_PREFIX.value + Capabilities.NoiseCancellation.ADAPTIVE.value + SUFFIX.value),
+    SET_CONVERSATION_AWARENESS_OFF(PREFIX.value + SETTINGS.value + CONVERSATION_AWARENESS.value + Capabilities.ConversationAwareness.OFF.value + SUFFIX.value),
+    SET_CONVERSATION_AWARENESS_ON(PREFIX.value + SETTINGS.value + CONVERSATION_AWARENESS.value + Capabilities.ConversationAwareness.ON.value + SUFFIX.value),
+    CONVERSATION_AWARENESS_RECEIVE_PREFIX(PREFIX.value + byteArrayOf(0x4b, 0x00, 0x02, 0x00));
+}
+
+object BatteryComponent {
+    const val LEFT = 4
+    const val RIGHT = 2
+    const val CASE = 8
+}
+
+object BatteryStatus {
+    const val CHARGING = 1
+    const val NOT_CHARGING = 2
+    const val NEED_AGAIN = 3
+    const val DISCONNECTED = 4
+}
+
+@Parcelize
+data class Battery(val component: Int, val level: Int, val status: Int) : Parcelable {
+    val isAvailable: Boolean
+        get() = level in 0..100 &&
+            (status == BatteryStatus.CHARGING || status == BatteryStatus.NOT_CHARGING ||
+                    status == BatteryStatus.NEED_AGAIN)
+
+    fun getComponentName(): String? {
+        return when (component) {
+            BatteryComponent.LEFT -> "LEFT"
+            BatteryComponent.RIGHT -> "RIGHT"
+            BatteryComponent.CASE -> "CASE"
+            else -> null
+        }
+    }
+
+    fun getStatusName(): String? {
+        return when (status) {
+            BatteryStatus.CHARGING -> "CHARGING"
+            BatteryStatus.NOT_CHARGING -> "NOT_CHARGING"
+            BatteryStatus.DISCONNECTED -> "DISCONNECTED"
+            else -> null
+        }
+    }
+}
+
+object LongPressEnableMode {
+    const val ANC_SWITCH = 0x1
+    const val VOICE_ASSIST = 0x2
+    const val OFF = 0x4
+    const val NOISE_CANCELLATION = 0x8
+    const val TRANSPARENCY = 0x16
+    const val ADAPTIVE = 0x32
+}
+
+enum class NoiseControlMode {
+    OFF,  NOISE_CANCELLATION, TRANSPARENCY, ADAPTIVE
+}
+
+object EarDetectionStatus {
+    const val IN_EAR = 0x0.toByte()
+    const val OUT_OF_EAR = 0x1.toByte()
+    const val IN_CASE = 0x2.toByte()
+}
+
+class AirPodsNotifications {
+    object EarDetection {
+        private val notificationBit = Capabilities.EAR_DETECTION
+        private val notificationPrefix = Enums.PREFIX.value + notificationBit
+
+        // AACP reports primary/secondary, not fixed left/right ears.
+        var status: List<Byte>? = null
+            private set
+        var reportedAt: Long = 0
+            private set
+
+        fun reset() { status = null; reportedAt = 0 }
+
+        fun setStatus(data: ByteArray, receivedAt: Long = System.currentTimeMillis()): Boolean {
+            if (!isEarDetectionData(data) || data[6].toInt() !in 0..3 || data[7].toInt() !in 0..3) return false
+            status = listOf(data[6], data[7])
+            reportedAt = receivedAt.coerceAtLeast(0)
+            return true
+        }
+
+        fun getLeftRightStatus(primaryComponent: Int?): List<Byte>? {
+            val reported = status ?: return null
+            return when (primaryComponent) {
+                BatteryComponent.LEFT -> reported
+                BatteryComponent.RIGHT -> reported.reversed()
+                else -> null // Wait for a battery report instead of guessing the physical sides.
+            }
+        }
+
+        fun isEarDetectionData(data: ByteArray): Boolean {
+            if (data.size != 8) {
+                return false
+            }
+            val prefixHex = notificationPrefix.joinToString("") { "%02x".format(it) }
+            val dataHex = data.joinToString("") { "%02x".format(it) }
+            return dataHex.startsWith(prefixHex)
+        }
+    }
+
+    object ANC {
+        private val notificationPrefix = Enums.NOISE_CANCELLATION_PREFIX.value
+
+        var status: Int = 1
+            private set
+
+        fun isANCData(data: ByteArray): Boolean {
+            if (data.size != 11) {
+                return false
+            }
+            val prefixHex = notificationPrefix.joinToString("") { "%02x".format(it) }
+            val dataHex = data.joinToString("") { "%02x".format(it) }
+            return dataHex.startsWith(prefixHex)
+        }
+
+        fun setStatus(data: ByteArray) {
+            when (data.size) {
+                // if the whole packet is given
+                11 -> {
+                    status = data[7].toInt()
+                }
+                // if only the data is given
+                1 -> {
+                    status = data[0].toInt()
+                }
+                // if the value of control command is given
+                4 -> {
+                    status = data[0].toInt()
+                }
+                else -> {
+                    Log.d("ANC", "Invalid ANC data size: ${data.size}")
+                }
+            }
+        }
+
+        val name: String =
+            when (status) {
+                1 -> "OFF"
+                2 -> "ON"
+                3 -> "TRANSPARENCY"
+                4 -> "ADAPTIVE"
+                else -> "UNKNOWN"
+            }
+
+    }
+
+    object BatteryNotification {
+        private var first = Battery(BatteryComponent.LEFT, -1, BatteryStatus.DISCONNECTED)
+        private var second = Battery(BatteryComponent.RIGHT, -1, BatteryStatus.DISCONNECTED)
+        private var case = Battery(BatteryComponent.CASE, -1, BatteryStatus.DISCONNECTED)
+        var primaryComponent: Int? = null
+            private set
+        private val reportedAt = mutableMapOf<Int, Long>()
+
+        fun lastValidReportAt(component: Int): Long = reportedAt[component] ?: 0
+
+        fun reset() {
+            first = Battery(BatteryComponent.LEFT, -1, BatteryStatus.DISCONNECTED)
+            second = Battery(BatteryComponent.RIGHT, -1, BatteryStatus.DISCONNECTED)
+            case = Battery(BatteryComponent.CASE, -1, BatteryStatus.DISCONNECTED)
+            primaryComponent = null
+            reportedAt.clear()
+        }
+
+        fun isBatteryData(data: ByteArray): Boolean {
+            if (data.size < 7 || !data.copyOfRange(0, 6).contentEquals(byteArrayOf(4, 0, 4, 0, 4, 0))) return false
+            val count = data[6].toInt() and 0xff
+            return count in 1..3 && data.size == 7 + 5 * count
+        }
+
+        // A pending record can display its last reading, but still needs a fresh report.
+        val needsRefresh: Boolean
+            get() = listOf(first, second).any { it.status == BatteryStatus.NEED_AGAIN }
+
+        fun setBattery(data: ByteArray, receivedAt: Long = System.currentTimeMillis()): Boolean {
+            if (!isBatteryData(data)) return false
+            // Like LibrePods, the first ear record identifies the primary pod.
+            // Case-only updates retain the previous mapping.
+            (7 until data.size step 5).map { data[it].toInt() and 0xff }
+                .firstOrNull { it == BatteryComponent.LEFT || it == BatteryComponent.RIGHT }
+                ?.let { primaryComponent = it }
+            // Records may arrive in either ear order. Never reuse the other
+            // ear's cached level when a record is disconnected or not ready.
+            for (offset in 7 until data.size step 5) {
+                val component = data[offset].toInt() and 0xff
+                val previous = when (component) {
+                    BatteryComponent.LEFT -> first
+                    BatteryComponent.RIGHT -> second
+                    BatteryComponent.CASE -> case
+                    else -> continue
+                }
+                val status = data[offset + 3].toInt() and 0xff
+                val level = if (status == BatteryStatus.DISCONNECTED || status == BatteryStatus.NEED_AGAIN)
+                    previous.level else data[offset + 2].toInt() and 0xff
+                val battery = Battery(component, level, status)
+                if (level in 0..100 && status in listOf(BatteryStatus.CHARGING, BatteryStatus.NOT_CHARGING))
+                    reportedAt[component] = receivedAt.coerceAtLeast(0)
+                when (component) {
+                    BatteryComponent.LEFT -> first = battery
+                    BatteryComponent.RIGHT -> second = battery
+                    BatteryComponent.CASE -> case = battery
+                }
+            }
+            return true
+        }
+
+        fun getBattery(): List<Battery> {
+            return listOf(first, second, case)
+        }
+    }
+
+    object ConversationalAwarenessNotification {
+        private val NOTIFICATION_PREFIX = Enums.CONVERSATION_AWARENESS_RECEIVE_PREFIX.value
+
+        var status: Byte = 0
+            private set
+
+        fun isConversationalAwarenessData(data: ByteArray): Boolean {
+            if (data.size != 10) {
+                return false
+            }
+            val prefixHex = NOTIFICATION_PREFIX.joinToString("") { "%02x".format(it) }
+            val dataHex = data.joinToString("") { "%02x".format(it) }
+            return dataHex.startsWith(prefixHex)
+        }
+
+        fun setData(data: ByteArray) {
+            if (!isConversationalAwarenessData(data)) return
+            status = data[9]
+        }
+    }
+}
+
+class Capabilities {
+    companion object {
+        val NOISE_CANCELLATION = byteArrayOf(0x0d)
+        val CONVERSATION_AWARENESS = byteArrayOf(0x28)
+        val CUSTOMIZABLE_ADAPTIVE_TRANSPARENCY = byteArrayOf(0x01, 0x02)
+        val EAR_DETECTION = byteArrayOf(0x06)
+    }
+
+    enum class NoiseCancellation(val value: ByteArray) {
+        OFF(byteArrayOf(0x01)),
+        ON(byteArrayOf(0x02)),
+        TRANSPARENCY(byteArrayOf(0x03)),
+        ADAPTIVE(byteArrayOf(0x04));
+    }
+
+    enum class ConversationAwareness(val value: ByteArray) {
+        OFF(byteArrayOf(0x02)),
+        ON(byteArrayOf(0x01));
+    }
+}
+
+enum class LongPressMode {
+    OFF, TRANSPARENCY, ADAPTIVE, ANC
+}
+
+data class LongPressPacket(val modes: Set<LongPressMode>) {
+    val value: ByteArray
+        get() {
+            val baseArray = byteArrayOf(0x04, 0x00, 0x04, 0x00, 0x09, 0x00, 0x1A)
+            val modeByte = calculateModeByte()
+            return baseArray + byteArrayOf(modeByte, 0x00, 0x00, 0x00)
+        }
+
+    private fun calculateModeByte(): Byte {
+        var modeByte: Byte = 0x00
+        modes.forEach { mode ->
+            modeByte = when (mode) {
+                LongPressMode.OFF -> (modeByte + 0x01).toByte()
+                LongPressMode.TRANSPARENCY -> (modeByte + 0x02).toByte()
+                LongPressMode.ADAPTIVE -> (modeByte + 0x04).toByte()
+                LongPressMode.ANC -> (modeByte + 0x08).toByte()
+            }
+        }
+        return modeByte
+    }
+}
+
+fun determinePacket(changedIndex: Int, newEnabled: Boolean, oldModes: Set<LongPressMode>, newModes: Set<LongPressMode>): ByteArray? {
+    return if (newEnabled) {
+        LongPressPacket(oldModes + newModes.elementAt(changedIndex)).value
+    } else {
+        LongPressPacket(oldModes - newModes.elementAt(changedIndex)).value
+    }
+}

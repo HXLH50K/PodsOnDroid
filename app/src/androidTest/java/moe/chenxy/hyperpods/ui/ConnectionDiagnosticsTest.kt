@@ -1,0 +1,156 @@
+package moe.chenxy.hyperpods.ui
+
+import android.content.ClipboardManager
+import android.content.ClipData
+import android.os.Bundle
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.test.platform.app.InstrumentationRegistry
+import moe.chenxy.hyperpods.R
+import moe.chenxy.hyperpods.pods.BatteryStatus
+import moe.chenxy.hyperpods.utils.AirPodsPro2USBC
+import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey as Key
+import moe.chenxy.hyperpods.utils.data.BatteryParams
+import moe.chenxy.hyperpods.utils.data.EarDetectionParams
+import moe.chenxy.hyperpods.utils.data.PodBatteryParams
+import moe.chenxy.hyperpods.ui.components.ConnectionDiagnostics
+import moe.chenxy.hyperpods.ui.components.DashboardBattery
+import moe.chenxy.hyperpods.ui.components.ModuleSelfCheck
+import moe.chenxy.hyperpods.ui.components.dashboardConnectionStatus
+import org.junit.Assert.*
+import org.junit.Rule
+import org.junit.Test
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/** Synthetic status only: never connects to hardware or writes headset settings. */
+class ConnectionDiagnosticsTest {
+    @get:Rule val compose = createAndroidComposeRule<DashboardPreviewActivity>()
+
+    @Test fun controlFailureIsNotMistakenForBluetoothAudioDisconnection() {
+        val status = Bundle().apply { putString("connection", "failed") }
+        assertEquals(R.string.diagnostics_audio_control_failed, dashboardConnectionStatus(status))
+        status.putString("connection", "connected")
+        assertEquals(R.string.diagnostics_audio_syncing, dashboardConnectionStatus(status))
+        status.putBoolean("ready", true)
+        assertEquals(R.string.dashboard_connected, dashboardConnectionStatus(status))
+        assertEquals(R.string.diagnostics_audio_no_control_report, dashboardConnectionStatus(null))
+    }
+
+    @Test fun unknownModelAndIncompleteInitializationNeverLookLikeZeroMissingSettingsAndReady() {
+        val status = Bundle().apply {
+            putString("connection", "connected")
+            putString("stage", "FEATURES")
+            putInt("received", 1)
+            putInt("missing_settings", -1)
+        }
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                AppTheme(1) { Column(Modifier.verticalScroll(rememberScrollState())) { ConnectionDiagnostics(status) } }
+            }
+        }
+        compose.onNodeWithText(compose.activity.getString(R.string.diagnostics_control_syncing)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.diagnostics_model_unknown)).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(compose.activity.getString(R.string.diagnostics_sync_pending)).performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.diagnostics_no_failure)).assertCountEquals(0)
+    }
+
+    @Test fun pendingEarHasACacheLabelAndConnectedCaseIsVisible() {
+        val at = 1000L
+        val status = Bundle().apply {
+            putString("connection", "connected")
+            putBoolean("wear", true)
+            putLong("wear_report_at", at)
+            putLong("left_battery_at", at)
+            putLong("right_battery_at", at)
+            putLong("case_battery_at", at)
+        }
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                AppTheme(1) {
+                    DashboardBattery(BatteryParams(
+                        PodBatteryParams(100, false, true, BatteryStatus.NOT_CHARGING),
+                        PodBatteryParams(85, false, true, BatteryStatus.NEED_AGAIN),
+                        PodBatteryParams(91, true, true, BatteryStatus.CHARGING)),
+                        EarDetectionParams(0, 1), AirPodsPro2USBC(), status)
+                }
+            }
+        }
+        compose.onNodeWithText("100%").assertIsDisplayed()
+        compose.onNodeWithText("85%").assertIsDisplayed()
+        compose.onNodeWithText("91%").assertIsDisplayed()
+        val formatted = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(at))
+        compose.onNodeWithText(compose.activity.getString(R.string.freshness_retained, formatted)).assertIsDisplayed()
+    }
+
+    @Test fun absentProcessResponseIsInformationalAndNotAnInactiveModuleVerdict() {
+        compose.mainClock.autoAdvance = false
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                AppTheme(1) { Column { ModuleSelfCheck {} } }
+            }
+        }
+        compose.mainClock.advanceTimeBy(3500)
+        compose.waitForIdle()
+        compose.onAllNodesWithText(compose.activity.getString(R.string.module_no_report)).assertCountEquals(3)
+    }
+
+    @Test fun copyingADiagnosticReportIgnoresSensitiveExtraFields() {
+        val status = Bundle().apply {
+            putString("connection", "connected")
+            putString("device_name", "PRIVATE_SENTINEL")
+            putString("mac", "PRIVATE_SENTINEL")
+            putString("serial", "PRIVATE_SENTINEL")
+            putString("packet", "PRIVATE_SENTINEL")
+            putString("head_gestures", "PRIVATE_SENTINEL")
+            putStringArrayList("unconfirmed_settings", arrayListOf(Key.SINGLE_POD_ANC, "PRIVATE_SENTINEL"))
+            putStringArrayList("missing_setting_keys", arrayListOf(Key.MICROPHONE_MODE, "PRIVATE_SENTINEL"))
+            putInt("noise_mode_reported", 3)
+            putInt("single_anc_reported", 2)
+            putInt("single_anc_requested", 1)
+            putInt("single_anc_recoveries", 1)
+        }
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                AppTheme(1) { Column(Modifier.verticalScroll(rememberScrollState())) { ConnectionDiagnostics(status) } }
+            }
+        }
+        compose.runOnIdle {
+            compose.activity.getSystemService(ClipboardManager::class.java)
+                .setPrimaryClip(ClipData.newPlainText("test", "PRIVATE_SENTINEL"))
+        }
+        compose.onNodeWithText(compose.activity.getString(R.string.diagnostics_copy)).performScrollTo().performClick()
+        // Only the test assertion needs background clipboard access when the
+        // emulator's clipboard overlay takes focus. No app permission is changed.
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        automation.adoptShellPermissionIdentity("android.permission.READ_CLIPBOARD_IN_BACKGROUND")
+        try {
+            compose.runOnIdle {
+                val report = compose.activity.getSystemService(ClipboardManager::class.java).primaryClip
+                    ?.getItemAt(0)?.text?.toString()
+                assertNotNull(report)
+                assertTrue(report!!.contains("P.O.D.S."))
+                assertFalse(report.contains("PRIVATE_SENTINEL"))
+                assertTrue(report.contains(compose.activity.getString(R.string.diagnostics_single_anc_reported) + ": " +
+                    compose.activity.getString(R.string.diagnostics_setting_disabled)))
+                assertTrue(report.contains(compose.activity.getString(R.string.diagnostics_single_anc_requested) + ": " +
+                    compose.activity.getString(R.string.diagnostics_setting_enabled)))
+                assertTrue(report.contains(compose.activity.getString(R.string.diagnostics_listening_mode) + ": " +
+                    compose.activity.getString(R.string.transparency_title)))
+            }
+        } finally {
+            automation.dropShellPermissionIdentity()
+        }
+    }
+}

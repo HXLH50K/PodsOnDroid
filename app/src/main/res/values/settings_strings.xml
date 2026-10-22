@@ -1,0 +1,20 @@
+<resources>
+    <string name="setting_select_to_apply">Not read yet; select to set</string>
+    <string name="settings_reading">Waiting for headset settings</string>
+    <string name="setting_pending">Waiting for headset confirmation…</string>
+    <string name="setting_applied">Headset name confirmed</string>
+    <string name="setting_failed">The headset did not confirm the change. Check the connection and try again.</string>
+    <string name="setting_sent">Command sent. Some firmware does not report this setting; check the actual headset behavior.</string>
+    <string name="setting_reported">Current state reported by the headset</string>
+    <string name="setting_confirmed">Change confirmed by the headset</string>
+    <string name="setting_write_failed">Command could not be sent. Check the control connection and try again.</string>
+    <string name="setting_invalid">This setting is unavailable or another change is pending.</string>
+    <string name="conversation_phone_volume_title">Lower phone media volume during conversations</string>
+    <string name="conversation_phone_volume_summary" formatted="false">Additionally lower media volume to 20% and restore it gradually when the conversation ends. Turn this off to let the headset handle conversations alone. Manual volume changes are preserved.</string>
+    <string name="loud_sound_unavailable">This version does not support this feature yet</string>
+    <string name="allow_off_title">Allow Off listening mode</string>
+    <string name="allow_off_summary">Allow turning off noise control. Loud sound protection is not active in Off mode.</string>
+    <string name="off_mode_enable_on_select">Selecting Off first enables the headset’s Off option. Loud sound protection is inactive in this mode.</string>
+    <string name="long_press_shared">Noise control cycle (both earbuds)</string>
+    <string name="long_press_shared_summary">Choose at least two modes. This cycle is shared by both earbuds.</string>
+</resources>

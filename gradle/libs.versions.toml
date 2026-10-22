@@ -1,0 +1,37 @@
+[versions]
+agp = "8.13.0"
+kotlin = "2.2.21"
+#coordinatorlayout = "1.2.0"
+coreKtx = "1.17.0"
+appcompat = "1.7.1"
+androidx-activity-compose = "1.11.0"
+androidx-window = "1.5.0"
+compose-plugin = "1.9.3"
+kotlinxSerializationJson = "1.9.0"
+xposedApi = "102.0.0"
+yukonga-miuix = "0.6.1"
+haze = "1.7.0"
+capsule = "2.1.1-patch2"
+hyperfocusapi = "1.10"
+
+[plugins]
+agp-app = { id = "com.android.application", version.ref = "agp" }
+agp-lib = { id = "com.android.library", version.ref = "agp" }
+kotlin = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+lsplugin-resopt = { id = "org.lsposed.lsplugin.resopt", version = "1.6" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+parcelize = { id = 'kotlin-parcelize' }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+jetbrains-compose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
+
+[libraries]
+coreKtx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+xposedApi = { group = "io.github.libxposed", name = "api", version.ref = "xposedApi" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+yukonga-miuix = { group = "top.yukonga.miuix.kmp", name = "miuix", version.ref = "yukonga-miuix" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
+androidx-window = { group = "androidx.window", name = "window", version.ref = "androidx-window" }
+haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+hyperfocusapi = { module = "com.github.ghhccghk:HyperFocusApi", version.ref = "hyperfocusapi" }
+gaze-capsule = { module = "com.mocharealm.gaze:capsule", version.ref = "capsule" }

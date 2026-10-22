@@ -1,0 +1,20 @@
+<resources>
+    <string name="setting_select_to_apply">尚未读取，可手动设置</string>
+    <string name="settings_reading">等待耳机状态同步</string>
+    <string name="setting_pending">等待耳机确认…</string>
+    <string name="setting_applied">耳机名称已确认</string>
+    <string name="setting_failed">耳机未确认此次修改，请检查连接后重试。</string>
+    <string name="setting_sent">命令已发送。部分固件不回报此设置，请以耳机实际效果为准。</string>
+    <string name="setting_reported">当前状态来自耳机回报</string>
+    <string name="setting_confirmed">耳机已确认此次修改</string>
+    <string name="setting_write_failed">命令发送失败，请检查耳机控制连接后重试。</string>
+    <string name="setting_invalid">此设置不可用，或上一项修改仍在等待确认。</string>
+    <string name="conversation_phone_volume_title">对话时降低手机媒体音量</string>
+    <string name="conversation_phone_volume_summary" formatted="false">额外将媒体音量降至原来的 20%，对话结束后平滑恢复。关闭后仅由耳机处理对话感知；手动调音量后不再自动恢复。</string>
+    <string name="loud_sound_unavailable">当前版本暂不支持此功能</string>
+    <string name="allow_off_title">允许关闭聆听模式</string>
+    <string name="allow_off_summary">允许关闭噪声控制。关闭模式下不提供高音量保护。</string>
+    <string name="off_mode_enable_on_select">点击“关闭”会先启用耳机的关闭选项；此模式下不提供高音量保护。</string>
+    <string name="long_press_shared">长按噪声循环（双耳共用）</string>
+    <string name="long_press_shared_summary">至少选择两种模式，左右耳机共用此循环。</string>
+</resources>

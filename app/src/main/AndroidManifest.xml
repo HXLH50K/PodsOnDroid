@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <queries>
+        <package android:name="com.android.bluetooth" />
+        <package android:name="com.xiaomi.bluetooth" />
+        <package android:name="com.android.systemui" />
+    </queries>
+    <application
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:description="@string/module_description"
+        android:localeConfig="@xml/locales_config"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:enableOnBackInvokedCallback="true"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.HyperPods">
+
+        <activity android:name=".MainActivity"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="com.hxlh50k.pods.action.show_airpods_ui" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <!-- Only the verified Bluetooth UID may store a fixed-field failure report. -->
+        <receiver android:name=".utils.DiagnosticsHistory" android:exported="true" />
+        <!-- The provider verifies the Bluetooth UID and returns only fixed app-policy fields. -->
+        <provider android:name=".utils.AppPreferencesProvider"
+            android:authorities="${applicationId}.preferences"
+            android:exported="true" />
+    </application>
+
+</manifest>

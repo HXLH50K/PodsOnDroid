@@ -1,0 +1,13 @@
+<resources>
+    <string name="scope_restart_title">Restart interface scopes</string>
+    <string name="scope_restart_summary">Reload verified interface hosts after updating the module. Requires root; Bluetooth control stays connected.</string>
+    <string name="scope_restart_no_hosts">No authenticated interface host reports yet. Enable the module and check loading first.</string>
+    <string name="scope_restart_warning">Restart only these verified processes:\n%1$s\n\nThe status bar, control center or headset window may briefly disappear. Bluetooth control is not restarted. Each host must report the currently installed module before the next is restarted. Some framework updates still require restarting the phone.</string>
+    <string name="scope_restart_confirm">Restart selected processes</string>
+    <string name="scope_restart_progress">Checking and reloading %1$s…</string>
+    <string name="scope_restart_verified">Verified the current module in %1$d replacement process(es).</string>
+    <string name="scope_restart_failed">Stopped after verifying %1$d process(es): %2$s. No further processes will be signalled. Check loading again; manual framework recovery may be needed.</string>
+    <string name="scope_restart_unknown_outcome">Verification was interrupted after %1$d verified process(es). A restart signal may already have been delivered. No further processes will be signalled; check module loading again before retrying.</string>
+    <string name="scope_restart_bluetooth_title">Bluetooth-inclusive restart</string>
+    <string name="scope_restart_bluetooth_pending">Not available in this milestone. It requires a verified control-channel shutdown and recovery handshake; the app will not silently interrupt all Bluetooth connections.</string>
+</resources>

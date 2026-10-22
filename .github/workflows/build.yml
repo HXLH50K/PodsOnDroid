@@ -1,0 +1,52 @@
+name: Build P.O.D.S.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Test APK artifact naming
+        run: node --test .github/scripts/prepare-apk.test.cjs
+
+      - name: Run unit tests and Android lint
+        run: ./gradlew :app:testDebugUnitTest :app:lintDebug
+
+      - name: Check native scan boundaries
+        run: bash app/src/test/cpp/run_tests.sh
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug
+
+      - name: Name the debug artifact
+        id: apk
+        env:
+          APK_VARIANT: debug
+        run: node .github/scripts/prepare-apk.cjs
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.apk.outputs.path }}
+          archive: false
+          if-no-files-found: error

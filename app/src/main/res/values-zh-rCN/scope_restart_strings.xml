@@ -1,0 +1,13 @@
+<resources>
+    <string name="scope_restart_title">重启界面作用域</string>
+    <string name="scope_restart_summary">更新模块后重新加载已验证的界面宿主。需要 root，不重启蓝牙控制。</string>
+    <string name="scope_restart_no_hosts">尚无可信的界面宿主回报，请先启用模块并检查加载状态。</string>
+    <string name="scope_restart_warning">仅重启以下已验证进程：\n%1$s\n\n状态栏、控制中心或耳机窗口可能短暂消失，不重启蓝牙控制。每个宿主确认加载当前模块后才处理下一个。部分框架更新仍需要重启手机。</string>
+    <string name="scope_restart_confirm">重启所选进程</string>
+    <string name="scope_restart_progress">正在检查并重新加载 %1$s…</string>
+    <string name="scope_restart_verified">已在 %1$d 个新进程中验证当前模块。</string>
+    <string name="scope_restart_failed">已验证 %1$d 个进程，操作停止：%2$s。不会继续结束其他进程。请重新检查加载状态，可能需要手动恢复框架。</string>
+    <string name="scope_restart_unknown_outcome">验证已中断，之前已验证 %1$d 个进程。重启信号可能已发出，不会继续处理其他进程；再次操作前请先检查模块加载状态。</string>
+    <string name="scope_restart_bluetooth_title">包含蓝牙的作用域重启</string>
+    <string name="scope_restart_bluetooth_pending">本阶段暂不开放。需要先验证控制通道的停止与恢复握手，不会静默中断全部蓝牙连接。</string>
+</resources>
