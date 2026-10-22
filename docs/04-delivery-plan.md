@@ -361,4 +361,20 @@ Validation before deployment:
 - Modern API102-only packaging, isolated debug identity, EN/zh-CN resources and development signing were checked. BLE permissions are present only in debug, absent from release.
 - Code review found no significant issues in the reviewed notification/observation changes. Actual island rendering, radio capture and lid semantics still require user checks.
 
-The next preview remains version `0.1.0-alpha.2` (code2). Deployment and small app-only instrumentation results will be recorded after execution; no automatic physical earbud operation or system-host restart is planned.
+### Alpha2 deployment and manual handoff
+
+- Implementation commit: `03f18a5`, on the independent P.O.D.S. branch.
+- Rebuilt debug and instrumentation APKs from that commit in 49 seconds, then installed them with authorized root `pm install` without changing system security settings or clearing app data.
+- Installed version: `0.1.0-alpha.2` (code2), package `com.hxlh50k.pods.debug`.
+- The installed APK SHA-256 matches the local artifact: `696ba0a17539fcb780c72e9a9609ba92f69c581dff504d9621467a8367d7ff7e`.
+- Two non-UI phone checks (application identity/launcher and EN/zh-CN resources) passed.
+- The updated test stack got past the old `InputManager.getInstance` failure. Five AboutPage UI cases passed; the first case failed with no Compose hierarchy. The lid-panel test stalled while the device lost foreground visibility and later slept/locked. The run was terminated by stopping only the verified test-app PID. This is not a successful complete UI run or a spontaneous product-crash claim.
+- No BLE scan was started, no physical lid operation was automated, and no system/Bluetooth host was restarted. The phone remains subject to normal lock-screen authentication.
+
+User checks: reload all three module scopes, normally with one phone restart; confirm the connection island ends after about five seconds and ordinary state refresh does not bring it back. For the next popup step, use **About → Lid observation (experimental)**, explicitly start the 30-second capture, mark closed/open/closed with a few seconds between actions, and copy the redacted report. Empty or failed observations can also be copied. This tool does not enable a native popup or assert that a nearby candidate belongs to the user.
+
+The repository remains private with no push. Native lid popups, the dedicated Interconnectivity panel, Liquid Glass, and full Bluetooth-inclusive restart are still later work.
+
+### Collaborative acceptance boundary
+
+The user explicitly requested joint physical-world testing after the extended UI automation. Alpha2 implementation, local regression checks, deployment, and independent Git history are the completed deliverables of this iteration. Physical island timing and lid semantics are **not** marked accepted. Stop further device operations here; agree on one or two manual checks, let the user operate the phone/headphones, and investigate only the reported result. Lock-screen or focus blockers must not trigger another autonomous testing loop.

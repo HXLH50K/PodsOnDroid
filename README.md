@@ -4,6 +4,8 @@ A private HyperPods-derived Android project for improving the AirPods 5 experien
 
 **Status, 2026-10-22:** the user accepted the `0.1.0-alpha.1` basic-control baseline. The `0.1.0-alpha.2` changes now separate a **five-second genuine audio-connection island** from silent battery/status updates, with a single Xiaomi-process presentation owner. They also add a debug-only, opt-in **30-second lid-observation tool** to obtain actual AirPods 5 header data before implementing lid detection. Native lid popups, the Interconnectivity headphone panel, and Liquid Glass are still incomplete. See the [current iteration](docs/04-delivery-plan.md#10-alpha2-notification-and-lid-observation-iteration) and the historical [first-preview receipt](docs/04-delivery-plan.md#9-measured-baseline-checkpoint).
 
+Alpha2 is installed on the test phone from implementation `03f18a5`, with its APK hash verified. Unit/build checks and two non-UI phone checks passed. App-only UI automation improved after the test-library update but was not fully successful because of hierarchy/foreground/lock-screen conditions; actual island behavior and lid observations are handed back to the user.
+
 At the user's request, `main` now starts at the independent P.O.D.S. snapshot **`781b4b6`**, with an identical source tree and no HyperPods commit ancestry. The former local history, including preview implementation `5013f04`, was verified and archived outside the repository before rewriting. Historical receipt hashes refer to that archive, not the new branch ancestry.
 
 ## Project boundaries
@@ -31,6 +33,8 @@ The debug app uses the same three declared scopes. Live restart behavior remains
 4. Candidates are unassociated, raw lid bytes are not interpreted as verified lid events, and even an empty report can be copied. This tool does **not** enable native popups. Do not expect the planned native panel, Liquid Glass, or Bluetooth-inclusive restart.
 
 The user has completed the initial basic-function check and requested continued development. Future hardware interactions still remain user-driven; hand off a verified preview or capture procedure rather than autonomously manipulating the headphones.
+
+Device acceptance is collaborative: after focused local validation and deployment, agree on one or two checks with the user and wait for their observations. Do not extend the handoff into repeated UI automation, wake/unlock retries, scope restarts, or radio capture. The next suggested check is the brief connection island; lid capture remains opt-in and is not started automatically.
 
 ## Documentation
 
