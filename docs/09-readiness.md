@@ -14,7 +14,7 @@ The later [read-only framework status query and official manager UI](07-device-a
 
 | Item | Decision |
 | --- | --- |
-| Foundation | HyperPods derivative preserving history, authorship, applicable GPL, and useful capabilities/tests |
+| Foundation | HyperPods-derived source with independent P.O.D.S. history; preserve provenance, authorship, applicable GPL, and useful capabilities/tests |
 | Label / application ID | `P.O.D.S.` / `com.hxlh50k.pods` |
 | Source namespace | Keep `moe.chenxy.hyperpods` for now; do not equate namespace with installation identity |
 | Platform | Current `houji` test phone, HyperOS 4, Android 17/API 37 |
@@ -92,7 +92,7 @@ It may avoid a phone reboot for ordinary module APK updates once the framework r
 
 | Stage | Work | Pause condition |
 | --- | --- | --- |
-| M0 | Preserve imported history/docs, record baseline tests/build, establish identity and rescue procedure | No headphones or release key required |
+| M0 | Preserve source provenance/docs, use independent Git history, record baseline tests/build and identity | No headphones or release key required |
 | M1-A | Migrate metadata/entry/hooks, static checks, controlled probes and host self-checks, R01 contract | Runtime API below 102 or need to replace the framework: stop, do not downgrade/replace automatically |
 | M1-B | Device identity, AACP, existing controls and feedback | Finish independently verified work, then explicitly wait for AirPods 5 |
 | M2/M3 | Lid discovery, native popup, dedicated Interconnectivity panel | Wait for Xiaomi Open-ear Headphones Pro when native-behavior comparison is needed |
@@ -111,6 +111,6 @@ When hardware is needed, the requested workflow is to finish and verify the curr
 
 ## 7. Documentation checkpoint boundaries
 
-The English documents preserve confirmed decisions, engineering targets, and unverified boundaries. The original user-answer archive exists outside the repository; historical upstream Chinese documents remain only in Git history.
+The English documents preserve confirmed decisions, engineering targets, and unverified boundaries. The original user-answer archive and former Git-history bundle exist outside the repository; upstream ancestry is intentionally absent from the P.O.D.S. branch.
 
 This documentation work does not inspect signing secrets, generate keys, commit/push, install probes, or restart devices. Source import and private repository creation are established facts; concurrent build/migration work must supply its own results. The upstream [UI evidence summary](../design-qa.md) is not P.O.D.S. acceptance.

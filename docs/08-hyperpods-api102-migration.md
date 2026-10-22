@@ -1,6 +1,6 @@
 # 08 HyperPods derivation and API 102 migration
 
-Updated: 2026-10-22. Source/history import and the earlier [measured baseline](04-delivery-plan.md#9-measured-baseline-checkpoint) are complete. Modern-only entry integration and restricted UI-host restart code are now implemented; **integrated build/tests, code review, and runtime validation are pending**. The checklist below remains an acceptance contract, not a claim that artifacts or runtime probes pass.
+Updated: 2026-10-22. Modern-only entry integration and restricted UI-host restart code are implemented; the [deployment receipt](04-delivery-plan.md#9-measured-baseline-checkpoint) records passing build/unit checks and the user subsequently reported basic controls working. Full hardware/native-window acceptance remains open. Inherited Git ancestry has now been replaced with an identical independent P.O.D.S. snapshot; the former history is backed up externally.
 
 Release application ID is `com.hxlh50k.pods` (unsigned), with isolated debug ID `com.hxlh50k.pods.debug` and user-visible app/module title `P.O.D.S.`. Source/Android namespace `moe.chenxy.hyperpods` and native library/JNI names remain unchanged. English/Simplified Chinese per-app locales are implemented; coding docs/commits remain English. Legacy `assets/xposed_init` and `assets/native_init` are removed, leaving modern entries only. Final artifact/runtime checks remain pending. M0/M1-A need no headphones; see [readiness](09-readiness.md).
 
@@ -15,12 +15,12 @@ Release application ID is `com.hxlh50k.pods` (unsigned), with isolated debug ID 
 
 Derivative policy:
 
-1. Source/history and prior planning documents are preserved in this independent workspace; do not modify the original reference workspace.
+1. Preserve source and prior planning documents, but use independent P.O.D.S. Git history as requested. Do not modify the original reference workspace.
 2. Preserve copyright, applicable GPL, and change provenance. The user-owned [repository](https://github.com/HXLH50K/PodsOnDroid) is created **private**, with no push at this checkpoint. Never infer permission to make it public.
 3. Use the new application ID and independent release signature. A new certificate cannot seamlessly update the original HyperPods package.
 4. Preserve controller, protocol, capabilities, truthful state, single-ear recovery, bounded writes, media-route safeguards, and useful tests.
 5. Do not simultaneously replace UI libraries, storage, or the control-owning process. Implement Liquid Glass separately after the framework baseline is verified.
-6. Historical Chinese upstream documents remain in Git history, not recreated in the working tree. All maintained coding documentation is English.
+6. Historical Chinese upstream documents remain in the reference project and external backup, not this branch ancestry or working tree. All maintained coding documentation is English.
 
 ## 2. Verified API 102 contract
 

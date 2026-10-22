@@ -1,6 +1,8 @@
 # 05 Confirmed decisions and remaining choices
 
-Updated: 2026-10-22. This is a faithful English decision summary, not a verbatim transcript. The original Chinese user answers were preserved byte-for-byte outside the repository before import. Historical Chinese upstream documents remain in Git history and are not recreated in the working tree.
+Updated: 2026-10-22. This is a faithful English decision summary, not a verbatim transcript. The original Chinese user answers were preserved byte-for-byte outside the repository before import. Historical Chinese upstream documents remain in the reference project and external history backup, not the independent P.O.D.S. branch.
+
+Latest decision: remove inherited HyperPods commit ancestry, keep the source/license/attribution, and continue development. The user reports the migration preview's basic functionality works and the original issues remain as expected. This does not declare native popups, the dedicated panel, or Liquid Glass complete.
 
 **Latest instructions take precedence:** the repository is private; all coding documentation and commit messages are English; the app supports English and Simplified Chinese (`zh-CN`) only. The earlier public-release intention is superseded.
 

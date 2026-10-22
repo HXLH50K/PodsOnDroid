@@ -23,7 +23,7 @@ Repository code references use pinned public snapshots when external. Official p
 
 | Project | Inspected baseline | Relevance |
 | --- | --- | --- |
-| HyperPods | `a44bc10e387f527062b9ba2b8f90b154b2e61248`, commit dated 2026-10-22 +08:00; source workspace was clean when inspected | Deep Xiaomi integration, including HyperOS 4 changes; now imported with history |
+| HyperPods | `a44bc10e387f527062b9ba2b8f90b154b2e61248`, commit dated 2026-10-22 +08:00; source workspace was clean when inspected | Deep Xiaomi integration; code retained as provenance, inherited Git ancestry removed at the user's request |
 | LibrePods | `89356c08cea3db0b6b54792d9329d09a87cc85fa`, dated 2026-10-16 +05:30; source workspace was clean | Rich cross-platform AirPods protocol/capability references |
 | OpenPods | `9cd800875f594fa6eb7325dd33d9216c476a5782`, dated 2025-09-26 UTC | BLE status/notifications rather than a complete AACP controller |
 
@@ -56,7 +56,7 @@ These projects differ in scope, protocol coverage, and integration cost. A claim
 - UI, ordinary notifications, and system cards should share model identity, alias, and state provenance.
 - Restrict host-layout changes to verified owned entries and restore recycled views.
 
-Historical feature-comparison/issue-fix documents remain in imported Git history; they are not recreated as Chinese working-tree documentation. Relevant current code/tests and the [English historical UI summary](../design-qa.md) provide navigation. Historical problem sections are not a current defect list.
+Historical feature-comparison/issue-fix documents remain in the reference project and the external history backup, not the independent P.O.D.S. branch. Relevant current code/tests and the [English historical UI summary](../design-qa.md) provide navigation. Historical problem sections are not a current defect list.
 
 ### What not to copy blindly
 
@@ -162,6 +162,6 @@ Confidence is high that the foundation is worth extending. Native entry points h
 
 - HyperPods' imported [LICENSE](../LICENSE) contains GPL v3. Determine any later-version option from the actual reused file grants, not a generic license template.
 - The pinned [LibrePods README](https://github.com/librepods-org/librepods/blob/89356c08cea3db0b6b54792d9329d09a87cc85fa/README.md) states GPL-3.0-or-later; OpenPods also grants v3-or-later.
-- Preserve source history, copyright, modification notices, and applicable corresponding-source obligations. Private hosting does not relicense derived work or remove distribution duties.
+- Preserve pinned source provenance, copyright, modification notices, and applicable corresponding-source obligations. Independent Git history and private hosting do not relicense derived work or remove distribution duties.
 - Review assets independently. LibrePods distinguishes trademarks and mentions Apple fonts; use system fonts and original/clearly licensed art rather than unverified Apple renders or animations.
 - [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid) remains private until explicit visibility authorization. Review licensing/assets before any approved distribution. This is engineering guidance, not legal advice.

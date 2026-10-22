@@ -2,14 +2,16 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-**Status, 2026-10-22: M0/M1-A development preview deployed for manual testing.** Implementation commit **`5013f04`**, version **`0.1.0-alpha.1` (code 1)**, is installed as `com.hxlh50k.pods.debug`; the installed APK hash matches the local artifact. The post-fix build passed **377 JVM tests**, Lint with **0 errors / 119 warnings / 2 hints**, and debug, AndroidTest, and unsigned-release assembly. The corrected deployment passed two identity/locale phone tests and a cold launch (**289 ms**), showing the waiting-for-AirPods screen. This is **not a completed MVP**: injected controls and live R01 remain unverified; native lid popups, the dedicated headphone panel, Liquid Glass, and Bluetooth-inclusive restart are not implemented in this preview. See the [full deployment receipt](docs/04-delivery-plan.md#9-measured-baseline-checkpoint).
+**Status, 2026-10-22:** the user reports that the `0.1.0-alpha.1` preview behaves like HyperPods and basic controls work; the original popup, island, and setting-feedback issues remain. This is user-reported acceptance of the migration baseline, not full hardware acceptance. Work now targets repeated/persistent island notifications and evidence-backed AirPods 5 popup integration. The earlier build passed **377 JVM tests**, Lint with **0 errors / 119 warnings / 2 hints**, and two phone identity/locale checks. See the [deployment receipt](docs/04-delivery-plan.md#9-measured-baseline-checkpoint).
+
+At the user's request, `main` now starts at the independent P.O.D.S. snapshot **`781b4b6`**, with an identical source tree and no HyperPods commit ancestry. The former local history, including preview implementation `5013f04`, was verified and archived outside the repository before rewriting. Historical receipt hashes refer to that archive, not the new branch ancestry.
 
 ## Project boundaries
 
 - App/module title: **P.O.D.S.**; release application ID `com.hxlh50k.pods` (unsigned), isolated debug ID `com.hxlh50k.pods.debug`. The Kotlin/Android namespace remains `moe.chenxy.hyperpods`.
 - Per-app locales implemented: **English and Simplified Chinese (`zh-CN`) only**. Coding documentation and commit messages are English.
 - Repository: [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid), created **private**; no initial push at this documentation checkpoint. Keep it private unless the user explicitly authorizes a visibility change.
-- Preserve HyperPods history, attribution, and applicable [GPL terms](LICENSE). Private hosting does not waive license obligations when distributing derived work.
+- Preserve HyperPods attribution, pinned source provenance, and applicable [GPL terms](LICENSE), not its Git ancestry. Private hosting and independent history do not waive distribution obligations.
 
 ## Prerequisites and validation
 
@@ -27,7 +29,7 @@ The debug app is enabled only for the three declared scopes. **19 restart tests*
 2. Connect the AirPods 5, open P.O.D.S., and inspect diagnostics for host loading, device identity, and control state.
 3. Try supported basic controls and report the observed results. Do not expect the planned native popups/panel, Liquid Glass, or Bluetooth-inclusive restart.
 
-The user will perform these steps; further autonomous runtime testing and dependency upgrades are not part of this handoff.
+The user has completed the initial basic-function check and requested continued development. Future hardware interactions still remain user-driven; hand off a verified preview or capture procedure rather than autonomously manipulating the headphones.
 
 ## Documentation
 

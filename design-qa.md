@@ -2,9 +2,9 @@
 
 **This is an English summary of upstream evidence, NOT P.O.D.S. verification.**
 
-The imported history is anchored at `a44bc10e387f527062b9ba2b8f90b154b2e61248`. The original report describes a HyperPods Compose/Miuix redesign on **2026-10-19**, followed by a **build 23** regression addendum. Its counts describe those historical runs, not the current application ID, API 102 migration, Liquid Glass design, R01, or physical AirPods 5 acceptance.
+The reference source is anchored at `a44bc10e387f527062b9ba2b8f90b154b2e61248`; that commit is provenance, not an ancestor of the independent P.O.D.S. branch. The original report describes a HyperPods Compose/Miuix redesign on **2026-10-19**, followed by a **build 23** regression addendum. Its counts describe those historical runs, not the current application ID, API 102 migration, Liquid Glass design, R01, or physical AirPods 5 acceptance.
 
-Original screenshots/reference images lived in a separate upstream analysis workspace and are not delivered here. Filenames below identify historical evidence only; there are deliberately no broken sibling-workspace links. The historical report and Chinese upstream documents remain in Git history, not recreated as current coding documentation.
+Original screenshots/reference images lived in a separate upstream analysis workspace and are not delivered here. Filenames below identify historical evidence only; there are deliberately no broken sibling-workspace links. The historical report and Chinese upstream documents remain in the reference project and external backup, not recreated as current coding documentation.
 
 ## 1. Historical test setup
 

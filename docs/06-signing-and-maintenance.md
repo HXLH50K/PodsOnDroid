@@ -10,7 +10,7 @@ Updated: 2026-10-22. Signing/release procedures below are plans, not completed o
 - Release application ID: `com.hxlh50k.pods`, currently unsigned; isolated debug application ID: `com.hxlh50k.pods.debug`.
 - Retain Kotlin/Android namespace `moe.chenxy.hyperpods` for now. Source namespace is not installation/signing identity.
 - Independent release key: never reuse HyperPods, LibrePods, Android debug, Cowpea, or another project's certificate.
-- Preserve history, authorship, and applicable GPL. A new certificate must not pretend to update the original HyperPods package.
+- Preserve source provenance, authorship, and applicable GPL while maintaining independent P.O.D.S. Git history. A new certificate must not pretend to update the original HyperPods package.
 - Install under the new ID; isolate other controllers during authorized tests. Use explicit export/import for settings migration, not another app's private storage.
 - Standalone APK, its LSP code, and any future KSU-bundled APK share the release identity.
 - Increase `versionCode` monotonically; use an understandable `versionName`, for example `0.1.0-alpha.1`.
@@ -137,7 +137,7 @@ Proposed rule: each KSU release records its embedded APK version/hash. User upda
 - Issue templates request redacted environment, steps, and stage errors, not whole system logs, serials, or keys.
 - Review protocol changes for source/license/fixtures before porting; do not auto-follow nightlies into production profiles.
 - Prioritize connection, truthful state, power, and upgrade stability before new models/visual extras.
-- Preserve HyperPods commits/attribution and review updates individually; do not merge legacy hook registration back into API 102. Track native-presentation changes separately from protocol fixes.
+- Preserve HyperPods attribution and pinned provenance, not inherited commit ancestry. Review upstream patches individually without merging the old history or legacy hook registration. Track native-presentation changes separately from protocol fixes.
 - Capture raw debug messages only during an authorized window and clean them afterward. Release diagnostics are fixed-field/local, never automatic remote collection.
 - Record reused project/commit/file, license, copyright, changes, and asset grants. When distributing, satisfy applicable corresponding-source/build-instruction obligations even if hosting remains private.
 

@@ -36,7 +36,7 @@ Lid popup and dedicated panel are mandatory, not deferred optional features. The
 
 Work:
 
-- Preserve the imported HyperPods history at `a44bc10e387f527062b9ba2b8f90b154b2e61248`, design docs, attribution, and applicable GPL; do not modify the original reference workspace.
+- Preserve source provenance from HyperPods `a44bc10e387f527062b9ba2b8f90b154b2e61248`, design docs, attribution, and applicable GPL. The user subsequently requested independent Git ancestry; the previous history is archived externally and the reference workspace stays unchanged.
 - Record clear upstream/project-origin roles. The origin repository is private; no upload or public visibility is implied.
 - Reproduce the smallest existing build/test baseline before API changes. Do not also replace storage, project structure, and UI libraries.
 - Establish application identity without renaming the retained source namespace unnecessarily.
