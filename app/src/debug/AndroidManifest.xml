@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <application>
         <!-- Debug-only native UI preview; never included in release builds. -->
         <activity android:name=".ui.DashboardPreviewActivity" android:exported="true" />

@@ -22,8 +22,8 @@ android {
         applicationId = "com.hxlh50k.pods"
         minSdk = 35
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0-alpha.1"
+        versionCode = 2
+        versionName = "0.1.0-alpha.2"
         resourceConfigurations += listOf("en", "zh-rCN")
         buildConfigField("String", "BUILD_REVISION", "\"$sourceRevision\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -113,8 +113,10 @@ configurations.configureEach {
 
 dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.9.4")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
+    // 3.7.0 avoids InputManager.getInstance reflection on API 23+, including Android 17.
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test:runner:1.7.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
     testImplementation("org.mockito:mockito-core:5.20.0")

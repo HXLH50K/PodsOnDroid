@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.os.Handler
 import android.os.ParcelUuid
+import android.os.SystemClock
 import android.util.Log
 import android.widget.Toast
 import io.github.libxposed.api.XposedInterface
@@ -16,12 +17,13 @@ import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.L2CAPController
 import moe.chenxy.hyperpods.utils.HostReflection
+import moe.chenxy.hyperpods.utils.AudioConnectionEvent
 import moe.chenxy.hyperpods.utils.SystemApisUtils.setIconVisibility
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPodsNotificationByMiuiBt
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.showPodConnectingByMiuiBt
+import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.audioSessions
 
 object HeadsetStateDispatcher {
-    private var isShowedToast = false
     private val airPodsUUIDs = hashSetOf(
         ParcelUuid.fromString("74ec2172-0bad-4d01-8f77-997b2be0722a"),
         ParcelUuid.fromString("2a72e02b-7b99-778f-014d-ad0b7221ec74")
@@ -32,8 +34,11 @@ object HeadsetStateDispatcher {
                 runCatching { nativeGetHookResult() }.getOrDefault(false)
         },
         { service, device ->
-            showPodConnectingByMiuiBt(service, device)
-            L2CAPController.connectPod(service, device)
+            audioSessions.claim(device.address)?.let { event ->
+                runCatching { showPodConnectingByMiuiBt(service, device, event) }
+                    .onFailure { Log.e("Art_Chen", "Unable to announce audio connection", it) }
+                L2CAPController.connectPod(service, device)
+            }
         })
 
     @SuppressLint("PrivateApi")
@@ -59,11 +64,21 @@ object HeadsetStateDispatcher {
                 val context = chain.thisObject as ContextWrapper
                 val handler = HostReflection.field(context, "mHandler") as Handler
                 if (device == null || currState == fromState) return@intercept result
+                val eventId = SystemClock.elapsedRealtimeNanos()
+                val connectedEvent = if (currState == BluetoothProfile.STATE_CONNECTED) {
+                    audioSessions.connected(device.address, AudioConnectionEvent(eventId, SystemClock.elapsedRealtime()))
+                } else null
+                if (currState == BluetoothProfile.STATE_DISCONNECTING || currState == BluetoothProfile.STATE_DISCONNECTED) {
+                    // Invalidate queued direct/UUID callbacks before the service handler runs.
+                    audioSessions.disconnected(device.address)
+                }
                 handler.post {
                     try {
                         Log.d("Art_Chen", "A2DP Connection State: $currState, isAirPod ${isPods(device)}")
                         if (currState == BluetoothProfile.STATE_DISCONNECTING || currState == BluetoothProfile.STATE_DISCONNECTED) {
                             uuidDiscovery.disconnected(context, device)
+                            runCatching { cancelPodsNotificationByMiuiBt(context, device, eventId) }
+                                .onFailure { Log.e("Art_Chen", "Unable to cancel audio notification", it) }
                             // UUIDs may be absent again during teardown.
                             L2CAPController.disconnectedPod(context, device)
                         }
@@ -87,8 +102,11 @@ object HeadsetStateDispatcher {
                                 ).show()
                                 return@post
                             }
-                            showPodConnectingByMiuiBt(context, device)
-                            L2CAPController.connectPod(context, device)
+                            audioSessions.claim(device.address, connectedEvent)?.let { event ->
+                                runCatching { showPodConnectingByMiuiBt(context, device, event) }
+                                    .onFailure { Log.e("Art_Chen", "Unable to announce audio connection", it) }
+                                L2CAPController.connectPod(context, device)
+                            }
                         } else if (currState == BluetoothHeadset.STATE_DISCONNECTING || currState == BluetoothHeadset.STATE_DISCONNECTED) {
                             statusBarManager.setIconVisibility("wireless_headset", false)
                         }

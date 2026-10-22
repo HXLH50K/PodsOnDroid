@@ -116,6 +116,21 @@ The imported [AirPods capability table](../app/src/main/java/moe/chenxy/hyperpod
 
 ## 5. Lid-open / quick-connect route
 
+### Follow-up: actual container and data requirements
+
+Further local inspection of the same BluetoothExtension APK hash established:
+
+- `com.android.bluetooth.ble.app.j2.a()` selects `b1.c` for protocol `16`.
+- `b1.c` is the native AirPods controller and uses the system `PairingDialog` container.
+- Its initialization is not a stateless display call: it creates `AirPodsInfo`, observes the system AirPods provider, binds `MiuiFastConnectService`, registers callbacks, queries connection state, and selects model-family resources.
+- The normal initialization also changes a process-wide dynamic-resource flag. Blindly launching this activity with guessed extras is not an acceptable new-model adapter.
+- The exact optional artwork path is under `files/my_internal_files/target/airpodsfastconnect/airpodsfastconnect`, not directly under `files/target`. That optional directory was absent during this follow-up; static fallback resources may still exist in the APK.
+- The installed `fc_airpods_adapter.json` enables the old adapter broadly, but does not add AirPods 5 model/lid semantics.
+
+No native popup was forced open and no system provider/configuration was written. Before connecting a new data adapter, collect the target's actual clear BLE fields during user-marked closed/open phases. The debug-only **Lid observation** tool supports this: it requests nearby-device permission on demand, scans for at most 30 seconds in the foreground, keeps at most eight unassociated candidates/128 state records, and exports only clear model/status/battery/lid/color/connection header fields and relative timings. Names, addresses, keys and opaque payload tails are not exported. This is a diagnostic collection step, **not lid detection or popup implementation**. It does not identify candidates by strongest signal.
+
+The clear-field positions are corroborated by [LibrePods BLEManager at the reference revision](https://github.com/librepods-org/librepods/blob/89356c08cea3db0b6b54792d9329d09a87cc85fa/android/app/src/main/java/me/kavishdevar/librepods/bluetooth/BLEManager.kt): bytes 8/9/10 are read as lid/color/connection fields, and decryption operates on the final 16 bytes. The collector requires at least 27 bytes, retains only fields before byte 11, and records raw `lid_byte` changes without converting them into claimed AirPods 5 lid events. This matters because collecting battery fields alone could miss the actual lid transition.
+
 ### 5.1 Imported HyperPods baseline
 
 [MiBluetoothToastHook](../app/src/main/java/moe/chenxy/hyperpods/hook/MiBluetoothToastHook.kt) in the imported baseline locates obfuscated `b1.d.U(ScanResult)` and replaces it with a no-op, intended to avoid competition from system AirPods quick-connect/popup/island control.

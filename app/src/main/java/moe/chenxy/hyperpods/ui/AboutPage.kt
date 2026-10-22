@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.ui.components.ConnectionDiagnostics
+import moe.chenxy.hyperpods.ui.components.LidObservationPanel
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import moe.chenxy.hyperpods.ui.components.DashboardGroup as Card
 import moe.chenxy.hyperpods.ui.components.DashboardSection
@@ -140,6 +141,9 @@ fun AboutPage(
                         }
                     )
                 }
+            }
+            if (BuildConfig.BUILD_TYPE == "debug") item(key = "lid_observation") {
+                Card { LidObservationPanel() }
             }
             item(key = "diagnostics") {
                 DashboardSection(stringResource(R.string.diagnostics_title))

@@ -66,6 +66,7 @@ fun ModuleSelfCheck(onReport: (String) -> Unit) {
                 "plugin_observed" -> R.string.module_plugin_observed
                 "plugin_waiting" -> R.string.module_plugin_waiting
                 "receiver_ready" -> R.string.module_receiver_ready
+                "ui_host_ready" -> R.string.module_ui_host_ready
                 else -> R.string.module_receiver_waiting
             })
         title to summary

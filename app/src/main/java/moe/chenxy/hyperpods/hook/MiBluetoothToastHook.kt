@@ -1,6 +1,7 @@
 package moe.chenxy.hyperpods.hook
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -17,6 +18,7 @@ import android.os.Bundle
 import android.os.Process
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.content.FileProvider
 import com.hyperfocus.api.FocusApi
@@ -25,19 +27,19 @@ import moe.chenxy.hyperpods.utils.HostReflection
 import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.utils.PodsIslandData
+import moe.chenxy.hyperpods.utils.AudioConnectionEvent
+import moe.chenxy.hyperpods.utils.AudioConnectionNotifications
+import moe.chenxy.hyperpods.utils.PodsNotificationKey
 import moe.chenxy.hyperpods.utils.LowBatterySettings
 import moe.chenxy.hyperpods.utils.LowBatteryReminder
 import moe.chenxy.hyperpods.utils.BatteryReminderStore
 import moe.chenxy.hyperpods.utils.BatteryReminderText
 import moe.chenxy.hyperpods.utils.BatteryReminderBatch
-import moe.chenxy.hyperpods.utils.SystemApisUtils
 import moe.chenxy.hyperpods.utils.SystemApisUtils.cancelAsUser
 import moe.chenxy.hyperpods.utils.SystemApisUtils.notifyAsUser
 import moe.chenxy.hyperpods.utils.SystemApisUtils.supportsIsland
 import moe.chenxy.hyperpods.utils.data.BatteryParams
-import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.showCaseBatteryToast
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil
-import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.showPodsBatteryToast
 import org.json.JSONObject
 import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
 import java.io.File
@@ -65,6 +67,7 @@ object MiBluetoothToastHook {
 
     @OptIn(ExperimentalEncodingApi::class)
     fun install(framework: XposedInterface, classLoader: ClassLoader) {
+        val notifications = AudioConnectionNotifications(BuildConfig.APPLICATION_ID)
         fun getCaseMp4Uri(context: Context): Uri? {
             val file = File(context.filesDir, "my_internal_files")
             if (file.isDirectory || file.mkdirs()) {
@@ -109,11 +112,13 @@ object MiBluetoothToastHook {
 
         }
 
-        fun deleteIntent(context: Context, bluetoothDevice: BluetoothDevice): PendingIntent? {
-            val intent = Intent("com.android.bluetooth.headset.notification.cancle")
+        fun deleteIntent(context: Context, bluetoothDevice: BluetoothDevice,
+            presentation: AudioConnectionNotifications.Presentation): PendingIntent {
+            val intent = Intent("com.hxlh50k.pods.action.dismissconnection")
             intent.setPackage(HyperPodsBroadcasts.XIAOMI_BLUETOOTH)
-            intent.putExtra("android.bluetooth.device.extra.DEVICE", bluetoothDevice)
-            intent.identifier = "BTHeadset${bluetoothDevice.address}"
+            intent.putExtra("device", bluetoothDevice)
+            intent.putExtra(AudioConnectionNotifications.EXTRA_EVENT_ID, presentation.event.id)
+            intent.identifier = presentation.key.tag
             return PendingIntent.getBroadcast(context, 0, intent,
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         }
@@ -138,10 +143,6 @@ object MiBluetoothToastHook {
                     (batteryParams.left?.isInCase == true || batteryParams.right?.isInCase == true)
         }
 
-        fun buildIslandTicker(batteryParams: BatteryParams): String {
-            return "${PodsIslandData.batteryText(batteryParams.left)} / ${PodsIslandData.batteryText(batteryParams.right)}"
-        }
-
         fun buildNotification(bluetoothDevice: BluetoothDevice, context: Context, batteryParams: BatteryParams,
             warning: String = ""): Notification.Builder {
             initResources(context)
@@ -150,9 +151,10 @@ object MiBluetoothToastHook {
             val alias = PodsIslandData.displayName(bluetoothDevice.alias, bluetoothDevice.name)
 
             val notificationManager = context.getSystemService("notification") as NotificationManager
+            val channelId = notifications.statusKey(address).tag
             notificationManager.createNotificationChannel(
                 NotificationChannel(
-                    "BTHeadset$address",
+                    channelId,
                     alias,
                     NotificationManager.IMPORTANCE_MIN
                 )
@@ -195,191 +197,121 @@ object MiBluetoothToastHook {
                     (if (batteryParams.right?.isCharging == true) " ⚡" else "")
 
             val content: String = (if (warning.isEmpty()) "" else "$warning\n") + caseBattStr + leftEar + rightEar
-            return Notification.Builder(context, "BTHeadset$address").setSmallIcon(
+            return Notification.Builder(context, channelId).setSmallIcon(
                 android.R.drawable.stat_sys_data_bluetooth
-            ).setWhen(0L).setTicker(alias).setDefaults(-1).setContentTitle(alias)
+            ).setWhen(0L).setDefaults(0).setContentTitle(alias)
                 .setContentText(content).setStyle(Notification.BigTextStyle().bigText(content)).setOnlyAlertOnce(true)
                 .setContentIntent(pendingIntent)
-                .setDeleteIntent(deleteIntent(context, bluetoothDevice)).setColor(
+                .setColor(
                     context.getColor(
                         system_notification_accent_color
                     )
                 ).setExtras(bundle2).addAction(action).setVisibility(Notification.VISIBILITY_PUBLIC)
         }
 
-        fun showConnectedToast(bluetoothDevice: BluetoothDevice, context: Context) {
+        fun showConnectedToast(bluetoothDevice: BluetoothDevice, context: Context,
+            presentation: AudioConnectionNotifications.Presentation) {
             initResources(context)
             val notificationManager = context.getSystemService("notification") as NotificationManager
-            val connectedStrID = context.resources.getIdentifier("headset_autoswitch_connected", "string", "com.xiaomi.bluetooth")
-            val channelId = "BTHeadset${bluetoothDevice.address}"
+            val connectedText = context.createPackageContext(BuildConfig.APPLICATION_ID, 0)
+                .getString(R.string.dashboard_connected)
+            val channelId = presentation.key.tag
             val deviceName = PodsIslandData.displayName(bluetoothDevice.alias, bluetoothDevice.name)
-
-            val baseInfo = focusApi.baseinfo(title = deviceName,
-                basetype = 0, content = context.getString(connectedStrID))
-            val api = focusApi.sendFocus(
-                title = "BTHeadset${bluetoothDevice.address}-connect",
-                cancel = false,
-                isShowNotification = false,
-                showSmallIcon = false,
-                baseInfo = baseInfo,
-                enableFloat = true,
-                reopen = "true", // allow notify again after notification cleaned
-                picInfo = Icon.createWithResource(context, earphone_drawable),
-                picInfotype = 2,
-                timeout = 1000,
-                ticker = context.getString(connectedStrID),
-                picticker = Icon.createWithResource(context, earphone_drawable)
-            )
-            val a = Bundle()
-            a.putString("miui.effect.src","true")
-            a.putAll(api)
+            val remaining = presentation.remaining(SystemClock.elapsedRealtime())
+            if (remaining == 0L) return
 
             notificationManager.createNotificationChannel(
                 NotificationChannel(
                     channelId,
                     deviceName,
-                    NotificationManager.IMPORTANCE_DEFAULT
+                    NotificationManager.IMPORTANCE_LOW
                 )
             )
 
-            val notificationBuild: Notification =
-                Notification.Builder(context, channelId)
+            val builder = Notification.Builder(context, channelId)
                     .setSmallIcon(earphone_drawable)
                     .setContentTitle(deviceName)
-                    .setContentText(context.getString(connectedStrID))
-                    .addExtras(a)
-                    .build()
-
-            notificationManager.cancelAsUser("HEADSET_CONNECT_NOTIFICATION", 1001, Process.myUserHandle())
-            notificationManager.notifyAsUser(
-                channelId,
-                10003,
-                notificationBuild,
-                Process.myUserHandle()
-            )
-        }
-
-        fun createPodsIslandNotification(bluetoothDevice: BluetoothDevice, context: Context, batteryParams: BatteryParams,
-            warning: String = "", modelNumber: String? = null) {
-            val sendNotification = buildNotification(bluetoothDevice, context, batteryParams, warning)
-//            val actions = focusApi.actionInfo(actionIntent = actionIntent, actionIntentType = "2", actionTitle = context.resources
-//                .getString(miheadset_notification_Disconnect))
-
-            val disconnectBundle = Bundle()
-            disconnectBundle.putParcelable("Device", bluetoothDevice)
-            val intent = Intent("com.android.bluetooth.headset.notification")
-            intent.setPackage(HyperPodsBroadcasts.XIAOMI_BLUETOOTH)
-            intent.putExtra("btData", disconnectBundle)
-            intent.putExtra("disconnect", "1")
-            intent.identifier = "BTHeadset${bluetoothDevice.address}"
-            val action = Notification.Action.Builder(
-                null,
-                context.resources
-                    .getString(miheadset_notification_Disconnect),
-                PendingIntent.getBroadcast(context, 0, intent,
-                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-            ).build()
-
-            val bundle = Bundle()
-            bundle.putParcelable("miui.focus.action_disconnect", action)
-            val model = PodsIslandData.modelForIcons(modelNumber)
-            val cardIcon = model?.let { Icon.createWithResource(BuildConfig.APPLICATION_ID, it.budsRes) }
-                ?: Icon.createWithResource(BuildConfig.APPLICATION_ID, R.drawable.dashboard_headphones)
-            val islandPics = Bundle().apply {
-                putParcelable(PodsIslandData.LEFT_ICON,
-                    Icon.createWithResource(BuildConfig.APPLICATION_ID, model?.leftBudsRes ?: R.drawable.dashboard_headphones)
-                        .apply { if (model == null) setTint(android.graphics.Color.WHITE) })
-                putParcelable(PodsIslandData.RIGHT_ICON,
-                    Icon.createWithResource(BuildConfig.APPLICATION_ID, model?.rightBudsRes ?: R.drawable.dashboard_headphones)
-                        .apply { if (model == null) setTint(android.graphics.Color.WHITE) })
+                    .setContentText(connectedText)
+                    .setDefaults(0)
+                    .setOnlyAlertOnce(true)
+                    .setOngoing(false)
+                    .setDeleteIntent(deleteIntent(context, bluetoothDevice, presentation))
+                    .setTimeoutAfter(remaining)
+            if (supportsIsland(context)) {
+                try {
+                    val icon = Icon.createWithResource(context, earphone_drawable)
+                    // HyperFocus 1.10 uses seconds; Android's notification timeout uses milliseconds.
+                    val focusTimeout = presentation.focusTimeoutSeconds(SystemClock.elapsedRealtime())
+                    val island = JSONObject()
+                        .put("islandProperty", 1)
+                        .put("islandTimeout", focusTimeout)
+                        .put("dismissIsland", true)
+                        .put("maxSize", false)
+                        .put("bigIslandArea", JSONObject().put("imageTextInfoLeft", JSONObject()
+                            .put("type", 1)
+                            .put("picInfo", JSONObject().put("type", 1).put("pic", "miui.focus.pic_mark_v2"))
+                            .put("textInfo", JSONObject().put("title", connectedText))))
+                        .put("smallIslandArea", JSONObject().put("picInfo", JSONObject()
+                            .put("type", 1).put("pic", "miui.focus.pic_mark_v2")))
+                    val api = focusApi.sendFocus(
+                        title = channelId,
+                        cancel = false,
+                        isShowNotification = false,
+                        showSmallIcon = false,
+                        baseInfo = focusApi.baseinfo(title = deviceName, basetype = 0, content = connectedText),
+                        island = island,
+                        updatable = false,
+                        islandFirstFloat = true,
+                        enableFloat = true,
+                        reopen = "false",
+                        picInfo = icon,
+                        picInfotype = 2,
+                        timeout = focusTimeout,
+                        ticker = connectedText,
+                        picticker = icon
+                    )
+                    val focus = JSONObject(requireNotNull(api.getString("miui.focus.param")))
+                    // Version 1.10 omits false updatable and ignores its islandFirstFloat argument.
+                    focus.getJSONObject("param_v2").apply {
+                        put("updatable", false)
+                        put("islandFirstFloat", true)
+                    }
+                    api.putString("miui.focus.param", focus.toString())
+                    builder.addExtras(Bundle().apply {
+                        putString("miui.effect.src", "true")
+                        putCharSequence("miui.targetPkg", BuildConfig.APPLICATION_ID)
+                        putAll(api)
+                    })
+                } catch (error: Exception) {
+                    Log.w("Art_Chen", "Unable to create connection island; using transient notification", error)
+                }
             }
-
-            // An empty focus title is invalid while the initial AACP report is
-            // pending. Keep a settings entry with unknown readings, not 0%.
-            val expandedText = PodsIslandData.expandedText(batteryParams,
-                context.resources.getString(miheadset_notification_LeftEar),
-                context.resources.getString(miheadset_notification_RightEar),
-                context.resources.getString(miheadset_notification_Box), warning)
-            val actionObject = JSONObject()
-            actionObject.put("action", "miui.focus.action_disconnect")
-
-            val baseInfo = focusApi.baseinfo(title = expandedText.title,
-                basetype = 1, content = expandedText.content)
-            val hintInfo = focusApi.hintInfo(type = 2,
-                titleLineCount = 1,
-                title = PodsIslandData.displayName(bluetoothDevice.alias, bluetoothDevice.name),
-                content = expandedText.hintContent,
-                actionInfo = actionObject)
-            val api = focusApi.sendFocus(
-                title = "BTHeadset${bluetoothDevice.address}",
-                cancel = false,
-                baseInfo = baseInfo,
-                hintInfo = hintInfo,
-                island = PodsIslandData.build(batteryParams),
-                addpics = islandPics,
-                updatable = true,
-                isShowNotification = true,
-                islandFirstFloat = false,
-                enableFloat = false,
-                reopen = "true", // allow notify again after notification cleaned
-                picInfo = cardIcon,
-                picInfotype = 2,
-                timeout = 1000,
-                ticker = buildIslandTicker(batteryParams),
-                picticker = if (model == null) Icon.createWithResource(BuildConfig.APPLICATION_ID, R.drawable.dashboard_headphones)
-                    .apply { setTint(android.graphics.Color.WHITE) } else cardIcon
-            )
-            api.getString("miui.focus.param")?.let { focusParam ->
-                val focusJson = JSONObject(focusParam)
-                focusJson.getJSONObject("param_v2").put("business", "headset")
-                api.putString("miui.focus.param", focusJson.toString())
-            }
-            val a = Bundle()
-            a.putString("miui.effect.src","true")
-            a.putBundle("miui.focus.actions", bundle)
-            a.putCharSequence("miui.targetPkg", BuildConfig.APPLICATION_ID)
-            a.putAll(api)
-            sendNotification.addExtras(a)
-            sendNotification.setOngoing(true)
-            val notificationManager = context.getSystemService("notification") as NotificationManager
-            notificationManager.cancelAsUser("HEADSET_CONNECT_NOTIFICATION", 1001, Process.myUserHandle())
+            val finalRemaining = presentation.remaining(SystemClock.elapsedRealtime())
+            if (finalRemaining == 0L) return
+            builder.setTimeoutAfter(finalRemaining)
             notificationManager.notifyAsUser(
-                "BTHeadset${bluetoothDevice.address}",
-                10003,
-                sendNotification.build(),
+                presentation.key.tag,
+                presentation.key.id,
+                builder.build(),
                 Process.myUserHandle()
             )
         }
 
         @SuppressLint("WrongConstant")
         fun createPodsNotification(bluetoothDevice: BluetoothDevice?, context: Context, batteryParams: BatteryParams,
-            warning: String = "", modelNumber: String? = null): Boolean {
+            warning: String = ""): Boolean {
             if (bluetoothDevice == null) {
                 Log.e("Art_Chen", "createPodsNotification: btDevice null");
                 return false
             }
-            if (supportsIsland(context)) {
-                try {
-                    createPodsIslandNotification(bluetoothDevice, context, batteryParams, warning, modelNumber)
-                    return true
-                } catch (error: Exception) {
-                    Log.w("Art_Chen", "Unable to create headset island; using notification", error)
-                }
-            }
-
             try {
-                val address: String = bluetoothDevice.address
-                var alias: String? = bluetoothDevice.alias
-                if (alias?.isEmpty() == true) {
-                    alias = bluetoothDevice.name
-                }
-
+                val key = notifications.statusKey(bluetoothDevice.address)
                 val notificationManager = context.getSystemService("notification") as NotificationManager
                 notificationManager.notifyAsUser(
-                    "BTHeadset$address",
-                    10003,
+                    key.tag,
+                    key.id,
                     buildNotification(bluetoothDevice, context, batteryParams, warning).build(),
-                    SystemApisUtils.getUserAllUserHandle()
+                    Process.myUserHandle()
                 )
                 return true
             } catch (e: Exception) {
@@ -388,15 +320,10 @@ object MiBluetoothToastHook {
             }
         }
 
-        fun cancelNotification(bluetoothDevice: BluetoothDevice, context: Context) {
-            MiuiStrongToastUtil.cancelCaseBatteryToast()
+        fun cancelNotification(key: PodsNotificationKey, context: Context) {
             try {
-                val address = bluetoothDevice.address
-                if (address.isNotEmpty()) {
-                    val notificationManager = context.getSystemService("notification") as NotificationManager
-                    notificationManager.cancelAsUser("BTHeadset$address", 10003, Process.myUserHandle())
-                    notificationManager.cancelAsUser("HEADSET_CONNECT_NOTIFICATION", 1001, Process.myUserHandle())
-                }
+                val notificationManager = context.getSystemService("notification") as NotificationManager
+                notificationManager.cancelAsUser(key.tag, key.id, Process.myUserHandle())
             } catch (e: Exception) {
                 Log.e("Art_Chen", "Failed to cancel Pod Notification!", e)
             }
@@ -405,7 +332,13 @@ object MiBluetoothToastHook {
 
         fun registerHyperPodsReceiver(context: Context) {
             if (receiverRegistered) return
+            // MiuiApplication also runs in :ui; only the main process may consume presentation events.
+            if (!AudioConnectionNotifications.ownsPresentation(Application.getProcessName())) {
+                Log.i("Art_Chen", "Skipping notification receiver outside Xiaomi Bluetooth main process")
+                return
+            }
             val handler = Handler(Looper.getMainLooper())
+            val presentations = mutableMapOf<String, Pair<AudioConnectionNotifications.Presentation, Runnable>>()
             val warningBatch = BatteryReminderBatch()
             var warningDevice: BluetoothDevice? = null
             var warningTask: Runnable? = null
@@ -415,28 +348,45 @@ object MiBluetoothToastHook {
                 warningBatch.clear()
                 warningDevice = null
             }
+            fun clearPresentation(address: String) {
+                presentations.remove(address)?.second?.let(handler::removeCallbacks)
+            }
+            fun presentConnection(device: BluetoothDevice, event: AudioConnectionEvent) {
+                val presentation = notifications.connected(device.address, event, SystemClock.elapsedRealtime()) ?: return
+                clearPresentation(device.address)
+                val expiry = Runnable {
+                    presentations.remove(device.address)
+                    notifications.expire(presentation, SystemClock.elapsedRealtime())?.let {
+                        cancelNotification(it, context)
+                    }
+                }
+                presentations[device.address] = presentation to expiry
+                try {
+                    check(handler.postDelayed(expiry, presentation.remaining(SystemClock.elapsedRealtime()))) {
+                        "Unable to schedule connection notification expiry"
+                    }
+                    showConnectedToast(device, context, presentation)
+                } catch (error: Exception) {
+                    clearPresentation(device.address)
+                    notifications.dismiss(presentation)?.let { cancelNotification(it, context) }
+                    throw error
+                }
+            }
             val receiver = object : BroadcastReceiver() {
                 override fun onReceive(receiveContext: Context?, intent: Intent?) {
-                    if (!HyperPodsBroadcasts.isTrusted(context, this, HyperPodsBroadcasts.BLUETOOTH)) return
+                    val sender = if (intent?.action == "com.hxlh50k.pods.action.dismissconnection")
+                        HyperPodsBroadcasts.XIAOMI_BLUETOOTH else HyperPodsBroadcasts.BLUETOOTH
+                    if (!HyperPodsBroadcasts.isTrusted(context, this, sender)) return
                     try {
                         when (intent?.action) {
                             "com.hxlh50k.pods.action.sendstrongtoast" -> {
                                 val batteryParams = intent.getParcelableExtra("batteryParams", BatteryParams::class.java) ?: return
+                                // Legacy AACP battery/case availability is status, not an audio or lid event.
                                 MiuiStrongToastUtil.updateCaseBatteryState(batteryParams)
-                                val caseUri = getCaseMp4Uri(context)
-                                if (!batteryParams.left!!.isConnected && !batteryParams.right!!.isConnected && batteryParams.case!!.isConnected && caseUri != null) {
-                                    showCaseBatteryToast(context, batteryParams.case!!.battery, batteryParams.case!!.isCharging, caseUri, 20)
-                                    return
-                                }
-                                val leftUri = getResourcesUrl(context, if (batteryParams.left!!.isConnected) "earphone_left_inear" else "earphone_left_no_inear")
-                                val rightUri = getResourcesUrl(context, if (batteryParams.right!!.isConnected) "earphone_right_inear" else "earphone_right_no_inear")
-                                if (leftUri != null && rightUri != null && caseUri != null)
-                                    showPodsBatteryToast(context, leftUri, rightUri, caseUri, 20, batteryParams)
                             }
                             "com.hxlh50k.pods.action.updatepodsnotification" -> {
                                 val params = intent.getParcelableExtra("batteryParams", BatteryParams::class.java) ?: return
                                 val device = intent.getParcelableExtra("device", BluetoothDevice::class.java) ?: return
-                                val modelNumber = intent.getStringExtra("modelNumber")
                                 val settings = intent.getParcelableExtra("lowBatterySettings", LowBatterySettings::class.java)
                                     ?.takeIf { it.valid } ?: LowBatterySettings()
                                 MiuiStrongToastUtil.updateCaseBatteryState(params)
@@ -445,7 +395,7 @@ object MiBluetoothToastHook {
                                     val warning = BatteryReminderText.format(resources, params, LowBatteryReminder.lowComponents(params, settings))
                                     val store = BatteryReminderStore(context.getSharedPreferences("hyperpods_battery_reminders", Context.MODE_PRIVATE), device.address)
                                     val decisions = LowBatteryReminder.evaluate(params, intent.getIntArrayExtra("freshComponents") ?: intArrayOf(), settings, store::state)
-                                    val posted = createPodsNotification(device, context, params, warning, modelNumber)
+                                    val posted = createPodsNotification(device, context, params, warning)
                                     store.commit(decisions, posted)
                                     if (warningDevice != device) cancelWarning()
                                     warningDevice = device
@@ -460,26 +410,45 @@ object MiBluetoothToastHook {
                                                     val text = BatteryReminderText.format(resources, latest, components)
                                                     if (text.isNotEmpty()) MiuiStrongToastUtil.showLowBatteryToast(context, text)
                                                 }
-                                            } catch (_: Exception) {
+                                            } catch (error: Exception) {
                                                 warningBatch.clear()
-                                                Log.w("Art_Chen", "Unable to show low battery warning")
+                                                Log.w("Art_Chen", "Unable to show low battery warning", error)
                                             }
-                                        }.also { handler.postDelayed(it, 350) }
+                                        }.also {
+                                            check(handler.postDelayed(it, 350)) { "Unable to schedule low battery warning" }
+                                        }
                                     }
-                                } catch (_: Exception) {
+                                } catch (error: Exception) {
                                     // An optional reminder failure must not remove the normal battery/settings entry.
-                                    Log.w("Art_Chen", "Low battery reminder unavailable; retaining headset notification")
+                                    Log.w("Art_Chen", "Low battery reminder unavailable; retaining headset notification", error)
                                     cancelWarning()
-                                    createPodsNotification(device, context, params, modelNumber = modelNumber)
+                                    createPodsNotification(device, context, params)
                                 }
                             }
                             "com.hxlh50k.pods.action.cancelpodsnotification" ->
                                 intent.getParcelableExtra("device", BluetoothDevice::class.java)?.let {
-                                    if (it == warningDevice) cancelWarning()
-                                    cancelNotification(it, context)
+                                    val keys = notifications.cancel(it.address,
+                                        intent.getLongExtra(AudioConnectionNotifications.EXTRA_EVENT_ID, 0))
+                                    if (keys.isNotEmpty()) {
+                                        clearPresentation(it.address)
+                                        if (it == warningDevice) cancelWarning()
+                                        MiuiStrongToastUtil.cancelCaseBatteryToast()
+                                        keys.forEach { key -> cancelNotification(key, context) }
+                                    }
                                 }
                             "com.hxlh50k.pods.action.podconnecting" ->
-                                intent.getParcelableExtra("device", BluetoothDevice::class.java)?.let { showConnectedToast(it, context) }
+                                intent.getParcelableExtra("device", BluetoothDevice::class.java)?.let {
+                                    presentConnection(it, AudioConnectionEvent(
+                                        intent.getLongExtra(AudioConnectionNotifications.EXTRA_EVENT_ID, 0),
+                                        intent.getLongExtra(AudioConnectionNotifications.EXTRA_CONNECTED_AT, -1)))
+                                }
+                            "com.hxlh50k.pods.action.dismissconnection" ->
+                                intent.getParcelableExtra("device", BluetoothDevice::class.java)?.let {
+                                    val presentation = presentations[it.address]?.first ?: return
+                                    if (presentation.event.id != intent.getLongExtra(AudioConnectionNotifications.EXTRA_EVENT_ID, 0)) return
+                                    clearPresentation(it.address)
+                                    notifications.dismiss(presentation)?.let { key -> cancelNotification(key, context) }
+                                }
                         }
                     } catch (error: Exception) {
                         Log.e("Art_Chen", "Unable to handle headset notification", error)
@@ -490,10 +459,11 @@ object MiBluetoothToastHook {
                 addAction("com.hxlh50k.pods.action.updatepodsnotification")
                 addAction("com.hxlh50k.pods.action.cancelpodsnotification")
                 addAction("com.hxlh50k.pods.action.podconnecting")
+                addAction("com.hxlh50k.pods.action.dismissconnection")
             }
             context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
             receiverRegistered = true
-            Log.i("Art_Chen", "HyperPods toast receiver registered directly (split-island-v2)")
+            Log.i("Art_Chen", "HyperPods toast receiver registered (bounded-audio-event-v1)")
         }
 
         installHook("Xiaomi Bluetooth application receiver") {

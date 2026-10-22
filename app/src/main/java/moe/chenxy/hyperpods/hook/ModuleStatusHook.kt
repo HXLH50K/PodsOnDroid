@@ -45,7 +45,8 @@ class ModuleStatusHook(
                             if (HeadsetStateDispatcher.nativeGetHookResult()) "native_ok" else "native_failed"
                         }.getOrDefault("native_unknown")
                         HyperPodsBroadcasts.SYSTEM_UI -> if (SystemUIPluginHook.pluginObserved) "plugin_observed" else "plugin_waiting"
-                        else -> if (MiBluetoothToastHook.notificationReceiverReady) "receiver_ready" else "receiver_waiting"
+                        else -> if (processName == "$host:ui") "ui_host_ready"
+                            else if (MiBluetoothToastHook.notificationReceiverReady) "receiver_ready" else "receiver_waiting"
                     }
                     HyperPodsBroadcasts.send(context, Intent(HyperPodsAction.ACTION_MODULE_STATUS).apply {
                         putExtra("request", request)

@@ -135,4 +135,16 @@ class ModuleStatusTest {
         `when`(intent.getStringExtra("call_state")).thenReturn("safe")
         assertNull(ModuleStatus.read(context, receiver, intent, request))
     }
+
+    @Test fun xiaomiUiDoesNotPretendToOwnTheMainNotificationReceiver() {
+        val host = HyperPodsBroadcasts.XIAOMI_BLUETOOTH
+        `when`(packages.getPackageUid(host, 0)).thenReturn(1002)
+        `when`(receiver.sentFromPackage).thenReturn(host)
+        `when`(intent.getStringExtra("host")).thenReturn(host)
+        `when`(intent.getStringExtra("process_name")).thenReturn("$host:ui")
+        `when`(intent.getStringExtra("detail")).thenReturn("ui_host_ready")
+        assertEquals("ui_host_ready", ModuleStatus.read(context, receiver, intent, request)!!.detail)
+        `when`(intent.getStringExtra("process_name")).thenReturn(host)
+        assertNull(ModuleStatus.read(context, receiver, intent, request))
+    }
 }

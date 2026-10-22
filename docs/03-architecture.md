@@ -1,5 +1,11 @@
 # 03 Architecture
 
+## Alpha2 implementation note
+
+The notification path now has one owner in the Xiaomi Bluetooth **main process**. Real A2DP transitions carry a monotonic event identity and original connection timestamp; late UUID discovery shares that identity. The connection presentation expires five seconds from the original transition, while battery, setting and AACP-recovery messages update a separate silent status entry. Presentation callbacks and cancellation are scoped to P.O.D.S. notification keys. The Xiaomi `:ui` self-check explicitly reports that it is not the notification owner.
+
+The debug lid-observation tool is separate from production discovery and control. It uses an explicitly requested, foreground-only BLE scan with a 30-second deadline, 8 anonymous session candidates, 128 distinct records and 16 manual markers. Raw addresses exist only in a cleared in-memory association map; export retains selected clear header fields before byte11, relative timings, scan status/error and explicit drop counts. No automatic pairing, AACP writes, persistent radio scan, inferred lid state or identity claim is made. BLE permissions are confined to the debug manifest.
+
 Status: implementation contract, not verification. Extend the imported HyperPods foundation with modern API 102. Android application ID: `com.hxlh50k.pods`; source namespace remains `moe.chenxy.hyperpods`. Target: AirPods 5 wireless-charging variant, reported firmware `1.0.0`. Protocol/native-window behavior is hardware-gated. App languages are English and Simplified Chinese only; coding documentation is English.
 
 ## 1. Decisions

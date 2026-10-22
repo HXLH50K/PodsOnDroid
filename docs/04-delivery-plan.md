@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-Updated: 2026-10-22. The final post-cancellation-fix build passed as recorded in section 9. This is an **M0/M1-A development preview**, to be handed to the user for manual testing after deployment; further autonomous runtime testing is not required for this handoff. Host injection, live R01, and hardware/native-window acceptance remain incomplete. The release plan below remains a future acceptance contract, not a completed-MVP claim.
+Updated: 2026-10-22. The user accepted the basic alpha1 behavior and requested further development with independent Git history. Section 10 records the alpha2 notification/capture changes; section 9 preserves the original preview receipt. Native-window, live R01 and broader hardware acceptance remain incomplete. The release plan remains a future acceptance contract, not a completed-MVP claim.
 
 ## 0. Starting conditions and pause points
 
@@ -340,3 +340,25 @@ No host-process restart or earbud interaction has been performed. P.O.D.S. host 
 **Manual handoff:** the user should first restart the phone once so scoped hosts can load the module, then connect AirPods 5 and inspect diagnostics/device identity/control readiness before trying supported basic controls. The restart is a requested user step, not an operation already performed or a guarantee that injection succeeds. Further autonomous runtime testing is deferred to the user's manual feedback; all hardware gates remain intact.
 
 The remote remains **private and empty**, with **no push**. This documentation update records the existing local implementation commit and deployment receipt; it creates no commit, release, or additional artifact.
+
+**Follow-up test tooling (2026-10-22):** the subsequent development request permits a test-only fix for the Android 17/API 37 Espresso bootstrap blocker. Pin `espresso-core:3.7.0`, `runner:1.7.0`, and `ext:junit:1.3.0`; keep Compose UI tests at `1.9.4` and production dependencies unchanged. The [official stable 3.7.0 release notes](https://developer.android.com/jetpack/androidx/releases/test#espresso-3.7.0) explicitly replace reflective `InputManager.getInstance` with `getSystemService`; the [published sources](https://dl.google.com/dl/android/maven2/androidx/test/espresso/espresso-core/3.7.0/espresso-core-3.7.0-sources.jar) confirm the public lookup on API 23+. The `3.8.0-alpha01` preview is unnecessary for this specific failure. No phone tests were run for this tooling update: all six AboutPage cases still require runtime verification, and no earbud or system-host acceptance is implied.
+
+## 10. Alpha2 notification and lid-observation iteration
+
+The user reports basic alpha1 controls work and the inherited defects remain, as expected. At their request, normal branch history was reset to an identical independent P.O.D.S. snapshot (`781b4b6`); the previous history is backed up externally, source/license/provenance remain intact, and the private remote was not rewritten or pushed.
+
+Implemented changes:
+
+- One five-second connection presentation, tied to a real A2DP event and shared with late UUID discovery. Normal battery/settings/AACP refresh does not rearm it.
+- Separate silent status updates, owner-scoped cancellation, and an explicit Xiaomi-main-process presentation guard. Existing ambiguous alpha1 notification tags are not blindly cancelled.
+- Debug-only lid observations: opt-in nearby-device permission, a 30-second foreground scan, manual case markers, bounded records and redacted clear-header export including the raw lid byte. This prepares the actual AirPods 5 contract; it is not lid detection or a native popup.
+- Test-only AndroidX updates to stable Espresso 3.7.0, runner 1.7.0 and ext.junit 1.3.0. Official Espresso release notes identify the removed reflective `InputManager.getInstance` dependency; production dependencies were not changed for this fix.
+
+Validation before deployment:
+
+- Integrated unit/build/Lint run: **404 JVM tests passed**, **0 errors / 120 Lint warnings / 2 hints**, debug/test/unsigned-release APKs assembled.
+- The final clear-header correction then passed **14 focused observation tests** and rebuilt all three APK variants. Do not add those 14 to the earlier suite total.
+- Modern API102-only packaging, isolated debug identity, EN/zh-CN resources and development signing were checked. BLE permissions are present only in debug, absent from release.
+- Code review found no significant issues in the reviewed notification/observation changes. Actual island rendering, radio capture and lid semantics still require user checks.
+
+The next preview remains version `0.1.0-alpha.2` (code2). Deployment and small app-only instrumentation results will be recorded after execution; no automatic physical earbud operation or system-host restart is planned.

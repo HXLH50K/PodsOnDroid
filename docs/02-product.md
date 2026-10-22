@@ -34,12 +34,13 @@ Target: AirPods 5 wireless-charging variant, user-reported firmware `1.0.0`; rea
 | Single-ear ANC / sleep pause | Preserve and regress | More firmware | Do not continually overwrite user operations |
 | AirPods 5 lid-open popup | **Required, M2** | Better unpaired guidance | Independent of A2DP notification; adding an old-model allowlist entry is insufficient |
 | Dedicated Interconnectivity headphone panel | **Required, M3** | More quick controls | Real state/actions; neither full app nor Bluetooth-settings redirect |
-| Brief island connection alert | **M4** | Visual refinement | Nonpersistent; battery/mode reports must not re-alert |
+| Brief island connection alert | **Implemented in alpha2; hardware check pending** | Visual refinement | Five seconds from a real audio connection; battery/mode/control recovery must not re-alert |
 | Bluetooth details/battery integration | Regress applicable existing behavior | New privileges in M5 | No unnecessary KSU systemization package |
 | Head gestures | Keep experimental | Hardware verification | Not an initial completion claim; no default phone permission |
 | Rename | Preserve and regress | Naming consistency | Separate local alias and device name; explain possible re-pairing |
 | Liquid Glass app UI | **M4** | Refinement | Framework/function before visuals; no background animation cost |
 | R01 scoped-process restart | **M1 contract, full M4 acceptance** | More verified hosts | Confirmation, allowlist, actual new-build verification |
+| Lid observation diagnostic | **Debug alpha2 only** | Validate the AirPods 5 lid contract | Opt-in 30-second capture, manual open/closed markers, redacted export; not a popup or production detector |
 
 First release requires M2, M3, and M4. Retained code does not inherit hardware acceptance. Never send unsupported commands merely to fill the feature table.
 

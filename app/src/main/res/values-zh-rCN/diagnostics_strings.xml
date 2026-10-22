@@ -20,6 +20,7 @@
     <string name="module_plugin_waiting">尚未观察到系统界面插件加载</string>
     <string name="module_receiver_ready">P.O.D.S. 通知接收器已注册</string>
     <string name="module_receiver_waiting">通知接收器尚未注册</string>
+    <string name="module_ui_host_ready">界面宿主已加载；通知展示由小米蓝牙主进程负责</string>
     <string name="module_check_again">重新检查模块加载</string>
     <string name="diagnostics_audio">蓝牙音频连接（A2DP）</string>
     <string name="diagnostics_audio_connected">已连接；耳机控制使用独立通道</string>

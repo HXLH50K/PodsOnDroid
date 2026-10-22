@@ -20,6 +20,7 @@
     <string name="module_plugin_waiting">System UI plugin loading not observed yet</string>
     <string name="module_receiver_ready">P.O.D.S. notification receiver registered</string>
     <string name="module_receiver_waiting">Notification receiver not registered yet</string>
+    <string name="module_ui_host_ready">UI host loaded; notification presentation belongs to the Xiaomi Bluetooth main process</string>
     <string name="module_check_again">Check module loading again</string>
     <string name="diagnostics_audio">Bluetooth audio connection (A2DP)</string>
     <string name="diagnostics_audio_connected">Connected; control uses a separate channel</string>

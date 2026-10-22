@@ -132,6 +132,8 @@ Proposed rule: each KSU release records its embedded APK version/hash. User upda
 
 ## 8. Maintenance
 
+File-level licensing still needs attention before wider distribution: the inherited `AACPManager.kt` header declares AGPL version 3, while the root license text is GPL version 3. Keep those notices intact and review the combined distribution obligations; neither private hosting nor the ancestry reset resolves that difference or permits silently relabeling the file.
+
 - Track phone/ROM/Bluetooth components/framework/headphone firmware per release, not just “HyperOS 4 supported.”
 - OTA, Bluetooth APEX, firmware, and framework updates trigger relevant regression; unknown native images are not patched.
 - Issue templates request redacted environment, steps, and stage errors, not whole system logs, serials, or keys.

@@ -60,9 +60,10 @@ object ModuleStatus {
         val allowed = when (pkg) {
             HyperPodsBroadcasts.BLUETOOTH -> setOf("native_ok", "native_failed", "native_unknown")
             HyperPodsBroadcasts.SYSTEM_UI -> setOf("plugin_observed", "plugin_waiting")
-            else -> setOf("receiver_ready", "receiver_waiting")
+            else -> setOf("receiver_ready", "receiver_waiting", "ui_host_ready")
         }
         val detail = intent.getStringExtra("detail")?.takeIf { it in allowed } ?: return null
+        if (detail == "ui_host_ready" && processName != "$pkg:ui") return null
         return Report(pkg, version, revision, detail, processName, pid, receiver.sentFromUid,
             frameworkApi, frameworkName, buildInstance, callState)
     }
