@@ -4,6 +4,8 @@ Updated: 2026-10-22. This is a faithful English decision summary, not a verbatim
 
 Latest decision: remove inherited HyperPods commit ancestry, keep the source/license/attribution, and continue development. The user reports the migration preview's basic functionality works and the original issues remain as expected. This does not declare native popups, the dedicated panel, or Liquid Glass complete.
 
+Latest test feedback supersedes the older presentation assumptions: paired Xiaomi reconnect and wearing are silent; first-pairing/discovery shows a connect card on the tested setup. The user wants a brief battery island on P.O.D.S. reconnection, **without either the inherited persistent island or ordinary notification**. They suggested that the first-pairing popup might be unnecessary. A confirmation attempt was unavailable, so implementation provisionally defers that separate feature rather than treating its permanent removal as confirmed. Notification cleanup proceeds independently.
+
 **Latest instructions take precedence:** the repository is private; all coding documentation and commit messages are English; the app supports English and Simplified Chinese (`zh-CN`) only. The earlier public-release intention is superseded.
 
 There is no unresolved product question blocking M0/M1-A. Source/history import has happened; API migration, identity/build changes, and restart implementation are in progress. Completion claims require their own evidence. See [stage boundaries](09-readiness.md).
@@ -22,7 +24,7 @@ There is no unresolved product question blocking M0/M1-A. Source/history import 
 
 | ID | Confirmed answer | Engineering consequence / remaining evidence |
 | --- | --- | --- |
-| Q06 | Lid-open popup and Interconnectivity Center headphone panel are mandatory in the first release | Notifications, Bluetooth settings, or the full app do not substitute for them |
+| Q06 | Dedicated Interconnectivity panel remains required; first-pairing popup necessity is being reconsidered after the latest Xiaomi test | Provisionally defer optional quick-pairing; paired reconnect uses a brief battery island only. This does not downgrade the dedicated control panel to a full-app/settings redirect |
 | Q07 | No ranking of advanced settings supplied | Preserve applicable existing functions; prioritize control feedback, native entry points, and notification disturbance instead of asking again |
 | Q08 | Show headphone settings when readable; otherwise show defaults that change after user interaction | Label defaults/local choices as not read from the device. Reading a page must not write defaults; write failures cannot appear successful. Phone-side policies remain separately identified |
 | Q09 | Lock-screen, landscape, and full-screen behavior should follow Xiaomi headphones | Compare against the supplied Xiaomi model; preserve host restrictions before observation instead of inventing behavior |
@@ -30,7 +32,7 @@ There is no unresolved product question blocking M0/M1-A. Source/history import 
 | Q11 | No multiple-headphone or proprietary multi-host manager | Control one active headset; do not alter the headset's existing multi-host behavior or forcibly take ownership |
 | Q12 | Apple Liquid Glass visual direction, with projects such as keimi as references | Apply to the native Android app, not all SystemUI. The precise reference URL/license is not established. **Latest language scope: English and Simplified Chinese only** |
 
-The island must appear **briefly for a real connection**, not remain as a persistent battery island. Battery/settings updates must not create another connection alert.
+The island must appear **briefly for a real connection**, then leave **no persistent island or ordinary status notification**. Battery/settings updates must not create another connection alert or a replacement status entry. The earlier alpha2 choice to keep a silent status notification did not satisfy this requirement.
 
 ## 3. Engineering, authorization, and delivery
 

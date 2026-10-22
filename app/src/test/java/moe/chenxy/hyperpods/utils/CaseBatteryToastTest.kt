@@ -1,55 +1,33 @@
 package moe.chenxy.hyperpods.utils
 
-import kotlinx.coroutines.Job
+import android.content.Context
 import moe.chenxy.hyperpods.utils.data.BatteryParams
 import moe.chenxy.hyperpods.utils.data.PodBatteryParams
 import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil
-import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertFalse
 import org.junit.Test
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.verifyNoInteractions
 
-/** Verify deferred-toast cancellation without calling HyperOS services on the JVM. */
 class CaseBatteryToastTest {
-    private val toast = MiuiStrongToastUtil
-    private fun field(name: String) = toast.javaClass.getDeclaredField(name).apply { isAccessible = true }
-    private fun battery(inCase: Boolean, caseConnected: Boolean = true, level: Int = 80) = BatteryParams(
-        PodBatteryParams(isConnected = true, isInCase = inCase), PodBatteryParams(),
-        PodBatteryParams(battery = level, isConnected = caseConnected))
-
-    @After fun cleanUp() = toast.cancelCaseBatteryToast()
-
-    @Test fun removalFromCaseCancelsTheDeferredCaseToast() {
-        val job = Job()
-        field("caseToastJob").set(toast, job)
-        toast.updateCaseBatteryState(battery(false))
-        assertTrue(job.isCancelled)
-        assertNull(field("caseToastJob").get(toast))
+    @Test fun legacyInitialCaseAndBatteryRequestsCannotBroadcastOrStartAnAnimation() {
+        val context = mock(Context::class.java)
+        repeat(150) {
+            MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(context, BatteryParams(
+                left = PodBatteryParams(it % 101, isConnected = true, isInCase = true),
+                case = PodBatteryParams(it % 101, isConnected = true)))
+        }
+        verifyNoInteractions(context)
     }
 
-    @Test fun unavailableCaseCancelsTheDeferredCaseToast() {
-        val job = Job()
-        field("caseToastJob").set(toast, job)
-        toast.updateCaseBatteryState(battery(true, false))
-        assertTrue(job.isCancelled)
+    @Test fun absentLegacyContextOrBatteryDoesNotProduceFallbackStatus() {
+        MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(null, BatteryParams())
     }
 
-    @Test fun laterBatteryUpdatesReplaceTheSnapshotWithoutCancellingAVisibleCase() {
-        val job = Job()
-        field("caseToastJob").set(toast, job)
-        toast.updateCaseBatteryState(battery(true))
-        val updated = battery(true, level = 0)
-        toast.updateCaseBatteryState(updated)
-        assertSame(updated, field("latestBattery").get(toast))
-        assertTrue(job.isActive)
-    }
-
-    @Test fun disconnectCancelsTheJobAndForgetsItsBatterySnapshot() {
-        toast.updateCaseBatteryState(battery(true))
-        val job = Job()
-        field("caseToastJob").set(toast, job)
-        toast.cancelCaseBatteryToast()
-        assertTrue(job.isCancelled)
-        assertNull(field("caseToastJob").get(toast))
-        assertNull(field("latestBattery").get(toast))
+    @Test fun lowBatteryWarningsAreRejectedOutsideTheMainPresentationOwner() {
+        val context = mock(Context::class.java)
+        // The Android JVM stub reports no process name.
+        assertFalse(MiuiStrongToastUtil.showLowBatteryToast(context, "Left: 10%"))
+        verifyNoInteractions(context)
     }
 }

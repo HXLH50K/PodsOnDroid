@@ -8,12 +8,34 @@ The user subsequently supplied AirPods 5 wireless-charging/reported `1.0.0` and 
 
 - Extend HyperPods rather than rewrite the protocol foundation.
 - AirPods 5 is the required target; older Xiaomi AirPods integration cannot be presumed to cover it.
-- Real lid-open popup and dedicated Interconnectivity Center headphone panel are mandatory initial features.
+- The original design required a lid popup and dedicated Interconnectivity panel. The later user comparison below provisionally defers first-pairing popup work; the dedicated control panel remains required.
 - Root-first, modern API 102 only; no dedicated rootless or legacy work.
 - Use the supplied Xiaomi headphones for native-behavior comparison when needed. Finish the verified independent stage and wait for the user, without automatic pairing or continuous polling.
 - Daily phone is Xiaomi 17 Pro; initial work uses the current test phone, not a separate second-device gate.
 
 **Device observations** cover metadata, root identity, and selected configuration; the follow-up below also verifies daemon-reported API 102. **Static evidence** covers APK symbols, methods, resources, and branches. **Unverified** includes actual P.O.D.S. host injection/new API calls, AirPods 5 advertisements/lid semantics, native-window rendering, and card controls. This survey neither proves AirPods 5 compatibility nor identifies the user's daily HyperPods build as identical to the imported source.
+
+### Manual Xiaomi comparison and iOS distinction
+
+The user reports the following on the current test setup:
+
+| Scenario | Observed Xiaomi behavior | Current P.O.D.S. direction |
+| --- | --- | --- |
+| Already paired, open case | Automatically reconnects, no popup and no island | Intentionally add one short battery island, then no ongoing notification |
+| Already paired, put headphones on | No special animation | Do not add an insertion animation merely to imitate a presumed native behavior |
+| First pairing / discovery | Native connect popup and quick pairing entry; the phone was left in this state during the report | Provisionally defer a custom/native-adapted quick-pairing popup; system Bluetooth pairing works independently |
+
+This is manual evidence for the user's Xiaomi comparison model/ROM, not a universal claim about every Xiaomi headphone.
+
+iOS separates **setup** from **battery inspection**:
+
+- Apple's [first-time setup instructions](https://support.apple.com/en-us/104989) describe opening the case near an iPhone on the Home Screen, a setup animation and a **Connect** action. Manual discovery/pairing is also documented. This is not a promise that the same setup card should appear on every reconnect.
+- A nearby open-case battery card on an already paired iPhone is a familiar iOS behavior, distinct from pairing; its exact trigger/presentation is version/state-dependent and was not reproduced in this task.
+- Apple's currently retrieved [battery guide](https://support.apple.com/guide/airpods/charge-airpods-devde25a4bbe/web) explicitly documents checking battery in Settings or the Batteries widget. It does not guarantee a popup on every opening, insertion, or background state. Do not treat web-search summaries as proof of such a guarantee.
+
+First-pairing UI is not inherently impossible because it is less frequent. The extra work is safe unpaired-device discovery/identity, OEM-private resources and lifecycle, pairing permissions and result handling, and avoiding unsolicited popups for nearby devices. A system Bluetooth settings flow already covers pairing without that custom surface. No unpair/reset/re-pair operation is needed for the current notification correction; those actions require a separately agreed round if the optional feature resumes.
+
+The product distinction is intentional: keep the user's preferred brief reconnect battery island even though their Xiaomi headphones reconnect silently. Remove the persistent status notification instead of relabeling it as a silent companion surface.
 
 ## 2. Device profile
 

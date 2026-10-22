@@ -2,9 +2,11 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-**Status, 2026-10-22:** the user accepted the `0.1.0-alpha.1` basic-control baseline. The `0.1.0-alpha.2` changes now separate a **five-second genuine audio-connection island** from silent battery/status updates, with a single Xiaomi-process presentation owner. They also add a debug-only, opt-in **30-second lid-observation tool** to obtain actual AirPods 5 header data before implementing lid detection. Native lid popups, the Interconnectivity headphone panel, and Liquid Glass are still incomplete. See the [current iteration](docs/04-delivery-plan.md#10-alpha2-notification-and-lid-observation-iteration) and the historical [first-preview receipt](docs/04-delivery-plan.md#9-measured-baseline-checkpoint).
+**Latest manual feedback:** alpha2's brief island works, but an inherited-looking persistent island/notification follows it. Keeping a separate silent status entry was not the requested experience. Alpha3 now removes that routine publisher and its error fallback, as well as ordinary case-battery animations: **one brief battery island and then no routine notification at all**. Available readings may update the original five-second window without replaying it. Upgrade cleanup requires proven P.O.D.S. ownership and does not delete another application's notifications.
 
-Alpha2 is installed on the test phone from implementation `03f18a5`, with its APK hash verified. Unit/build checks and two non-UI phone checks passed. App-only UI automation improved after the test-library update but was not fully successful because of hierarchy/foreground/lock-screen conditions; actual island behavior and lid observations are handed back to the user.
+The user's Xiaomi comparison found silent paired reconnect/wearing and a quick-connect card in discovery/first-pairing mode. P.O.D.S. intentionally keeps the user's preferred brief battery island for reconnect. First-pairing popup work is **provisionally deferred**, not permanently cancelled; ordinary Android Bluetooth pairing remains available. The dedicated Interconnectivity control panel and Liquid Glass remain planned. See the [latest UX evidence](docs/07-device-and-native-integration.md#manual-xiaomi-comparison-and-ios-distinction) and [decisions](docs/05-decisions.md).
+
+The last device deployment was alpha2 (`03f18a5`). Alpha3 passed **55 focused JVM tests**, local debug assembly, and Lint with **0 errors / 117 warnings / 2 hints**; it has **not** been installed or hardware-accepted in this iteration. Physical acceptance remains a joint user-led step. Historical receipts remain in the [delivery plan](docs/04-delivery-plan.md).
 
 At the user's request, `main` now starts at the independent P.O.D.S. snapshot **`781b4b6`**, with an identical source tree and no HyperPods commit ancestry. The former local history, including preview implementation `5013f04`, was verified and archived outside the repository before rewriting. Historical receipt hashes refer to that archive, not the new branch ancestry.
 
@@ -28,9 +30,9 @@ The debug app uses the same three declared scopes. Live restart behavior remains
 ## Manual testing handoff
 
 1. After installing the update, **reload all three scopes, normally by restarting the phone once**. The interface-only restart button cannot update the Bluetooth hosts.
-2. Connect AirPods 5. Check that the connection island ends after about five seconds and does not return for battery/settings refresh or control-channel recovery. A real audio disconnect/reconnect should create one new brief alert.
-3. For popup investigation, open **About → Lid observation (experimental)**. Start the bounded capture, mark the case closed, open and mark it, then close and mark again, pausing a few seconds between actions. Stop or wait for expiry and copy the redacted report. Grant nearby-device permission only if you want to perform this capture.
-4. Candidates are unassociated, raw lid bytes are not interpreted as verified lid events, and even an empty report can be copied. This tool does **not** enable native popups. Do not expect the planned native panel, Liquid Glass, or Bluetooth-inclusive restart.
+2. Connect AirPods 5. Confirm the battery island disappears after about five seconds and **no P.O.D.S. status notification or persistent island remains**. Ordinary battery/settings refresh must not bring either back.
+3. If anything remains, report its app name and a screenshot before changing other modules. Do not assume inherited appearance proves a separately installed HyperPods is responsible, or delete another app's notifications.
+4. Lid observations are not required for this correction. The debug tool remains opt-in and is **not** a native popup. Do not expect the planned dedicated panel, Liquid Glass, or Bluetooth-inclusive restart.
 
 The user has completed the initial basic-function check and requested continued development. Future hardware interactions still remain user-driven; hand off a verified preview or capture procedure rather than autonomously manipulating the headphones.
 

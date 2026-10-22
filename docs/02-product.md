@@ -2,6 +2,8 @@
 
 Status: confirmed design baseline; imported functionality is not automatically verified P.O.D.S. functionality. API/build/restart changes are in progress. The app follows a Liquid Glass visual direction; system behavior should resemble native Xiaomi headphones, not recreate Apple's ecosystem. See [readiness](09-readiness.md).
 
+**Latest manual feedback, 2026-10-22:** paired Xiaomi headphones reconnect silently when the case opens and show no extra insertion animation; discovery/first pairing displays a connect card. This is evidence for the user's tested model/ROM, not every Xiaomi device. P.O.D.S. intentionally differs on paired reconnect by showing one brief battery island, then **no ongoing island and no ongoing notification**. First-pairing popup work is provisionally deferred following the user's suggestion; it has not been permanently cancelled. The dedicated Interconnectivity control panel remains required.
+
 ## 1. Constraints
 
 - Exact label **P.O.D.S.**; Android application ID `com.hxlh50k.pods`; retain source namespace `moe.chenxy.hyperpods` for now. Use original or clearly licensed icons.
@@ -26,15 +28,15 @@ Target: AirPods 5 wireless-charging variant, user-reported firmware `1.0.0`; rea
 | ANC/transparency/off/adaptive | Capability-gated | Firmware differences | Unsupported modes unavailable; off mode may require a separate allowance |
 | Wear state | Required | Better diagnostics | Unknown is not unworn; primary/secondary need not mean left/right |
 | Remove-to-pause / reinsert-to-resume | Preserve and regress | Adjustable policy | Inventory defaults; resume only the same media session actually paused by this policy |
-| Brief connection alert / necessary ordinary notification | Required | Tiles/widgets | No persistent island; notification is not a native panel |
+| Brief connection battery island | Required | Tiles/widgets | No persistent island or ordinary status notification after the initial window |
 | Device/firmware info and diagnostic export | Required | Compatibility summaries | Redact by default; sharing is manual |
 | Low-battery alert | M4 regression | Configurable thresholds | Independent alert policy; battery refresh is not a connection event |
 | Conversation awareness / personalized volume | Preserve and regress | Firmware fixes | Keep additional phone attenuation distinct from the headphone setting |
 | Long-press cycle, microphone, tones, swipes | Preserve and regress | More settings | Actual case variant/capabilities gate controls; sent is not confirmed |
 | Single-ear ANC / sleep pause | Preserve and regress | More firmware | Do not continually overwrite user operations |
-| AirPods 5 lid-open popup | **Required, M2** | Better unpaired guidance | Independent of A2DP notification; adding an old-model allowlist entry is insufficient |
+| Discovery/first-pairing connect popup | **Provisionally deferred** | Optional native quick-pairing enhancement | Initial pairing uses system Bluetooth settings; do not require continuous lid discovery for reconnect UX |
 | Dedicated Interconnectivity headphone panel | **Required, M3** | More quick controls | Real state/actions; neither full app nor Bluetooth-settings redirect |
-| Brief island connection alert | **Implemented in alpha2; hardware check pending** | Visual refinement | Five seconds from a real audio connection; battery/mode/control recovery must not re-alert |
+| Brief island connection alert | **Alpha3 corrective implementation** | Visual refinement | Alpha2 retained an unwanted status notification; remove it rather than just making it silent |
 | Bluetooth details/battery integration | Regress applicable existing behavior | New privileges in M5 | No unnecessary KSU systemization package |
 | Head gestures | Keep experimental | Hardware verification | Not an initial completion claim; no default phone permission |
 | Rename | Preserve and regress | Naming consistency | Separate local alias and device name; explain possible re-pairing |
@@ -42,7 +44,7 @@ Target: AirPods 5 wireless-charging variant, user-reported firmware `1.0.0`; rea
 | R01 scoped-process restart | **M1 contract, full M4 acceptance** | More verified hosts | Confirmation, allowlist, actual new-build verification |
 | Lid observation diagnostic | **Debug alpha2 only** | Validate the AirPods 5 lid contract | Opt-in 30-second capture, manual open/closed markers, redacted export; not a popup or production detector |
 
-First release requires M2, M3, and M4. Retained code does not inherit hardware acceptance. Never send unsupported commands merely to fill the feature table.
+The active release route prioritizes connection-only presentation, M3's dedicated control panel and M4's stability/visual work. First-pairing popup acceptance is suspended under the provisional deferral, not marked passed. Retained code does not inherit hardware acceptance.
 
 ## 3. Explicit exclusions
 
@@ -67,7 +69,7 @@ Future additions require a recorded decision and separate acceptance, not silent
 2. Verify runtime API 102, loaded scopes, and system component versions. Request Bluetooth permissions only when app-side APIs need them; pairing remains in system UI.
 3. Select a paired device. Allow refusal of optional notification permissions and explain the consequence.
 4. Check audio profile, classic control socket, protocol handshake, and capabilities independently.
-5. Explain scope/restart/rescue requirements for Bluetooth, lid popup, and Interconnectivity separately. Ticking a framework scope is not proof it loaded.
+5. Explain scope/restart/rescue requirements for Bluetooth, connection presentation, and Interconnectivity separately. First-pairing popup adaptation, if resumed, gets its own gate. Ticking a framework scope is not proof it loaded.
 6. Keep diagnostics and system Bluetooth settings available on failure; do not loop authorization/install prompts.
 
 Preserve page information/control logic before moving the app to Liquid Glass. Native popups/panels share state/actions but remain independent entry points; opening the home page does not replace them, and system-wide windows must not all inherit the app theme.
@@ -105,9 +107,10 @@ Show understandable outcomes and next steps rather than a wall of packets:
 
 Any future **Disconnect headphones** action must be distinct from reconnecting control because it affects audio.
 
-### AirPods 5 lid-open popup
+### Discovery / first-pairing popup (provisionally deferred)
 
-- Require real lid events for paired AirPods 5. Unpaired discovery needs explicit identity confirmation, never automatic binding to a stranger's nearby device.
+- Do not show a modal popup for every paired reconnection. Initial pairing remains available through Android Bluetooth settings. The following constraints apply only if optional quick-pairing work is resumed.
+- Unpaired discovery needs explicit identity confirmation, never automatic binding to a stranger's nearby device. A discovered advertisement is not proof the device belongs to the user.
 - Prefer verified HyperOS quick-connect/animation containers, with AirPods-5-specific state/capabilities rather than forced Pro/old-model templates.
 - A2DP is not a lid sensor. Verify advertisements, opening/closing semantics, and random-address correlation; a battery report is not inherently a new opening.
 - Show name, valid part batteries, and connection progress. Label broadcast-only battery as estimated, not precise AACP data.
@@ -142,9 +145,13 @@ Share system scan events where possible; limit extra scanning/wakeups. Control f
 
 ### Notifications and degradation
 
-- Ordinary notifications can be a failure fallback, but cannot fulfill mandatory lid/panel release gates.
+- No ongoing connection/status notification, even at silent/minimum importance. State continues to feed the application and dedicated control panel without notification posts.
+- A necessary presentation fallback must be transient and share the same original deadline. Missing native presentation cannot justify a persistent ordinary notification.
 - A brief island consumes a real new audio-connection event once. Socket recovery, page reopening, partial battery reports, and setting reports are not new connections.
-- End the alert with the native lifecycle/bounded cancellation; later data must not extend its display deadline.
+- Display valid battery values available during the initial window; unknown is `--`, not invented zero. Late battery updates may update that same window without replaying its animation or extending the deadline.
+- End the alert with bounded cancellation; post-expiry data must not post a replacement notification, a case-battery toast or another island.
+- Explicitly enabled low-battery warnings are distinct, bounded events, not a persistent connection/status entry.
+- On upgrade, clean only notifications proven to belong to this P.O.D.S. installation. A `BTHeadset` tag or Bluetooth UID alone is not ownership proof; independently running HyperPods and genuine Xiaomi notifications must not be deleted.
 - Denied notification permission is not control failure. Follow actual foreground-service rules if a service is required.
 - Keep legally required service notifications separate from island presentation; do not hide required notifications or emulate every system surface using overlay permission.
 - Do not repeatedly notify successful background retries.

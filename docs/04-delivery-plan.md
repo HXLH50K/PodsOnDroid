@@ -2,6 +2,8 @@
 
 Updated: 2026-10-22. The user accepted the basic alpha1 behavior and requested further development with independent Git history. Section 10 records the alpha2 notification/capture changes; section 9 preserves the original preview receipt. Native-window, live R01 and broader hardware acceptance remain incomplete. The release plan remains a future acceptance contract, not a completed-MVP claim.
 
+**Current scope override:** after the user's Xiaomi comparison, ordinary paired reconnect targets a brief battery island followed by **no persistent island or status notification**. The user is reconsidering first-pairing/discovery popups; that work is provisionally deferred, not permanently cancelled or marked accepted. The active path can proceed to the dedicated Interconnectivity panel without demanding another lid-capture round.
+
 ## 0. Starting conditions and pause points
 
 - Confirmed: `P.O.D.S.`, application ID `com.hxlh50k.pods`, retained namespace `moe.chenxy.hyperpods`, AirPods 5 wireless-charging variant/reported `1.0.0`, current test phone first, API-102-only LSP, and non-destructive testing authority.
@@ -18,17 +20,18 @@ M0 Imported HyperPods baseline / identity / baseline build and tests
  -> M1-A API 102, no-headphone probes, R01 self-check contract
  -> wait for AirPods 5
  -> M1-B control and settings/report regression
- -> M2 lid discovery and native popup
+ -> connection-only battery presentation and cleanup
  -> M3 dedicated Interconnectivity headphone panel
  -> M4 Liquid Glass / brief island / R01 / stability and power
  -> initial release through an explicitly approved private channel
 
-After M0, read-only M2/M3 research/model design may proceed in parallel.
+M2 first-pairing popup research is optional/provisionally deferred.
+After M0, M3 research/model design may proceed independently.
 Real injection/control requires the M1 gates.
 After M4: M5 additional features and evidence-driven optional KSU.
 ```
 
-Lid popup and dedicated panel are mandatory, not deferred optional features. The brief island cannot prove either. No dedicated rootless/legacy-framework workstream.
+The dedicated control panel remains mandatory and cannot be replaced by the brief island. M2's earlier mandatory-popup assumption is suspended under the scope override above. No dedicated rootless/legacy-framework workstream.
 
 ## 2. Milestones
 
@@ -80,7 +83,9 @@ Stop/redirect:
 
 Estimate: **3-6 effective development days**. M1-A may be delivered independently; waiting for hardware is not an M1-B pass.
 
-### M2: AirPods 5 lid discovery and native popup
+### M2: Discovery / first-pairing popup (provisionally deferred)
+
+The following work is retained as a future option, not a dependency of the current reconnect/island correction. If resumed, first-pairing discovery and paired-device battery display must be specified separately; do not force a popup for every paired lid opening.
 
 Work:
 
@@ -204,7 +209,7 @@ Use existing targeted tasks, for example `.\gradlew.bat :app:testDebugUnitTest :
 | T30 | Panel close/back/lock/rotation/MiLink restart | Correct focus/listener cleanup; control survives UI closure |
 | T31 | Xiaomi native comparison when hardware connected | Compare layer/gesture/animation/density; not an AirPods test substitute |
 | T32 | Firmware/MiLink/quick-connect resource update | Diagnosable mismatch; no dependence on permanent cloud-config tampering |
-| T33 | Battery/mode updates and control recovery in one audio connection | No new/extended/reappearing island alert |
+| T33 | Battery/mode updates and control recovery in one audio connection | No new/extended/reappearing island and no ordinary persistent notification; cleanup only with proven ownership |
 | T34 | No setting report, default display, manual choice, failed send | Clear provenance; display does not write; failure feedback/rollback; reports win |
 | T35 | Conversation-volume default/choice and route change | Preserve policy; restore only on the correct route |
 | T36 | R01 root denied, unknown host, PID reuse/identity mismatch | Explicit refusal, no wrong action or name-based bulk fallback |
@@ -213,7 +218,7 @@ Use existing targeted tasks, for example `.\gradlew.bat :app:testDebugUnitTest :
 | T39 | Glass visible/static/background/motion disabled | Readable/operable; no background rendering wakeups; effects optional |
 | T40 | New app ID, authorities/actions/notifications/JNI self-checks | Consistent installation identity with retained namespace; no cross-talk/double control with HyperPods |
 
-All applicable cases are initial-release requirements, particularly T19, T23-T30, and T32-T40. Execute T31 once the supplied Xiaomi headphones are available to establish the requested native behavior. Missing hardware or fallback cannot turn T24/T27 into a pass.
+All active-scope cases remain release requirements. T24/T25 and the numeric lid-popup/dedup gates below are dormant while M2 is deferred, not passed. T27 and the dedicated-panel requirements remain mandatory. T31 now has user-reported Xiaomi connection behavior recorded, but no broader device matrix is implied.
 
 Localization is cross-cutting: run relevant page, accessibility, permission, error, and export cases in **English and Simplified Chinese**, including fallback behavior; no additional app locales are in scope.
 
@@ -378,3 +383,25 @@ The repository remains private with no push. Native lid popups, the dedicated In
 ### Collaborative acceptance boundary
 
 The user explicitly requested joint physical-world testing after the extended UI automation. Alpha2 implementation, local regression checks, deployment, and independent Git history are the completed deliverables of this iteration. Physical island timing and lid semantics are **not** marked accepted. Stop further device operations here; agree on one or two manual checks, let the user operate the phone/headphones, and investigate only the reported result. Lock-screen or focus blockers must not trigger another autonomous testing loop.
+
+## 11. Alpha3: connection-only presentation
+
+User feedback: the initial island briefly appeared, then an inherited-looking persistent island and ordinary notification took over. The alpha2 source still unconditionally posted a silent status notification for routine `updatepodsnotification` messages; a reminder error path could repost the same status. This was a product implementation gap, not evidence that the user had misconfigured the phone or another module.
+
+Implemented correction:
+
+- Delete routine status-notification creation and its error fallback, and stop normal case/battery report animations. In-app control/state reporting is unchanged.
+- Only genuine audio connection events authorize the original five-second presentation. Available left/right/case readings may update its existing key during that window with no first-float replay or deadline reset. After expiry, ordinary updates post nothing.
+- Keep explicitly configured low-battery warnings as separate bounded, deduplicated events, consumed only when submitted successfully.
+- Retire active alpha2 namespaced entries and legacy candidates only with P.O.D.S. ownership evidence. Never delete a notification merely because it has a Bluetooth/headset tag. Another enabled HyperPods module remains independent and must not be silently disabled.
+- Document silent Xiaomi paired reconnection versus discovery-first-pairing UI. First-pairing popup work is provisionally deferred, while the dedicated control panel remains required.
+
+Focused local validation:
+
+- **55 JVM tests passed** across connection policy, ownership, ordinary case suppression, low-battery batching/storage, and the requested prior scope-cancellation/interface regressions.
+- `:app:lintDebug :app:assembleDebug` passed: **0 Lint errors, 117 warnings, 2 hints**. The development APK signature verifies.
+- Selected review comment `a75635c4-cb97-415a-b67f-ae0a36b9f314` was an already-fixed earlier cancellation issue. Current interruptible root execution, process cleanup, and unknown-outcome reporting were verified and the thread resolved; no redundant source rewrite was needed.
+
+Version: `0.1.0-alpha.3`, code3, isolated package `com.hxlh50k.pods.debug`. No ADB command, installation, scope restart, radio scan, or physical headphone interaction was performed for this iteration.
+
+The next agreed manual check is only: install/reload the new version, reconnect once, and confirm both the battery island and ordinary status notification are gone after the brief window. If a residual entry remains, collect its displayed application identity and screenshot before attributing it to another module. Do not require new lid captures, unpairing or headset reset for this fix.

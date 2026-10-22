@@ -2,65 +2,37 @@ package moe.chenxy.hyperpods.utils.miuiStrongToast
 
 import DeviceNotificationBundle
 import android.annotation.SuppressLint
+import android.app.Application
 import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.widget.Toast
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Job
-import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
-import moe.chenxy.hyperpods.utils.LowBatterySettings
+import androidx.core.graphics.toColorInt
+import kotlinx.serialization.json.Json
+import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.utils.AudioConnectionEvent
 import moe.chenxy.hyperpods.utils.AudioConnectionNotifications
 import moe.chenxy.hyperpods.utils.AudioConnectionSessions
-import kotlinx.serialization.json.Json
-import moe.chenxy.hyperpods.BuildConfig
+import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
+import moe.chenxy.hyperpods.utils.LowBatterySettings
 import moe.chenxy.hyperpods.utils.SystemApisUtils.isHyperOS
-import moe.chenxy.hyperpods.utils.SystemApisUtils.isHyperOS3
 import moe.chenxy.hyperpods.utils.data.BatteryParams
 import moe.chenxy.hyperpods.utils.data.IconParams
 import moe.chenxy.hyperpods.utils.data.Left
 import moe.chenxy.hyperpods.utils.data.Right
 import moe.chenxy.hyperpods.utils.data.StrongToastBean
 import moe.chenxy.hyperpods.utils.data.TextParams
-import androidx.core.graphics.toColorInt
 
 @SuppressLint("WrongConstant")
 object MiuiStrongToastUtil {
     internal val audioSessions = AudioConnectionSessions()
-    private var caseToastJob: Job? = null
-    private var latestBattery: BatteryParams? = null
-
-    fun updateCaseBatteryState(params: BatteryParams) {
-        latestBattery = params
-        if (!caseBatteryVisible(params)) {
-            caseToastJob?.cancel()
-            caseToastJob = null
-        }
-    }
-
-    fun cancelCaseBatteryToast() {
-        caseToastJob?.cancel()
-        caseToastJob = null
-        latestBattery = null
-    }
-
-    private fun caseBatteryVisible(params: BatteryParams): Boolean =
-        params.case?.isConnected == true &&
-            (params.left?.isInCase == true || params.right?.isInCase == true)
-    var lastPodsTimestamp = -1L
-    val colorGreen = "#FF34C759".toColorInt()
-    val colorRed = "#FFFF3B30".toColorInt()
+    private val colorRed = "#FFFF3B30".toColorInt()
 
     fun showStringToast(context: Context, text: String?, colorType: Int) {
         if (!isHyperOS) {
@@ -91,9 +63,12 @@ object MiuiStrongToastUtil {
         }
     }
 
-    /** A transient, silent warning; does not post another persistent notification or change audio. */
-    fun showLowBatteryToast(context: Context, text: String) {
-        cancelCaseBatteryToast() // Do not let the deferred case animation overwrite this warning.
+    /** A distinct, silent warning with a five-second maximum, never a persistent status entry. */
+    fun showLowBatteryToast(context: Context, text: String): Boolean {
+        if (!AudioConnectionNotifications.ownsPresentation(Application.getProcessName())) {
+            Log.e("Art_Chen", "Refusing low battery presentation outside Xiaomi Bluetooth main process")
+            return false
+        }
         if (isHyperOS) {
             try {
                 val bean = StrongToastBean(Left(textParams = TextParams(text, colorRed)),
@@ -109,117 +84,24 @@ object MiuiStrongToastUtil {
                 val service = context.getSystemService(Context.STATUS_BAR_SERVICE)
                 service.javaClass.getMethod("setStatus", Int::class.javaPrimitiveType, String::class.java, Bundle::class.java)
                     .invoke(service, 1, "strong_toast_action", bundle)
-                return
+                return true
             } catch (error: Exception) {
                 Log.w("Art_Chen", "Low battery strong toast unavailable; using text toast", error)
             }
         }
-        Handler(Looper.getMainLooper()).post {
-            runCatching { Toast.makeText(context, text, Toast.LENGTH_LONG).show() }
-                .onFailure { Log.w("Art_Chen", "Unable to show low battery text toast", it) }
-        }
-    }
-
-    fun showCaseBatteryToast(context: Context, case: Int, caseCharging: Boolean, caseMp4Uri: Uri, lowBatteryThreshold: Int) {
-        if (!isHyperOS) {
-            return
-        }
-        val caseText = TextParams("$case %", if (caseCharging) colorGreen else if (case <= lowBatteryThreshold) colorRed else Color.WHITE)
-        val caseVideo = IconParams(Category.RAW, FileType.MP4, caseMp4Uri.toString(), 1)
-        val left = Left(iconParams = caseVideo)
-        val right = Right(textParams = caseText)
-        val strongToastBean = StrongToastBean(left, right)
-        val jsonStr = Json.encodeToString(StrongToastBean.serializer(), strongToastBean)
-        val bundle = DeviceNotificationBundle.Builder()
-            .setPackageName("com.xiaomi.bluetooth")
-            .setStrongToastCategory(StrongToastCategory.VIDEO_TEXT)
-            .setNotifyId("${BuildConfig.APPLICATION_ID}:battery")
-            .setTarget(null)
-            .setParam(jsonStr)
-            .onCreate()
-
-        try {
-            val service = context.getSystemService(Context.STATUS_BAR_SERVICE)
-            Log.d("Art_Chen", "Showing Case Batt Toast")
-            service.javaClass.getMethod(
-                "setStatus", Int::class.javaPrimitiveType, String::class.java, Bundle::class.java
-            ).invoke(service, 1, "strong_toast_action", bundle)
-        } catch (e: Exception) {
-            Log.e("Art_Chen", "Failed to show Case Battery Toast", e)
-        }
-    }
-
-    fun showPodsBatteryToast(
-        context: Context,
-        leftVideoUri: Uri,
-        rightVideoUri: Uri,
-        caseMp4Uri: Uri,
-        lowBatteryThreshold: Int = 20,
-        batteryParams: BatteryParams
-    ) {
-        updateCaseBatteryState(batteryParams)
-        if (!isHyperOS) {
-            return
-        }
-        val left = batteryParams.left!!.battery
-        val leftCharging = batteryParams.left!!.isCharging
-        val right = batteryParams.right!!.battery
-        val rightCharging = batteryParams.right!!.isCharging
-
-        val leftText =
-            if (batteryParams.left!!.isConnected) TextParams("$left %", if (leftCharging) colorGreen else if (left <= lowBatteryThreshold) colorRed else Color.WHITE, turnAnim = true) else null
-        val leftVideo = IconParams(Category.RAW, FileType.MP4, leftVideoUri.toString(), 1)
-        val rightText =
-            if (batteryParams.right!!.isConnected) TextParams( "$right %", if (rightCharging) colorGreen else if (right <= lowBatteryThreshold) colorRed else Color.WHITE, turnAnim = true) else null
-        val rightVideo = IconParams(Category.RAW, FileType.MP4, rightVideoUri.toString(), 1)
-        val l = Left(textParams = leftText, iconParams = leftVideo)
-        val r = Right(textParams = rightText, iconParams = rightVideo)
-        val strongToastBean = StrongToastBean(l, r)
-        val jsonStr = Json.encodeToString(StrongToastBean.serializer(), strongToastBean)
-        val bundle = DeviceNotificationBundle.Builder()
-            .setPackageName("com.xiaomi.bluetooth")
-            .setStrongToastCategory(StrongToastCategory.VIDEO_TEXT_TEXT_VIDEO)
-            .setDuration(7000)
-            .setNotifyId("${BuildConfig.APPLICATION_ID}:battery")
-            .setTarget(null)
-            .setParam(jsonStr)
-            .onCreate()
-        try {
-            val service = context.getSystemService(Context.STATUS_BAR_SERVICE)
-            service.javaClass.getMethod(
-                "setStatus", Int::class.javaPrimitiveType, String::class.java, Bundle::class.java
-            ).invoke(service, 1, "strong_toast_action", bundle)
-            lastPodsTimestamp = System.currentTimeMillis()
-            caseToastJob?.cancel()
-            if (caseBatteryVisible(batteryParams)) {
-                caseToastJob = CoroutineScope(Dispatchers.Main).launch {
-                    delay(4000)
-                    val current = latestBattery?.takeIf { caseBatteryVisible(it) } ?: return@launch
-                    showCaseBatteryToast(
-                        context,
-                        current.case!!.battery,
-                        current.case!!.isCharging,
-                        caseMp4Uri,
-                        lowBatteryThreshold
-                    )
-                }
-            }
+        return try {
+            Toast.makeText(context, text, Toast.LENGTH_LONG).show()
+            true
         } catch (error: Exception) {
-            Log.e("Art_Chen", "Failed to show Pods Battery Toast", error)
+            Log.e("Art_Chen", "Unable to show low battery text toast", error)
+            false
         }
     }
 
-    fun showPodsBatteryToastByMiuiBt(
-        context: Context?,
-        batteryParams: BatteryParams
-    ) {
-        val intent = Intent("com.hxlh50k.pods.action.sendstrongtoast")
-
-        intent.putExtra("batteryParams", batteryParams)
-
-        intent.`package` = "com.xiaomi.bluetooth"
-
-        HyperPodsBroadcasts.send(context, intent, HyperPodsBroadcasts.XIAOMI_BLUETOOTH)
+    @Suppress("UNUSED_PARAMETER")
+    fun showPodsBatteryToastByMiuiBt(context: Context?, batteryParams: BatteryParams) {
+        // Legacy AACP caller: the device-addressed refresh below already carries these readings.
+        // Battery/case availability alone has no authority to start an animation.
     }
 
     fun showPodsNotificationByMiuiBt(
@@ -231,15 +113,12 @@ object MiuiStrongToastUtil {
         modelNumber: String? = null,
     ) {
         val intent = Intent("com.hxlh50k.pods.action.updatepodsnotification")
-
         intent.putExtra("batteryParams", batteryParams)
         intent.putExtra("device", device)
         intent.putExtra("lowBatterySettings", lowBatterySettings)
         intent.putExtra("freshComponents", freshComponents)
         intent.putExtra("modelNumber", modelNumber)
-
-        intent.`package` = "com.xiaomi.bluetooth"
-
+        intent.`package` = HyperPodsBroadcasts.XIAOMI_BLUETOOTH
         HyperPodsBroadcasts.send(context, intent, HyperPodsBroadcasts.XIAOMI_BLUETOOTH)
     }
 
@@ -249,23 +128,20 @@ object MiuiStrongToastUtil {
         throughEventId: Long? = null,
     ) {
         val intent = Intent("com.hxlh50k.pods.action.cancelpodsnotification")
-
         intent.putExtra("device", device)
         intent.putExtra(AudioConnectionNotifications.EXTRA_EVENT_ID,
             audioSessions.cancellationId(device.address, throughEventId, SystemClock.elapsedRealtimeNanos()))
-
-        intent.`package` = "com.xiaomi.bluetooth"
-
+        intent.`package` = HyperPodsBroadcasts.XIAOMI_BLUETOOTH
         HyperPodsBroadcasts.send(context, intent, HyperPodsBroadcasts.XIAOMI_BLUETOOTH)
     }
 
-    /** Only the A2DP dispatcher may supply a claimed audio event; AACP refreshes use status updates. */
+    /** Only the A2DP dispatcher may supply a claimed event; AACP refreshes cannot create a presentation. */
     internal fun showPodConnectingByMiuiBt(context: Context, device: BluetoothDevice, event: AudioConnectionEvent) {
         val intent = Intent("com.hxlh50k.pods.action.podconnecting")
         intent.putExtra("device", device)
         intent.putExtra(AudioConnectionNotifications.EXTRA_EVENT_ID, event.id)
         intent.putExtra(AudioConnectionNotifications.EXTRA_CONNECTED_AT, event.connectedAt)
-        intent.`package` = "com.xiaomi.bluetooth"
+        intent.`package` = HyperPodsBroadcasts.XIAOMI_BLUETOOTH
         HyperPodsBroadcasts.send(context, intent, HyperPodsBroadcasts.XIAOMI_BLUETOOTH)
     }
 
@@ -289,5 +165,4 @@ object MiuiStrongToastUtil {
         const val TEXT_BITMAP_INTENT = "text_bitmap_intent"
         const val VIDEO_TEXT_TEXT_VIDEO = "video_text_text_video"
     }
-
 }

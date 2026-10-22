@@ -22,8 +22,8 @@ The later [read-only framework status query and official manager UI](07-device-a
 | Target headphones | AirPods 5 wireless-charging variant, user-reported firmware `1.0.0`; read exact fields when connected |
 | Native comparison | Xiaomi Open-ear Headphones Pro, user-reported firmware `1.1.0.3` |
 | Delivery | Prefer one modern API-102-only LSP APK; no dedicated rootless work; KSU only with demonstrated need |
-| Core experience | Lid-open/connection popup, dedicated Interconnectivity headphone panel, reliable controls and feedback |
-| Island | Brief real-connection alert; no persistent battery island or battery-refresh alerts |
+| Core experience | Brief reconnect battery island, dedicated Interconnectivity headphone panel, reliable controls and feedback; first-pairing popup provisionally deferred after manual comparison |
+| Island | Brief real-connection alert, then neither persistent island nor ordinary status notification; no battery-refresh alerts |
 | App appearance | Native Android implementation of the Liquid Glass visual direction, not global SystemUI restyling |
 | System-window behavior | Follow observed Xiaomi lock-screen, landscape, full-screen, back, and lifecycle behavior |
 | Conversation volume | Keep existing additional phone-side attenuation and saved user choices |
@@ -95,7 +95,7 @@ It may avoid a phone reboot for ordinary module APK updates once the framework r
 | M0 | Preserve source provenance/docs, use independent Git history, record baseline tests/build and identity | No headphones or release key required |
 | M1-A | Migrate metadata/entry/hooks, static checks, controlled probes and host self-checks, R01 contract | Runtime API below 102 or need to replace the framework: stop, do not downgrade/replace automatically |
 | M1-B | Device identity, AACP, existing controls and feedback | Finish independently verified work, then explicitly wait for AirPods 5 |
-| M2/M3 | Lid discovery, native popup, dedicated Interconnectivity panel | Wait for Xiaomi Open-ear Headphones Pro when native-behavior comparison is needed |
+| M2/M3 | Current priority: reconnect presentation and dedicated Interconnectivity panel; optional discovery popup is provisionally deferred | No further lid capture is a prerequisite for the current notification fix; agree on any hardware round with the user |
 | M4 | Liquid Glass, brief island, stability/power, complete R01 verification | Ask only for genuinely new design/safety choices, not settled decisions |
 | Before release | Independent release key, same-signature upgrades, GPL source obligations, approved private delivery | Resolve password custody and authorize the specific upload/release; retain private visibility |
 

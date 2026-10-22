@@ -1,8 +1,8 @@
 # 03 Architecture
 
-## Alpha2 implementation note
+## Notification iteration notes
 
-The notification path now has one owner in the Xiaomi Bluetooth **main process**. Real A2DP transitions carry a monotonic event identity and original connection timestamp; late UUID discovery shares that identity. The connection presentation expires five seconds from the original transition, while battery, setting and AACP-recovery messages update a separate silent status entry. Presentation callbacks and cancellation are scoped to P.O.D.S. notification keys. The Xiaomi `:ui` self-check explicitly reports that it is not the notification owner.
+Alpha2 established a single notification owner in the Xiaomi Bluetooth **main process** and a five-second A2DP-derived deadline, but incorrectly retained a separate silent status entry. The user rejects both persistent surfaces. Alpha3 removes routine status publication altogether: battery/setting/AACP updates feed internal state, may refresh only the still-active original presentation without re-alerting, and post nothing after expiry. Existing owned status/legacy entries require verified ownership before cleanup; Bluetooth tags alone are insufficient. The Xiaomi `:ui` self-check remains distinct from the notification owner.
 
 The debug lid-observation tool is separate from production discovery and control. It uses an explicitly requested, foreground-only BLE scan with a 30-second deadline, 8 anonymous session candidates, 128 distinct records and 16 manual markers. Raw addresses exist only in a cleared in-memory association map; export retains selected clear header fields before byte11, relative timings, scan status/error and explicit drop counts. No automatic pairing, AACP writes, persistent radio scan, inferred lid state or identity claim is made. BLE permissions are confined to the debug manifest.
 
@@ -265,7 +265,7 @@ Popup, panel, and island share a device/session snapshot. Do not feed BLE estima
 
 - Give true audio-connection cycles their own event identity, separate from the control socket's `connectionEpoch`.
 - Consume each event once; end with host lifecycle/bounded timing. Data refresh cannot extend the deadline or create a persistent island.
-- Coordinate lid popup and island to avoid stacked disturbance, but never remove the required popup or substitute the island.
+- Paired reconnection intentionally uses only a brief battery island; it is not a detected lid event. First-pairing/discovery popup work is provisionally deferred, separate from the still-required dedicated control panel.
 - R01 belongs in app-side management, using fixed allowlisted root actions. External IPC cannot supply arbitrary PIDs/commands; recheck PID, start identity, UID, and scope immediately before acting.
 - UI-only reconstruction leaves AACP intact. Only explicit selection of Bluetooth restart quiesces control and accepts audio interruption.
 - Successful restoration requires new-build identity, API 102, and relevant hook checks. Bound failures; no automatic system-core/framework/phone restart.
