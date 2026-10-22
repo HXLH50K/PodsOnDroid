@@ -436,3 +436,14 @@ Implemented:
 - `BatteryIslandVisibilityHook`: scoped native pre-draw observation, dual-ear visibility token and first-visible timestamp; five-second expiry starts on the acknowledgment rather than A2DP connection. If that lifecycle cannot be confirmed, record `visibility_unconfirmed` and cancel by watchdog. The actual ROM behavior remains unverified.
 
 No unit tests, instrumentation tests, Lint, ADB, installation, scope restart, radio capture or earbud operation is performed. Build warnings and artifact metadata are recorded separately. The user's shutdown request is executed only after a successful package has been saved; no applications are forcibly terminated to make shutdown succeed.
+
+### Alpha4 package receipt
+
+- Implementation commit: `7052323`.
+- Final command: `:app:assembleDebug -x :app:lintVitalDebug -x :app:lintVitalAnalyzeDebug -x :app:lintVitalReportDebug --console=plain`.
+- Result: **BUILD SUCCESSFUL**, 9 seconds; compiler deprecation warnings remain. This is compilation evidence only, not a test result.
+- Package: `dist\PODS-0.1.0-alpha.4-debug.apk`, 31,743,627 bytes, version `0.1.0-alpha.4` / code4, application ID `com.hxlh50k.pods.debug`.
+- SHA-256: `56f11972974d97b898180b90f73f2184f15c74c16f422d1872a948dcc64a55ff`; a sidecar checksum file is stored with the APK.
+- APK v2 development signature and modern API102 metadata inspected successfully. No new release key was created or reused from another product.
+- Not installed. No test, Lint, or hardware acceptance is claimed. The native pre-draw signal, actual continuous visibility, independent colors and threshold behavior remain for a jointly agreed later test.
+- The source and documentation are saved locally; no remote push. After saving this receipt, the requested non-forced computer shutdown can be scheduled with a short grace period.

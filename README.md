@@ -6,6 +6,8 @@ A private HyperPods-derived Android project for improving the AirPods 5 experien
 
 Per the user's request, this iteration runs **compilation/packaging only: no tests, Lint, device installation, radio capture or phone operations**. The APK is a development build; native timing, colors and reminder behavior remain for the next jointly agreed manual check.
 
+The versioned local handoff is `dist\PODS-0.1.0-alpha.4-debug.apk` with an adjacent SHA-256 file. Implementation `7052323` compiled successfully and the APK identity/development signature were inspected; see the [package receipt](docs/04-delivery-plan.md#alpha4-package-receipt). No test results from older previews apply to this new implementation.
+
 The user's Xiaomi comparison found silent paired reconnect/wearing and a quick-connect card in discovery/first-pairing mode. P.O.D.S. intentionally keeps the user's preferred brief battery island for reconnect. First-pairing popup work is **provisionally deferred**, not permanently cancelled; ordinary Android Bluetooth pairing remains available. The dedicated Interconnectivity control panel and Liquid Glass remain planned. See the [latest UX evidence](docs/07-device-and-native-integration.md#manual-xiaomi-comparison-and-ios-distinction) and [decisions](docs/05-decisions.md).
 
 The last assistant-managed device deployment was alpha2 (`03f18a5`); alpha3 was built locally and handed to the user. Its **55 focused JVM tests**, assembly and Lint results do not override the subsequent failed manual presentation test. Physical acceptance remains a joint user-led step. Historical receipts remain in the [delivery plan](docs/04-delivery-plan.md).
