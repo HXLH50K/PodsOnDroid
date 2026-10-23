@@ -876,3 +876,25 @@ Appearance, enable the preview and compare reduced transparency on/off.
 Connected-home appearance can be checked during ordinary use. Further
 24-hour use, power comparison, accessibility/large-font coverage, retained
 features and independent production signing remain later M4 gates.
+
+### Alpha10 package and deployment receipt
+
+- Source: `5d48f4ff0965dd7b639fc8aa0cc1d0f0358660e7`.
+- File: `dist/PODS-0.1.0-alpha.10-debug.apk`; **31,970,139 bytes**.
+- SHA-256: `d8db6dfe702afc48500be9cdcc4e6f82249b47d14721012c0581f921f389146b`.
+- Verified debug identity `com.hxlh50k.pods.debug`, alpha10/code10,
+  development v2 signer, committed revision, API102 and the original three
+  scopes. No transport, native hook, panel controller or noise-mode policy
+  source changed from alpha9.
+- Final committed-source build and all 23 focused tests passed. Lint:
+  **0 errors, 136 warnings, 2 hints**. The broader existing controller-suite
+  failures remain outside this focused run.
+- In-place installation on `houji` returned `Success`; installed base-APK hash
+  matches this artifact. Update time: `2026-10-23 18:50:36`; original install
+  time and app data were preserved. Exact device-staging APK was removed.
+- No app UI launch, scope reload, media-volume/mode command or physical earbud
+  interaction was performed. Opening the app is sufficient for this UI-only
+  preview; it does not prove that background hosts reloaded a new build.
+- Appearance remains off by default. The user can view the About-page sample
+  without headphones, enable the preview and toggle reduced transparency.
+  This independent prototype is delivered; broader M4 and issue #1 remain open.
