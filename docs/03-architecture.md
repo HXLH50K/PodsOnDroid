@@ -1,5 +1,116 @@
 # 03 Architecture
 
+## App design and material survey (2026-10-23)
+
+Scope: research first, following the user's rejection of alpha11 and clarification
+that Liquid Glass is a local control material, not the overall app style. This
+survey changes no UI code, dependencies, installed APK or device state.
+
+### Overall interface language
+
+The supplied screenshot supports a descriptive classification: HyperOS-oriented
+large titles, grouped cards/dashboard summaries and a floating translucent
+navigation layer. It does not establish Keimi's source implementation, motion
+rules, or use of a particular library. No matching authoritative public Keimi
+source was verified; do not infer its stack from the screenshot.
+
+The community [Miuix documentation](https://compose-miuix-ui.github.io/miuix/)
+explicitly describes Xiaomi HyperOS-style components. This is a useful cohesive
+component reference, not a public Xiaomi-system SDK. Google's [app-bar guidance](https://developer.android.com/develop/ui/compose/components/app-bars)
+and [accessibility defaults](https://developer.android.com/develop/ui/compose/accessibility/api-defaults)
+provide Android navigation/interaction rules; for example, touch targets must
+remain at least 48 dp. A component library does not choose the app's information
+architecture, content density or emphasis automatically.
+
+### What Liquid Glass does and does not specify
+
+Apple's [Materials HIG](https://developer.apple.com/design/human-interface-guidelines/materials)
+places Liquid Glass in a functional layer for navigation and controls above
+content, and warns against treating it as the general content material.
+Regular and clear variants have different readability/use cases. The
+[SwiftUI guide](https://developer.apple.com/documentation/swiftui/applying-liquid-glass-to-custom-views)
+describes optical appearance plus interactive behavior, with `glassEffect`,
+`GlassEffectContainer` and coordinated morphing. Those are Apple-platform APIs,
+not Android APIs and not a universal whole-app design standard.
+
+Apple's [Landmarks sample](https://developer.apple.com/documentation/swiftui/landmarks-building-an-app-with-liquid-glass)
+is a verifiable implementation reference for standard navigation/toolbars plus
+selective custom glass. Use such inspectable references rather than guessing
+the private implementation of commercial apps from promotional screenshots.
+
+### Android implementation options
+
+| Option | Verified capability | Limit / role in P.O.D.S. |
+| --- | --- | --- |
+| Android 12+ window blur | Public `Window.setBackgroundBlurRadius`, `FLAG_BLUR_BEHIND`, `blurBehindRadius` and availability listener | Cross-window frosting, suitable for the existing dialog; not a complete component/motion system or an intra-page dock API |
+| RenderEffect / Android 13+ AGSL RuntimeShader | Compose/View rendering effects and programmable filtering/shading | Foundation for optical treatments; backdrop capture, refraction, highlights and interaction still need implementation |
+| Haze | Public documentation provides backdrop visual effects; Tivi is a linked real-app example | Useful blur/source infrastructure; using it does not by itself establish Liquid Glass fidelity |
+| Kyant Backdrop | Documented color/blur/lens pipeline; Android 13+ lens/refraction, optional depth/chromatic effects; bottom-bar/button/slider examples | A candidate for a small local-control comparison, not an automatic app redesign; README says high-level components are examples rather than built-in product controls |
+| Miuix | HyperOS-style Compose component suite; current public repository lists navigation/blur/shape modules | Candidate for coherent components and transitions; verify compatibility with the pinned project version before importing newer examples |
+
+Primary implementation references:
+
+- [AOSP cross-window blur](https://source.android.com/docs/core/display/window-blurs):
+  effects can be disabled by the device/runtime, requiring readable fallback.
+- [Android AGSL](https://developer.android.com/develop/ui/views/graphics/agsl):
+  programmable RuntimeShader behavior is available on Android 13+.
+- [Haze documentation](https://chrisbanes.github.io/haze/latest/):
+  current docs describe a modular v2 architecture, **not** the project's pinned
+  Haze 1.7.0 API. Do not silently apply v2 recipes to the current dependency.
+- [Backdrop effects](https://kyant.gitbook.io/backdrop/api/backdrop-effects.md)
+  and [repository/examples](https://github.com/Kyant0/AndroidLiquidGlass):
+  effects use RenderEffect; shader-dependent effects require Android 13+.
+  The README links LiquidBottomTabs, LiquidButton, LiquidToggle and LiquidSlider.
+- [Miuix source](https://github.com/compose-miuix-ui/miuix) and its
+  [license](https://github.com/compose-miuix-ui/miuix/blob/main/LICENSE).
+
+Haze, Backdrop and Miuix publish Apache-2.0 licenses in the verified sources.
+That does not remove the need to preserve notices or validate dependency,
+GPU, lifecycle and accessibility behavior. Backdrop's FAQ documents a possible
+RenderThread crash scenario; prototype and verify rather than adding effects
+blindly. The current project pins Miuix 0.6.1, Haze 1.7.0, Kotlin 2.2.21 and
+Compose plugin 1.9.3. No dependency was upgraded during this research.
+
+There is no verified public HyperOS call that converts an arbitrary app into
+the complete screenshot's design. MiLink's private service/view infrastructure
+is a separate system-panel concern, not the right route for ordinary app
+headers, navigation, spacing or transitions.
+
+### Confirmed problems in the current app
+
+- `DashboardPageHeader` implements a back icon when a callback is supplied, but
+  Settings and headphone child pages place that header inside a `LazyColumn`
+  item. The return affordance therefore scrolls out of view. A specific report
+  of an icon never appearing initially would need separate visual confirmation;
+  the nonpersistent placement is already confirmed from source.
+- Settings changes the destination enum and directly swaps the content; About
+  is a separate early-return branch. There is no common enter/pop transition
+  host. The headphone subpages and top-level pager have their own animations,
+  so animation is not consistently absent; it is inconsistent across routes.
+- Styling card fills and blur parameters cannot repair these navigation defects.
+
+### Implementation recommendation after this survey
+
+1. Establish a shared page frame: fixed child toolbar with a leading return
+   action, root large-title behavior, safe insets and persistent readable
+   navigation. Use the public app-bar pattern or an equivalent Miuix component.
+2. Use a real back-stack/navigation host or an explicit shared AnimatedContent
+   host. Define peer-tab, child-enter, child-pop and modal-dismiss semantics
+   separately; preserve scroll and drafts, block outgoing interactions, and
+   handle fast reversals and cancelled back gestures.
+3. Use Android's [Compose animation guidance](https://developer.android.com/develop/ui/compose/animation/quick-guide),
+   [Navigation guidance](https://developer.android.com/guide/navigation) and
+   [predictive-back guidance](https://developer.android.com/develop/ui/compose/system/predictive-back)
+   rather than instant replacement or unrelated per-page timings. Any initial
+   200-300 ms motion range would be a project tuning proposal, not an official
+   universal design requirement.
+4. Validate a root/child pair and its navigation before revising all surfaces.
+   Evaluate optional Backdrop optics only after the overall hierarchy works.
+   Keep ordinary settings cards simple; do not multiply blur layers for effect.
+
+The survey does not fix the reported header/transition issues and does not
+claim visual acceptance. It intentionally stops before another APK iteration.
+
 ## Current alpha7 transport
 
 The user has reported the complete debug scope reload as working. Battery presentation uses `NativeBatteryIslandBridge` in SystemUI and `NativeBatteryIslandSchema` against the locally inspected plugin controller. `NativeBatteryIslandEndpoint` resolves the OEM's lazy content proxy: plugin loading validates the endpoint without creating a window; the first real presentation reuses its controller or calls the verified creator once. The Xiaomi host sends only bounded primitive payloads; native objects and views remain in SystemUI. No Android notification is created or injected as a fake carrier.

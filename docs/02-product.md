@@ -1,5 +1,36 @@
 # 02 Product scope and interaction
 
+## 2026-10-23 design-language clarification
+
+The user clarified that Liquid Glass describes only selected controls, not the
+whole app. Alpha11 is not visually accepted. Do not treat a dark palette,
+rounded cards or one blurred dock as sufficient evidence of matching the
+reference.
+
+Describe the intended direction as a **HyperOS-oriented, card-based settings
+and dashboard interface with restrained glass navigation controls**. This is a
+working description, not a claim that the screenshot implements a specific
+official design system or that Keimi's internal toolkit is known.
+
+Separate three contracts:
+
+1. **Structure:** Headphones and Settings remain separate; project About and
+   diagnostic tools stay nested. Content density, type hierarchy, spacing,
+   card grouping and emphasis must be designed together.
+2. **Navigation:** every child destination has a stable upper-left Up/Back
+   affordance outside the scrollable list. Root tabs, hierarchical push/pop and
+   modal dismissal have distinct, coherent transitions. Scrolling must not
+   remove the only visible return affordance.
+3. **Material:** ordinary content uses readable solid/layered surfaces. Glass
+   is limited to appropriate navigation/actions; blur alone is not a complete
+   liquid-glass treatment. Reduced transparency/motion preserve all functions.
+
+Before another broad visual implementation, establish one representative root
+screen and one child screen with fixed navigation and consistent tokens, then
+compare real rendering and interaction. Do not continue producing whole-app
+style iterations from a guessed label. The [architecture survey](03-architecture.md#app-design-and-material-survey-2026-10-23)
+records public APIs, reference implementations and confirmed navigation gaps.
+
 Status: confirmed design baseline; imported functionality is not automatically verified P.O.D.S. functionality. API/build/restart changes are in progress. The app follows a Liquid Glass visual direction; system behavior should resemble native Xiaomi headphones, not recreate Apple's ecosystem. See [readiness](09-readiness.md).
 
 **2026-10-23 battery contract:** [Battery notification specification](10-battery-notification-spec.md) supersedes older notification/reminder details below. Alpha3's brief flash failed the requested visible five seconds. Alpha4 implements independent left/right colors, editable Low20/Medium50, separate switches, falling-edge reminders and first-read suppression, with no active case/implicit10% alert path. Per user instruction it is packaged without tests; real timing/rendering and behavioral acceptance remain open.
