@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-23 evening:** the user confirmed the earlier work passed and authorized pulling, packaging and deploying alpha8 on the original workstation. The committed preview was built without functional changes and installed in place on the connected `houji` test phone. Section 19 records signer continuity, focused checks and installed-file verification. The panel itself is not yet accepted; scope reload and physical checks remain user-operated.
+**Current status, 2026-10-23 evening:** the user confirmed alpha8 opens the expected floating panel, but rejected its visual design and provided a Xiaomi headphone-panel reference, preferring MiLink reuse. Section 20 records the alpha9 reference-style implementation and explicit native-reuse boundary. Alpha8 deployment is historical; no automatic scope restart or earbud operation is authorized.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -739,3 +739,64 @@ battery readings and, if a listening mode is supported and ready, change one
 mode and restore it. Start and verify a bounded module-log collector before
 handoff. Unknown readings should stay unknown. Successful package installation
 and action resolution do not establish artwork/control acceptance.
+
+## 20. Alpha9 reference-style panel and native reuse boundary
+
+User feedback: alpha8's floating entry works, but its UI differs too much from the
+Xiaomi headphone panel. The user-selected screenshot was read locally from the
+phone; it is not bundled into the app or committed.
+
+### Native feasibility evidence
+
+The currently installed MiLink is `18.2.2.1.2609281717`, SHA-256
+`6c05c0566ae696fd2594ec03d4e700050e0eaa2837fe3f16c61228c451143652`.
+Targeted static inspection located
+`com.miui.circulateplus.world.headset.HeadsetDetailFragment` and `HeadSetsDetail`.
+The fragment requires `CirculateServiceInfo` plus device models, lifecycle/service
+injection and `HeadsetServiceController`; the view also owns controller listeners
+and state-dependent operations. This is not a standalone Activity accepting
+P.O.D.S. battery values. A presentation-only adapter with authenticated target
+identity and exclusive P.O.D.S. control has not yet been established.
+
+Alpha9 therefore uses the existing approved preview route, not a counterfeit
+native route. Native MiLink remains preferred future integration work, not
+declared infeasible or completed. No OEM code/resources were copied into the
+project; no privileged permission bypass, global device-type change, additional
+Xposed scope or competing headset SDK writer was introduced.
+
+### Implemented preview
+
+- Window width follows the reference's approximately 84% viewport proportion,
+  capped at 392 dp; height is bounded by available system-bar/cutout-safe space.
+- A rounded native window background uses cross-window blur plus behind-window
+  blur. Runtime blur-disable changes use an explicitly logged readable opaque
+  surface instead of claiming a fake blur effect.
+- Title, compact left/right/case battery row, charging indicators, large original
+  product image, rounded monochrome supported-mode controls and More settings
+  replace the compressed full-app dashboard. Unknown batteries stay unknown;
+  retained readings are identified. Product artwork remains untinted.
+- Real phone media volume is shown in a native SeekBar. Binding/polling does not
+  change it; only explicit touch/accessibility/key adjustment writes STREAM_MUSIC.
+  The platform's actual readback wins over requested levels, including Android
+  volume limits. Fixed/unavailable volume is disabled/reported. No call/ring
+  volume, remote volume protocol, test sound or find-device ringing was added.
+- Mode selection still comes from genuine headphone reports, never a tap alone.
+  Failure/pending states remain visible. Back, outside touch and the close
+  affordance dismiss; backgrounding ends the panel as before.
+- The alpha8 capture identified a real `DeviceCardArtworkHook` failure:
+  plugin `applicationContext` can be null. Both device-card receivers now use
+  an actual SystemUI package context; authentication is unchanged.
+
+### Local verification and physical boundary
+
+28 focused JVM cases passed: 4 SystemUI context, 4 panel sizing, 6 media volume,
+7 mode-state, 4 untinted artwork and 3 state-freshness cases. They cover the
+captured null-context shape, invalid metrics, bounded/narrow geometry, no volume
+writes during reads, fixed/range refusal and actual volume readback. Android
+Lint passed with no errors; unrelated existing warnings remain.
+
+These are not screenshot/visual acceptance tests. No UI automation, scope
+restart, mode change, volume change or earbud operation was performed by the
+assistant. The next user round checks the glass layout and preserved artwork,
+then checks the controls only if the user chooses. Do not report this preview
+as an accepted native MiLink implementation.

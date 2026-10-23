@@ -1,5 +1,34 @@
 # 07 Test device and Xiaomi native integration
 
+## Alpha9 native-panel reference and SystemUI context correction
+
+The user confirms alpha8 opens a floating panel on `houji`, but requests the
+Xiaomi glass-card appearance and prefers native MiLink reuse. The reference was
+read from the user-specified screenshot, not scraped or redistributed.
+
+Read-only analysis of active MiLink `18.2.2.1.2609281717` (same SHA-256 as the
+alpha8 survey below) identifies the relevant detail UI in
+`com.miui.circulateplus.world.headset.HeadsetDetailFragment` / `HeadSetsDetail`,
+not just the older device-transfer `HeadsetCirculateFragment`.
+`onCreate` consumes internal `_service`, `_device` and `bluetooth_device_info`
+models; the detail view/fragment uses `HeadsetServiceController`, injected
+service management and listeners. Merely starting a fragment or changing
+`third_headset` does not provide a verified presentation-only AirPods adapter.
+The existing signature/privileged service boundary is unchanged.
+
+Separately, the alpha8 user-round log shows `DeviceCardArtworkHook` failing at
+receiver registration because the plugin view context returns a null
+application context. Alpha9 resolves `com.android.systemui` package context
+when no real SystemUI application context is available; a missing host remains
+an explicit error, not a foreign-context fallback. Regression tests exercise
+the observed null-context case. Actual artwork rendering still needs a user
+check after loading the changed module.
+
+The current preview uses public Android window blur plus app-owned content.
+That is native platform rendering, not MiLink service/view reuse. Safe native
+MiLink adaptation remains a separate milestone with target identity, read-only
+state consumption, one command writer and teardown requirements.
+
 ## Alpha8 read-only survey on the current phone
 
 On 2026-10-23 the attached phone is `pandora`, `OS4.0.4.0.XBLCNXM`, API 37,

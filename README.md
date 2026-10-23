@@ -2,7 +2,34 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha8 Interconnectivity preview
+## Current checkpoint: alpha9 reference-style panel
+
+The user accepted alpha8's floating-panel entry but rejected its dashboard-like
+appearance, providing a Xiaomi headphone-card screenshot and preferring MiLink
+reuse. Alpha9 replaces the miniature dashboard with a compact battery header,
+large original earbud image, rounded translucent controls and More settings.
+Android's native cross-window and behind-window blur provide the glass surface;
+when blur is unavailable, the window explicitly uses an opaque readable surface.
+This is still a P.O.D.S.-owned window, **not native MiLink panel reuse**.
+
+The installed MiLink detail panel was inspected: its fragment/view depends on
+internal service/device models and a headset controller. No isolated adapter
+that preserves the single P.O.D.S. command writer has been verified. Alpha9 does
+not spoof a Xiaomi model, add a MiLink scope, import OEM code, weaken privileged
+permissions or claim that full native integration is impossible.
+
+The panel retains reported-only mode selection and truthful battery state.
+Its volume slider controls the phone's actual **media stream**, writes only on
+user input, and reads back Android's resulting level. It does not send a second
+headphone protocol or expose unverified ring-to-find controls.
+
+The accepted alpha8 round also exposed a null plugin `applicationContext` in the
+device-card artwork hook. Alpha9 obtains the actual SystemUI package context
+for the artwork and click receivers. **28 focused JVM tests passed** and Android
+Lint completed without errors; actual glass rendering remains for the next
+user-operated check. See [the alpha9 record](docs/04-delivery-plan.md#20-alpha9-reference-style-panel-and-native-reuse-boundary).
+
+## Previous checkpoint: alpha8 Interconnectivity preview
 
 Development resumed on 2026-10-23 after the user reported no obvious alpha7 issues.
 Alpha8 adds identity-scoped AirPods artwork in Interconnectivity and a dedicated

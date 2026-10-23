@@ -5,50 +5,79 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.util.Log
+import android.view.Gravity
+import android.view.WindowInsets
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.ui.AppTheme
 import moe.chenxy.hyperpods.ui.components.*
 import moe.chenxy.hyperpods.utils.*
 import moe.chenxy.hyperpods.utils.data.*
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import java.util.function.Consumer
 
 class HeadphonePanelActivity : ComponentActivity() {
+    private var blurListener: Consumer<Boolean>? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setFinishOnTouchOutside(true)
-        val width = (resources.displayMetrics.widthPixels * 0.94f).toInt()
-            .coerceAtMost((420 * resources.displayMetrics.density).toInt())
-        window.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
-        setContent { AppTheme { Panel(this) } }
+        val metrics = windowManager.currentWindowMetrics
+        val insets = metrics.windowInsets.getInsetsIgnoringVisibility(
+            WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+        val density = resources.displayMetrics.density
+        val size = HeadphonePanelLayout.size(
+            metrics.bounds.width() - insets.left - insets.right,
+            metrics.bounds.height() - insets.top - insets.bottom, density)
+        window.setGravity(Gravity.CENTER)
+        window.setLayout((size.widthDp * density).toInt(), WindowManager.LayoutParams.WRAP_CONTENT)
+        window.decorView.clipToOutline = true
+        window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND or WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        val listener = Consumer<Boolean> { enabled -> applyGlass(enabled) }
+        blurListener = listener
+        windowManager.addCrossWindowBlurEnabledListener(mainExecutor, listener)
+        applyGlass(windowManager.isCrossWindowBlurEnabled)
+        setContent { AppTheme(colorMode = 2) { Panel(this, size.maxHeightDp) } }
+    }
+
+    private fun applyGlass(enabled: Boolean) {
+        val density = resources.displayMetrics.density
+        window.setBackgroundDrawable(GradientDrawable().apply {
+            cornerRadius = 40 * density
+            setColor(if (enabled) Color.argb(105, 112, 112, 120) else Color.rgb(66, 66, 72))
+            setStroke(density.toInt().coerceAtLeast(1), Color.argb(66, 255, 255, 255))
+        })
+        window.setBackgroundBlurRadius(if (enabled) (72 * density).toInt() else 0)
+        window.attributes = window.attributes.apply {
+            blurBehindRadius = if (enabled) (24 * density).toInt() else 0
+            dimAmount = if (enabled) .22f else .48f
+        }
+        Log.i("PODS-Panel", if (enabled) "Native window blur enabled" else
+            "Cross-window blur unavailable; using readable opaque panel")
     }
 
     override fun onStop() {
         super.onStop()
         if (!isChangingConfigurations) finish()
     }
+
+    override fun onDestroy() {
+        blurListener?.let(windowManager::removeCrossWindowBlurEnabledListener)
+        blurListener = null
+        super.onDestroy()
+    }
 }
 
 @Composable
-private fun Panel(activity: HeadphonePanelActivity) {
+private fun Panel(activity: HeadphonePanelActivity, maxHeightDp: Float) {
     var info by remember { mutableStateOf<AACPManager.Companion.AirPodsInformation?>(null) }
     var name by remember { mutableStateOf<String?>(null) }
     var battery by remember { mutableStateOf(BatteryParams()) }
-    var ears by remember { mutableStateOf(EarDetectionParams((-1).toByte(), (-1).toByte())) }
     var diagnostics by remember { mutableStateOf<Bundle?>(null) }
     var values by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var hostPending by remember { mutableStateOf(false) }
@@ -66,8 +95,6 @@ private fun Panel(activity: HeadphonePanelActivity) {
                     HyperPodsAction.ACTION_PODS_DISCONNECTED -> activity.finish()
                     HyperPodsAction.ACTION_PODS_BATTERY_CHANGED ->
                         intent.getParcelableExtra("status", BatteryParams::class.java)?.let { battery = it }
-                    HyperPodsAction.ACTION_EAR_DETECTION_STATUS_CHANGED ->
-                        intent.getParcelableExtra("status", EarDetectionParams::class.java)?.let { ears = it }
                     HyperPodsAction.ACTION_PODS_DIAGNOSTICS -> {
                         diagnostics = intent.getBundleExtra("diagnostics")
                         modeState = modeState.report(diagnostics?.getInt("noise_mode_reported", 0) ?: 0)
@@ -90,7 +117,7 @@ private fun Panel(activity: HeadphonePanelActivity) {
         }
         activity.registerReceiver(receiver, IntentFilter().apply {
             listOf(HyperPodsAction.ACTION_PODS_CONNECTED, HyperPodsAction.ACTION_PODS_DISCONNECTED,
-                HyperPodsAction.ACTION_PODS_BATTERY_CHANGED, HyperPodsAction.ACTION_EAR_DETECTION_STATUS_CHANGED,
+                HyperPodsAction.ACTION_PODS_BATTERY_CHANGED,
                 HyperPodsAction.ACTION_PODS_DIAGNOSTICS, HyperPodsAction.ACTION_PODS_SETTINGS_STATE,
                 HyperPodsAction.ACTION_PODS_SETTING_RESULT).forEach(::addAction)
         }, Context.RECEIVER_EXPORTED)
@@ -104,33 +131,29 @@ private fun Panel(activity: HeadphonePanelActivity) {
         }
     }
     val model = info?.modelNumber?.let(AirPodsModels::getModelByModelNumber)
-    val reported = modeState.reported ?: 0
-    Column(Modifier.fillMaxWidth().heightIn(max = 620.dp).clip(RoundedCornerShape(28.dp))
-        .background(MiuixTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(16.dp)) {
-        Text(info?.name?.takeIf { it.isNotBlank() } ?: name ?: stringResource(R.string.app_name))
-        Text(stringResource(dashboardConnectionStatus(diagnostics)))
-        DashboardBattery(battery, ears, model, diagnostics, showUnknownCase = true)
-        if (PodsSettings.supports(PodsSettings.NOISE_MODE, model)) {
-            DashboardSection(stringResource(R.string.dashboard_noise))
-            DashboardNoise(NoiseControlMode.entries.getOrNull(reported - 1), { mode ->
-                modeState = modeState.select(mode.ordinal + 1)
-                request++
-                HyperPodsBroadcasts.send(activity, Intent(HyperPodsAction.ACTION_ANC_SELECT)
-                    .putExtra("status", mode.ordinal + 1), HyperPodsBroadcasts.BLUETOOTH)
-            }, if (diagnostics?.getBoolean("ready") == true && !hostPending && modeState.requested == null)
-                PodsSettings.allowedNoiseModes(model, values) else emptySet())
-            Text(stringResource(when {
-                modeState.failed -> R.string.panel_failed
-                modeState.requested != null || hostPending -> R.string.panel_sending
-                modeState.reported != null -> R.string.panel_reported
-                else -> R.string.settings_reading
-            }))
-        }
-        DashboardLink(stringResource(R.string.panel_more)) {
+    HeadphonePanelContent(
+        activity = activity,
+        name = info?.name?.takeIf { it.isNotBlank() } ?: name,
+        battery = battery,
+        model = model,
+        diagnostics = diagnostics,
+        modeState = modeState,
+        hostPending = hostPending,
+        allowedModes = if (PodsSettings.supports(PodsSettings.NOISE_MODE, model))
+            PodsSettings.allowedNoiseModes(model, values) else emptySet(),
+        maxHeightDp = maxHeightDp,
+        connected = info != null,
+        onMode = { mode ->
+            modeState = modeState.select(mode)
+            request++
+            HyperPodsBroadcasts.send(activity, Intent(HyperPodsAction.ACTION_ANC_SELECT)
+                .putExtra("status", mode), HyperPodsBroadcasts.BLUETOOTH)
+        },
+        onMore = {
             activity.startActivity(Intent(activity, MainActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP))
             activity.finish()
-        }
-        DashboardLink(stringResource(R.string.panel_close)) { activity.finish() }
-    }
+        },
+        onClose = activity::finish,
+    )
 }

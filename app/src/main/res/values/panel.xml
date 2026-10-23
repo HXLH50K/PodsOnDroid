@@ -1,7 +1,14 @@
 <resources>
     <string name="panel_more">More settings</string>
     <string name="panel_close">Close</string>
-    <string name="panel_reported">Reported by headphones</string>
     <string name="panel_sending">Waiting for headphones…</string>
     <string name="panel_failed">Change not confirmed. Check connection and try again.</string>
+    <string name="panel_battery_percent">%1$d%%</string>
+    <string name="panel_battery_unknown">—</string>
+    <string name="panel_battery_description">%1$s: %2$s</string>
+    <string name="panel_battery_retained">Last reported battery readings</string>
+    <string name="panel_media_volume">Media volume</string>
+    <string name="panel_volume_unavailable">Unable to change media volume. Use the phone’s volume buttons.</string>
+    <string name="panel_volume_limited">Android limited the volume change. The current level is shown.</string>
+    <string name="panel_volume_fixed">This output has fixed volume.</string>
 </resources>

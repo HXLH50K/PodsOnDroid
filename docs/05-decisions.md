@@ -59,6 +59,16 @@ The island must appear **briefly for a real connection**, then leave **no persis
 
 ## 4. Native versus fallback panel
 
+**2026-10-23 evening feedback:** alpha8's floating entry is accepted, but its
+visual design is not. The user supplied a Xiaomi headphone-panel reference and
+prefers actual MiLink reuse. Alpha9 uses native Android window blur and a
+reference-oriented layout while retaining the app-owned preview route; this is
+not acceptance of that route as the final native integration. The exact MiLink
+detail view has been located, but its service-model/controller adapter remains
+unverified. Do not introduce an OEM command writer or fake device identity to
+claim native support. Ring-to-find is not enabled without validated capability
+and control; the new slider is explicitly phone media volume.
+
 **2026-10-23 clarification:** the user specified card -> dedicated small panel
 (earbud/case artwork, batteries, simple frequent controls) -> More settings ->
 full app, and requested an appropriate implementation. Alpha8 uses an app-owned

@@ -11,6 +11,7 @@ import io.github.libxposed.api.XposedInterface
 import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.utils.HostReflection
 import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
+import moe.chenxy.hyperpods.utils.SystemUiContext
 import moe.chenxy.hyperpods.utils.data.HyperPodsAction
 import java.util.UUID
 
@@ -51,7 +52,7 @@ object DeviceCardHook {
                 Looper.myLooper() != Looper.getMainLooper()) return@intercept chain.proceed()
             val id = HostReflection.call(info, "getId") as String
             if (!registered) {
-                context.applicationContext.registerReceiver(receiver,
+                SystemUiContext.resolve(context).registerReceiver(receiver,
                     IntentFilter(HyperPodsAction.ACTION_PODS_MAC_RECEIVED), null, handler,
                     Context.RECEIVER_EXPORTED)
                 registered = true

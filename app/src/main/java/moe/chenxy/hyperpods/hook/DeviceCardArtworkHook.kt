@@ -16,6 +16,7 @@ import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.utils.AirPodsModels
 import moe.chenxy.hyperpods.utils.HostReflection
 import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
+import moe.chenxy.hyperpods.utils.SystemUiContext
 import moe.chenxy.hyperpods.utils.data.HyperPodsAction
 import java.lang.ref.WeakReference
 import java.util.UUID
@@ -65,7 +66,7 @@ internal object DeviceCardArtworkHook {
                 if (HostReflection.call(info, "getDeviceType") != "third_headset" || requests.size >= 8)
                     return@intercept result
                 val id = HostReflection.call(info, "getId") as String
-                val context = images.first().context.applicationContext
+                val context = SystemUiContext.resolve(images.first().context)
                 if (!registered) {
                     context.registerReceiver(receiver, IntentFilter(HyperPodsAction.ACTION_PODS_MAC_RECEIVED),
                         null, handler, Context.RECEIVER_EXPORTED)
