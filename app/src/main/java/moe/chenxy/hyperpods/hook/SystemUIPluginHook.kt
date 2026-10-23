@@ -26,6 +26,7 @@ object SystemUIPluginHook {
     private val savedGravity = Collections.synchronizedMap(WeakHashMap<View, Int>())
 
     fun install(framework: XposedInterface, classLoader: ClassLoader) {
+        installHook("notification-free battery bridge") { NativeBatteryIslandBridge.install(framework, classLoader) }
         val pluginInstance = Class.forName("com.android.systemui.shared.plugins.PluginInstance", false, classLoader)
         HostReflection.methods(pluginInstance, "loadPlugin").forEach { method ->
             framework.intercept(method) { chain ->
@@ -59,7 +60,6 @@ object SystemUIPluginHook {
     }
 
     private fun installPlugin(framework: XposedInterface, loader: ClassLoader) {
-        installHook("dual-ear battery visibility") { BatteryIslandVisibilityHook.install(framework, loader) }
         installHook("SystemUI device card") { DeviceCardHook.install(framework, loader) }
         optionalHook("focus footer", loader,
             "miui.systemui.notification.focus.moduleV3.ModuleTextButtonViewHolder") { type ->

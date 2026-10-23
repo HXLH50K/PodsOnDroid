@@ -1,5 +1,7 @@
 # 04 Delivery and acceptance plan
 
+**Current alpha6 task:** the user confirms scope restart works and asks to fix the remaining display issues. A direct native device-island bridge now replaces notification publication; untinted pictorial earbud resources and text-only threshold coloring are used. Static analysis of read-only system APK copies supports the specific contract. Packaging/local checks and the next user-led render check are recorded separately below; no automatic UI, process restart, radio capture or computer power operation is authorized by this iteration.
+
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
 **Current task, 2026-10-23:** after requesting the [battery notification specification](10-battery-notification-spec.md), the user requested implementation, packaging **without tests**, and then computer shutdown. Alpha4 follows that contract. Only compilation/packaging and artifact checks are permitted in this iteration; BAT-01 through BAT-36 and native timing/rendering remain unexecuted, not passed.
@@ -482,3 +484,19 @@ Next agreed manual check: install alpha5 without first rebooting, open module di
 - SHA-256: `bdc737642f0d8cdea8d5bcb43edcea5b6fc7e29af67d4fdcbdcc5342386e806b`; a matching sidecar file is saved with the APK.
 - Not installed or executed on the phone. Real process restoration, framework cache refresh and native rendering remain user-led acceptance checks.
 - No remote push or power operation. The old shutdown request remains withdrawn.
+
+## 15. Alpha6: direct native island and original earbud artwork
+
+The user reports full debug scope reload as effective. That implementation is unchanged in this iteration.
+
+The alpha5 normal-notification-before-island behavior is addressed by replacing the transport:
+
+- Xiaomi Bluetooth's battery owner now sends a bounded primitive payload to an authenticated SystemUI receiver; it no longer creates a notification or notification channel for presentation.
+- The SystemUI bridge uses the statically inspected native device-island data/controller contract. No fake `StatusBarNotification`, forced charger state, or ordinary-notification fallback is used.
+- Native updates paint only the existing owned ear regions without renewing or re-adding the animation. Pre-draw acknowledgment, startup/visibility deadlines, token revisions, cancellation and plugin-unload handling remain explicit.
+- Known model artwork is loaded in its original colors and material; threshold colors are applied only through the native percentage-text appearance API. Saved view appearance, accessibility description and image state are restored on release.
+- Ownership checks restrict native removal to the exact current data object and application key. Existing charging/device islands are not overwritten; mismatched native schemas fail closed.
+
+Local validation: **11 focused JVM tests passed** (4 artwork cases and 7 payload/trust/lease cases) and debug assembly succeeded. No broad suite, Lint, runtime display, scan, restart, installation or earbud operation was performed. The only ADB work was read-only copying of system APKs for local static inspection; those binaries are not product artifacts.
+
+Next joint check: install alpha6, use the now user-verified full debug reload, then reconnect once. Verify direct island appearance with no preceding ordinary notification/card and untinted pictorial ear images with independently colored percentage text. If there is no island or timing is wrong, report that first instead of running repeated automated trials.

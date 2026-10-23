@@ -4,6 +4,8 @@ Status: confirmed design baseline; imported functionality is not automatically v
 
 **2026-10-23 battery contract:** [Battery notification specification](10-battery-notification-spec.md) supersedes older notification/reminder details below. Alpha3's brief flash failed the requested visible five seconds. Alpha4 implements independent left/right colors, editable Low20/Medium50, separate switches, falling-edge reminders and first-read suppression, with no active case/implicit10% alert path. Per user instruction it is packaged without tests; real timing/rendering and behavioral acceptance remain open.
 
+**Latest alpha5 feedback:** the user reports debug scope reload works. The remaining notification/card-before-island behavior is not acceptable. Use a genuinely native island lifecycle without publishing an ordinary notification. Earbud images retain pictorial shading and original colors; battery thresholds color only each ear's text, not the product images.
+
 **Latest manual feedback, 2026-10-22:** paired Xiaomi headphones reconnect silently when the case opens and show no extra insertion animation; discovery/first pairing displays a connect card. This is evidence for the user's tested model/ROM, not every Xiaomi device. P.O.D.S. intentionally differs on paired reconnect by showing one brief battery island, then **no ongoing island and no ongoing notification**. First-pairing popup work is provisionally deferred following the user's suggestion; it has not been permanently cancelled. The dedicated Interconnectivity control panel remains required.
 
 ## 1. Constraints

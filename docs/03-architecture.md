@@ -1,5 +1,18 @@
 # 03 Architecture
 
+## Current alpha6 transport
+
+The user has reported the complete debug scope reload as working. Battery presentation now uses `NativeBatteryIslandBridge` in SystemUI and `NativeBatteryIslandSchema` against the locally inspected plugin controller. The Xiaomi host sends only bounded primitive payloads; native objects and views remain in SystemUI. No Android notification is created or injected as a fake carrier.
+
+- The native device-data path uses `DynamicIslandData` with property0/priority1, then `DynamicIslandContent.addDynamicIslandView(data, false)`.
+- Refresh paints only the owned existing two regions; it does not call the OEM update method that can re-add content or restart timeouts.
+- Actual owned pre-draw starts the five-second lease. Startup, detach, dismiss, expiry, plugin unload and cancellation all terminate the same owned generation.
+- Exact object identity and key checks protect unrelated charging/device animations; busy native device content is not overwritten.
+- Original model earbud resources are loaded without icon tint or image color filters. Each `TimerTextEffectView` percentage uses its own threshold color, with original appearance/accessibility/image state restored on release.
+- The old notification manager is used only for proved-owned upgrade cleanup. It is not a display transport or fallback.
+
+This is implementation plus static contract evidence, not a claim of hardware rendering acceptance. Unknown or changed native schemas fail closed and report an explicit failure.
+
 **Morning follow-up:** full debug scope reload is prioritized over another hardware notification test. The old interface-only runner cannot replace module code inside the Bluetooth main hosts. The update path must accept authenticated old-build reports, explicitly authorize process-exit disruption, preflight all required hosts and verify replacement builds. This does not enable API102 hot reload or computer power operations.
 
 The current `BatteryIslandRenderer` still publishes a backing Android notification. Model-specific earbud icons and `enableFloat=false` separate icon/collapsing-card fixes from the stricter requested notification-free native animation. Existing `strong_toast_action` examples demonstrate another entry path, but do not establish its complete two-ear, update, cancellation and visibility contract for this ROM. Keep that adaptation separate rather than guessing new private template names.

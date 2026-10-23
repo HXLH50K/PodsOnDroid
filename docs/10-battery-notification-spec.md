@@ -12,6 +12,14 @@ The user's alpha4 observation was a standard notification/card first, followed b
 
 The alpha4 renderer is explicitly notification-backed through `NotificationManager`; hiding its tray entry or turning off a floating-card flag does not by itself implement a notification-free charging-style channel. The next prioritized iteration addresses complete debug scope reloading, replaces the icons with model-appropriate earbuds (generic earbud silhouettes when unknown), and disables ordinary focus expansion. A true no-notification animation path still requires a verified native lifecycle/payload contract, including two colored ear regions, update/cancel behavior and timing. Do not silently fall back to an ordinary notification or mark the stricter native-animation requirement complete.
 
+### Follow-up after alpha5 manual test
+
+The user reports full debug scope reload is effective, but a normal notification/card still precedes the island. The next presentation must use a native island path that does not publish an Android notification, not another attempt to adjust `enableFloat`/tray visibility.
+
+Earbud artwork must retain its **original pictorial material, shading and colors**. Do not apply `Icon.setTint`, an image color filter, or a threshold-colored silhouette to a known-model product image. Threshold color applies only to the corresponding left/right percentage text. Unknown models may use honest neutral earbud placeholders until identification arrives, then refresh the same presentation with the correct untinted images.
+
+Alpha6 implements this path through SystemUI's native device-island controller with no notification carrier. It uses the original images plus native colored percentage spans, owned pre-draw acknowledgment and fixed update/cancellation leases. This supersedes alpha4/alpha5's notification-backed implementation notes; actual no-banner presentation and five visible seconds are not accepted until the user verifies them.
+
 ## 1. Problem and evidence
 
 The user reports that the current connection notification **flashes briefly rather than remaining as a useful five-second island**. This is a failed presentation result, not an accepted implementation.

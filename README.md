@@ -2,9 +2,9 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-**Latest feedback, 2026-10-23:** alpha4 shows an ordinary notification/card before collapsing into the island, uses battery-shaped icons instead of earbuds, and its interface-only restart does not reload the Bluetooth hosts after updates. The immediate priority is **complete debug scope reload with actual new-build verification**. This is process restart, not API102 hot reload and not a phone reboot.
+**Alpha6, 2026-10-23:** the user reports full debug scope reload works. The remaining normal-notification-to-island transition is now addressed with a new **direct native device-island transport**, not another focus-notification flag change. Model-specific left/right artwork remains untinted and pictorial; threshold color applies to battery text only. Native rendering still requires the next user-led acceptance check.
 
-The next presentation changes use separate model-appropriate left/right earbud icons and disable ordinary focus expansion. The renderer still has a backing Android notification: that interim change is **not** completion of the requested pure charging-style native animation channel. That route needs a separately verified system contract rather than a guessed template or a hidden persistent notification.
+The battery path no longer creates a `Notification`, notification channel, or `StatusBarNotification`, and has no notification publication fallback. It sends bounded authenticated data to SystemUI, which creates owned native island content using the contract inspected in this phone's system APKs. Ordinary notification access is retained only to remove proved-owned older-version remnants.
 
 Alpha5 implements the priority debug reload path and passed **46 focused JVM tests** plus debug assembly. Alpha4's [build-only receipt](docs/04-delivery-plan.md#alpha4-package-receipt) remains historical; the [alpha5 record](docs/04-delivery-plan.md#14-alpha5-priority-full-debug-scope-reload) distinguishes local checks from live acceptance. No autonomous device restart, installation, headset operation or computer shutdown is part of this iteration.
 
@@ -33,12 +33,12 @@ Hardware-gated validation requires the user's AirPods 5 wireless-charging varian
 
 The debug app uses the same three declared scopes. Live restart behavior remains unverified. Alpha1's AboutPage automation was blocked by old Espresso reflection; test-only dependencies now use the official stable fix. No autonomous host-process restart or physical earbud manipulation is part of this iteration.
 
-## Next joint check: debug scope reload
+## Next joint check: direct native battery island
 
-1. After installing the next debug APK, open the module-loading diagnostics while the **old** module is still running in the hosts. Do not preemptively reboot just to make the new action available.
-2. When no call is active and Bluetooth interruption is acceptable, explicitly confirm the new full debug reload. The expected required hosts are Android Bluetooth, Xiaomi Bluetooth main and SystemUI; an observed Xiaomi `:ui` process is handled separately.
-3. Read the per-host result. Success requires replacement-process evidence and the currently installed build, not merely a successful signal. If a host stays old or disappears, report that exact outcome; do not loop restarts or change the framework automatically.
-4. Only after the reload path is understood, agree on a separate island-rendering round. Pure notification-free animation and the dedicated native control panel remain distinct follow-up work.
+1. Install alpha6, then use the now user-verified full DEBUG scope reload while no call is active and Bluetooth interruption is acceptable. Verify that the required three hosts report the new build.
+2. In one agreed round, reconnect the earbuds once. Expect direct native island animation with no preceding ordinary notification/card and no notification remaining after it closes.
+3. Confirm both earbud pictures retain their original shading/material. Only the respective percentage text should use the Low/Medium color rules.
+4. If nothing appears or the lifecycle is wrong, report that result before retrying. Native schema mismatch fails closed instead of falling back to a notification. No repeated automated phone tests or power actions are performed.
 
 The user has completed the initial basic-function check and requested continued development. Future hardware interactions still remain user-driven; hand off a verified preview or capture procedure rather than autonomously manipulating the headphones.
 

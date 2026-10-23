@@ -1,5 +1,22 @@
 # 07 Test device and Xiaomi native integration
 
+## Alpha6 direct native island evidence
+
+A later read-only copy of the installed system APKs confirmed:
+
+- SystemUI SHA-256: `f64985403bc3154768de001dc14c9aac680466b3b20558cd1f3e6ed83c234da4`.
+- SystemUI plugin SHA-256: `de51bd76933922fbd3c3baeb2b5bfeaee7013b43d5816759f2dcda35cb37a068`.
+- Process: `com.android.systemui`; the actual native controller is obtained from its dynamic-island plugin content after the erased `onPluginLoaded(Plugin, Context, PluginLifecycleManager)` callback returns.
+- Owner class: `com.android.systemui.statusbar.notification.DynamicIslandPluginController`; its public `context` field and content getter expose the instantiated plugin holder after normal startup loading.
+- Native contract: `DynamicIslandData()` with property0 and priority1, native dual-region ticker JSON and image extras, then `DynamicIslandContent.addDynamicIslandView(data, false)` / `removeDynamicIslandView(String)`.
+- Controller: `miui.systemui.dynamicisland.window.DynamicIslandWindowViewController`. Its normal update operation can re-add missing content and renew native timeouts, so alpha6 instead updates only the currently owned rendered regions.
+- Native colored percentage rendering uses `miuix.colorful.texteffect.TimerTextEffectView.updateTextWithNewAppearance(CharSequence, Integer)`, not merely a base TextView color call.
+- Owned timeout cleanup uses `DynamicIslandSafeguardsController.cancelDelayDeleted(String)` with current data-object identity protection.
+
+The implementation does not construct or publish a `Notification` or a synthetic `StatusBarNotification`. It does not spoof charger power state or alter genuine charging content. Old P.O.D.S. notification cleanup remains separate and ownership-checked.
+
+This survey copied only system APKs and performed local static analysis; it did not display an island, restart processes, pair/operate earbuds or change device settings. Native lifecycle and exact rendering remain for a joint user check. Captured APKs/decompiler copies are temporary local analysis inputs, not project deliverables.
+
 Investigation date: 2026-10-22. This is the record of a **prior read-only survey** of the user's rooted test phone: metadata queries, local APK extraction, and static analysis. That survey did not install a probe, invoke windows, change configuration, enable/disable modules, restart processes, or connect headphones. Concurrent implementation work must record its own later results rather than retroactively upgrading this evidence.
 
 The user subsequently supplied AirPods 5 wireless-charging/reported `1.0.0` and Xiaomi Open-ear Headphones Pro/reported `1.1.0.3`, and authorized future non-destructive tests. These are user reports, not firmware fields read from a connected headset.

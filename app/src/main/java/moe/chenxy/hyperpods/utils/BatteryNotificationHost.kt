@@ -64,17 +64,22 @@ internal class BatteryNotificationHost(private val context: Context) {
             addAction(LEGACY_TOAST)
             addAction(BatteryIslandContract.ACTION_VISIBLE)
             addAction(BatteryIslandContract.ACTION_DISMISSED)
+            addAction(BatteryIslandContract.ACTION_FAILED)
             addAction(BatteryIslandContract.ACTION_CONTROL_GAP)
         }
         context.registerReceiver(object : BroadcastReceiver() {
             override fun onReceive(receiveContext: Context, intent: Intent) {
-                val sender = when (intent.action) {
-                    BatteryIslandContract.ACTION_VISIBLE -> HyperPodsBroadcasts.SYSTEM_UI
-                    BatteryIslandContract.ACTION_DISMISSED -> HyperPodsBroadcasts.XIAOMI_BLUETOOTH
-                    else -> HyperPodsBroadcasts.BLUETOOTH
-                }
-                if (!HyperPodsBroadcasts.isTrusted(context, this, sender)) return
-                if (intent.action == BatteryIslandContract.ACTION_VISIBLE && sentFromPackage != sender) return
+                val nativeReply = intent.action in setOf(BatteryIslandContract.ACTION_VISIBLE,
+                    BatteryIslandContract.ACTION_DISMISSED, BatteryIslandContract.ACTION_FAILED)
+                if (nativeReply) {
+                    val uid = runCatching {
+                        context.packageManager.getPackageUid(HyperPodsBroadcasts.SYSTEM_UI, 0)
+                    }.getOrDefault(-1)
+                    if (!BatteryIslandContract.trustedIdentity(sentFromUid, sentFromPackage, uid,
+                            setOf(HyperPodsBroadcasts.SYSTEM_UI, BatteryIslandContract.SYSTEM_UI_PLUGIN)) ||
+                        intent.`package` != HyperPodsBroadcasts.XIAOMI_BLUETOOTH ||
+                        intent.getIntExtra(BatteryIslandContract.SCHEMA, -1) != BatteryIslandContract.VERSION) return
+                } else if (!HyperPodsBroadcasts.isTrusted(context, this, HyperPodsBroadcasts.BLUETOOTH)) return
                 try {
                     when (intent.action) {
                         CONNECTED -> connect(intent)
@@ -83,9 +88,11 @@ internal class BatteryNotificationHost(private val context: Context) {
                         LEGACY_TOAST -> retireOwned()
                         BatteryIslandContract.ACTION_CONTROL_GAP -> controlGap(intent)
                         BatteryIslandContract.ACTION_VISIBLE -> visible(intent)
-                        BatteryIslandContract.ACTION_DISMISSED -> {
-                            if (intent.getStringExtra(BatteryIslandContract.PRESENTATION_TOKEN) == active?.token) {
-                                finishPresentation("user_dismissed")
+                        BatteryIslandContract.ACTION_DISMISSED, BatteryIslandContract.ACTION_FAILED -> {
+                            if (intent.getStringExtra(BatteryIslandContract.PRESENTATION_TOKEN) == active?.token &&
+                                intent.getLongExtra(BatteryIslandContract.AUDIO_EVENT, -1) == active?.audioEvent) {
+                                finishPresentation(if (intent.action == BatteryIslandContract.ACTION_FAILED)
+                                    "native_failed" else "native_dismissed")
                             }
                         }
                     }
@@ -239,7 +246,6 @@ internal class BatteryNotificationHost(private val context: Context) {
         val current = session ?: return
         finishPresentation("superseded")
         val presentation = BatteryIslandRenderer.Presentation(
-            PodsNotificationKey("${BuildConfig.APPLICATION_ID}:audio:${current.device.address}", 10004),
             UUID.randomUUID().toString(), current.event.id, SystemClock.elapsedRealtime(),
         )
         active = presentation
@@ -247,7 +253,7 @@ internal class BatteryNotificationHost(private val context: Context) {
         try {
             renderer.post(presentation, content(), first = true)
             scheduleExpiry(presentation)
-            Log.i(TAG, "Battery card submitted; waiting for native dual-ear first-visible callback")
+            Log.i(TAG, "Native island IPC submitted; waiting for dual-ear pre-draw acknowledgment")
         } catch (error: Exception) {
             Log.e(TAG, "Battery presentation failed; event will not replay", error)
             finishPresentation("post_failed")
@@ -362,7 +368,8 @@ internal class BatteryNotificationHost(private val context: Context) {
         val previous = active
         active = null
         if (previous != null) {
-            cancel(previous.key)
+            try { renderer.cancel(previous) }
+            catch (error: Exception) { Log.e(TAG, "Native cancellation IPC failed; SystemUI watchdog remains", error) }
             Log.i(TAG, "Battery presentation ended: $reason")
         }
     }
@@ -377,7 +384,6 @@ internal class BatteryNotificationHost(private val context: Context) {
             val ownership = OwnedPodsNotifications(BuildConfig.APPLICATION_ID)
             for (entry in manager.activeNotifications) {
                 val key = PodsNotificationKey(entry.tag ?: continue, entry.id)
-                if (key == active?.key) continue
                 if (!ownership.isNamespaced(key) && !ownership.isLegacyCandidate(key)) continue
                 val target = entry.notification.extras.getCharSequence("miui.targetPkg")?.toString()
                 val intentPackages = mutableSetOf<String>()
