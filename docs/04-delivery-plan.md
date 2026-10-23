@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-23 evening:** the user accepts the overall alpha12 UI, defers miscellaneous polish, and reports that all secondary-page dropdowns fail to open. Direct app-only UI testing is authorized for this repair; background log collection is not wanted for routine UI work. Section 24 records the alpha13 root popup-host fix and direct-device evidence. No scope restart, live headphone-value change or earbud operation is authorized by this UI check.
+**Current status, 2026-10-23 evening:** alpha13's shared dropdown-host repair has direct phone UI evidence. The user requested pushing completed work and auditing remaining TODOs; miscellaneous UI work is explicitly excluded from the rest of this session. Section 25 separates completed implementation from outstanding functional/acceptance/release work. This audit is not authorization to start another physical test round or resume UI polish.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -1134,3 +1134,42 @@ claim every possible dismissal gesture has been tested.
   screenshot/APK staging files and local dependency-inspection scratch.
   The main app remains installed, with no popup left open.
 - No background collector remains. Issue #1 and deferred UI polish are unchanged.
+
+## 25. Post-alpha13 backlog audit
+
+The user requested publishing the accumulated work and checking the remaining
+TODOs, with **no further miscellaneous UI work in this session**.
+
+Four stale alpha4 session tasks still appeared open: battery policy, bilingual
+settings wiring, five-second presentation and preview packaging. Their
+implementations were completed by the later battery milestones and package
+receipts, so they were reconciled as done. This does not mark every battery
+edge-case acceptance test as passed. Historical no-test/shutdown wording must
+not be revived as a current instruction; the shutdown request was withdrawn.
+
+### Remaining work
+
+| Priority / stage | Task | Evidence and boundary |
+| --- | --- | --- |
+| High, functional | [#1: in-case noise control](https://github.com/HXLH50K/PodsOnDroid/issues/1) | Shared app/panel issue, cause unconfirmed; investigate readiness, transport and device acceptance rather than assume a firmware rule |
+| Engineering baseline | Restore CI regression health | Broader controller tests have the documented null-mock-address failures; focused UI test success does not make CI green |
+| Joint acceptance | Battery reminder matrix | Threshold crossings, initial-low suppression, independent ears/switches, unknown/partial reports, charge/reconnect/session dedup still need evidence |
+| Joint acceptance | Retained features and stability/power | Single-ear use, wear/media ownership, conversation/manual volume, route safety, idle/lock/process recovery, 24-hour mixed use and A/B power |
+| Release preparation | Independent production signing | Password custody and encrypted backup first; create a new isolated production identity, never reuse/commit private keys |
+| Release gate | Private release readiness | Verify installation/import, signed upgrade, disable/rollback, diagnostic redaction and inherited-license obligations after the preceding gates |
+
+The release-readiness task depends on the functional, CI, acceptance and signing
+gates. Those tasks are not all prerequisites for each other and are not implied
+to have started by this audit.
+
+### Deferred, not current session work
+
+- UI polish, additional glass effects and cosmetic inconsistencies.
+- Native MiLink reuse and discovery/first-pairing popup research remain separate
+  deferred work; the accepted app-owned panel is not mislabeled as native reuse.
+- Optional KSU packaging, rootless/legacy support and unrelated feature expansion
+  remain outside the current workstream.
+
+The packaged alpha13 APK is unchanged by this documentation checkpoint. No
+phone operation, test rerun, dependency change or functional modification was
+performed for the backlog audit.

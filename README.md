@@ -4,6 +4,11 @@ A private HyperPods-derived Android project for improving the AirPods 5 experien
 
 ## Current checkpoint: alpha13 dropdown repair
 
+**Session scope:** the user requested pushing the completed work and auditing
+remaining TODOs. Miscellaneous UI polish is explicitly deferred to another
+session. The remaining functional/verification/release work is summarized in
+[the current backlog](docs/04-delivery-plan.md#25-post-alpha13-backlog-audit).
+
 The user accepts the overall alpha12 UI and defers miscellaneous polish. The
 blocking secondary-page dropdown problem is repaired: the custom app frame
 had omitted Miuix's shared popup host that its original Scaffold provided.
