@@ -41,6 +41,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun AboutPage(
     padding: PaddingValues,
     diagnostics: Bundle? = null,
+    isActive: Boolean = true,
 ) {
     val context = LocalContext.current
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -75,6 +76,9 @@ fun AboutPage(
                         )
                     }
                 }
+            }
+            item(key = "appearance") {
+                AppearanceSettings(isActive)
             }
             item(key = "battery_notifications") {
                 BatteryNotificationSettingsPanel()

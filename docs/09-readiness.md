@@ -1,13 +1,19 @@
 # 09 Readiness and stage boundaries
 
-**Latest handoff, 2026-10-23 afternoon:** alpha8 implements an app-owned
-Interconnectivity floating panel and scoped AirPods artwork. The user paused
-testing and requested source transfer to another computer because the old
-development signing key is unavailable here. The 22 focused tests/build passed;
-device installation and acceptance have not happened. Start with the
-[transfer checklist](04-delivery-plan.md#cross-machine-transfer-checklist).
-The early-stage readiness records below are historical, not the current task
-or authorization to install/restart/test.
+**Latest checkpoint, 2026-10-23 evening:** alpha8/alpha9 were deployed from the
+original signing workstation. The user accepts the basic alpha9 floating-panel
+experience, not final aesthetic polish or native MiLink reuse. The in-case
+noise-control defect shared by the app and panel is tracked as
+[#1](https://github.com/HXLH50K/PodsOnDroid/issues/1), recorded and deliberately
+not fixed in the next milestone. Work now proceeds to M4's opt-in main-app
+Liquid Glass prototype: About-page sample without headphones, main-overview
+surfaces, reduced-transparency/readability/power/background gates and unchanged
+control semantics. Full debug scope reload and the brief native island have
+already been user-verified. Production signing, full stability/power acceptance
+and native MiLink integration are not complete.
+
+The early-stage readiness and restart notes below are historical, not the
+current task or authorization to repeat device operations.
 
 Updated: 2026-10-22. Authority: [confirmed decisions](05-decisions.md), including the later private-repository and language instructions.
 

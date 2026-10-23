@@ -190,7 +190,7 @@ fun PodDetailPage(
                     while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
                 }
             }
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        GlassPage(active = isActive && page == 0, modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 state = listStates[page],
                 // Keep the scroll/focus viewport between the fixed bars. Item-only
@@ -201,7 +201,7 @@ fun PodDetailPage(
             ) {
                 if (page == 0) {
                     item(key = "home_header") {
-                        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                        GlassHero(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                             Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(podsInfo?.name?.takeIf { it.isNotBlank() }
                                     ?: deviceName.takeIf { it.isNotBlank() } ?: "AirPods",

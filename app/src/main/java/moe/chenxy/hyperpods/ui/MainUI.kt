@@ -414,6 +414,7 @@ fun AppHorizontalPager(
 
                 1 -> AboutPage(
                     diagnostics = diagnostics,
+                    isActive = pagerState.currentPage == 1,
                     padding = padding
                 )
             }

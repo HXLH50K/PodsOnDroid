@@ -59,6 +59,14 @@ The island must appear **briefly for a real connection**, then leave **no persis
 
 ## 4. Native versus fallback panel
 
+**2026-10-23 alpha9 acceptance:** the user says the current floating panel
+basically satisfies the requirement despite remaining visual roughness. Retain
+it as the accepted functional baseline and proceed to the planned M4 app
+prototype rather than further native-panel experimentation in this iteration.
+This does not turn the app-owned window into native MiLink reuse. The shared
+in-case noise-control problem is recorded as issue #1 and deferred by request;
+do not alter control readiness or pretend it was fixed by UI styling.
+
 **2026-10-23 evening feedback:** alpha8's floating entry is accepted, but its
 visual design is not. The user supplied a Xiaomi headphone-panel reference and
 prefers actual MiLink reuse. Alpha9 uses native Android window blur and a

@@ -2,7 +2,34 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha9 reference-style panel
+## Current checkpoint: alpha10 opt-in app appearance prototype
+
+The user accepted alpha9's basic floating-panel experience, while noting that
+its aesthetics still need refinement. A shared control defect is recorded as
+[#1](https://github.com/HXLH50K/PodsOnDroid/issues/1): noise-control changes fail
+with the earbuds in the case and reportedly require both earbuds to be removed,
+in both the app and panel. Its cause is unconfirmed and it is **not fixed** here,
+as the user requested recording it before continuing the plan.
+
+The next planned M4 milestone is a small real-app Liquid Glass prototype.
+Alpha10 adds **About > Appearance > Liquid Glass preview**, off by default, with
+a headphone-free sample and a separate Reduce transparency choice. The effect
+is limited to the main headphone overview, not the panel, settings subpages or
+SystemUI. Existing labels, reports, capabilities and command callbacks remain
+unchanged.
+
+The existing Haze dependency renders a static layered backdrop and glass
+surfaces. No continuous animation or background timer is added. Effects are
+disabled offscreen/in the background, under power saving/high-contrast text, or
+when transparency is reduced. Appearance preferences remain app-local and are
+not transmitted to the Bluetooth hosts.
+
+Local evidence: **23 focused JVM tests passed**, including all 64 combinations
+of the effect policy gates; assembly and Lint passed. Visual approval and broader
+M4 stability/power acceptance are still pending. See
+[the M4 prototype record](docs/04-delivery-plan.md#21-alpha9-acceptance-known-control-defect-and-m4-app-prototype).
+
+## Previous checkpoint: alpha9 reference-style panel
 
 The user accepted alpha8's floating-panel entry but rejected its dashboard-like
 appearance, providing a Xiaomi headphone-card screenshot and preferring MiLink

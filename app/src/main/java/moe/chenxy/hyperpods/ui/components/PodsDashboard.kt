@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import moe.chenxy.hyperpods.R
+import moe.chenxy.hyperpods.ui.LocalGlassSurface
+import moe.chenxy.hyperpods.ui.glassSurface
 import moe.chenxy.hyperpods.pods.EarDetectionStatus
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AirPodsBase
@@ -67,7 +69,9 @@ fun DashboardDivider(modifier: Modifier = Modifier) {
 
 @Composable
 fun DashboardGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Card(modifier = modifier.fillMaxWidth(), cornerRadius = 24.dp, content = content)
+    val glass = LocalGlassSurface.current
+    if (glass == null) Card(modifier = modifier.fillMaxWidth(), cornerRadius = 24.dp, content = content)
+    else Column(modifier.fillMaxWidth().glassSurface(glass), content = content)
 }
 
 @Composable
@@ -246,8 +250,10 @@ fun DashboardNoise(mode: NoiseControlMode?, onSelect: (NoiseControlMode) -> Unit
         R.string.dashboard_transparency, R.string.adaptive_title)
     val icons = listOf(R.drawable.dashboard_mode_off, R.drawable.dashboard_mode_anc,
         R.drawable.dashboard_mode_transparency, R.drawable.dashboard_mode_adaptive)
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp))
-        .background(MiuixTheme.colorScheme.surface).padding(4.dp).selectableGroup()) {
+    val glass = LocalGlassSurface.current
+    val surface = if (glass == null) Modifier.clip(RoundedCornerShape(24.dp)).background(MiuixTheme.colorScheme.surface)
+        else Modifier.glassSurface(glass)
+    Row(Modifier.fillMaxWidth().then(surface).padding(4.dp).selectableGroup()) {
         modes.forEachIndexed { index, value ->
             val selected = value == mode
             val enabled = index + 1 in allowedModes

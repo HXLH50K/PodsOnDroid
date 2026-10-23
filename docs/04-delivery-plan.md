@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-23 evening:** the user confirmed alpha8 opens the expected floating panel, but rejected its visual design and provided a Xiaomi headphone-panel reference, preferring MiLink reuse. Section 20 records the alpha9 reference-style implementation and explicit native-reuse boundary. Alpha8 deployment is historical; no automatic scope restart or earbud operation is authorized.
+**Current status, 2026-10-23 evening:** the user accepts alpha9 as basically meeting the floating-panel requirement and asks to record the shared in-case noise-control issue before continuing the plan. Section 21 records issue #1 and the next M4 opt-in app appearance prototype. The defect is not fixed or declared a firmware limitation. No automatic scope restart or earbud operation is authorized.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -823,3 +823,56 @@ as an accepted native MiLink implementation.
   and `Art_Chen` before handoff. The user reloads scopes, opens the panel and
   judges layout/glass/artwork; control interaction is user-operated. Native
   MiLink reuse is still explicitly unimplemented, not silently claimed.
+
+## 21. Alpha9 acceptance, known control defect and M4 app prototype
+
+The user accepts the current floating-panel function and basic appearance,
+while noting remaining aesthetic roughness. The alpha9 capture confirms native
+window blur was enabled when the user opened the panel. It also contains old
+SystemUI-PID artwork errors; installation alone is not evidence that the new
+hook was loaded. Do not claim fresh artwork-hook acceptance from those logs.
+The collector has been stopped; no repeated device round was initiated.
+
+### Open high-priority issue: noise control with earbuds in the case
+
+Tracked in private [issue #1](https://github.com/HXLH50K/PodsOnDroid/issues/1).
+
+- The user reports noise-control changes fail while earbuds are in the case.
+- The full app and floating panel are both affected; this is not panel-only.
+- Removing both earbuds reportedly allows switching.
+- Lid position, exact mode pair, single-ear result and control readiness are
+  unrecorded. Root cause is unknown: do not assert a Bluetooth, UI or firmware
+  explanation without evidence.
+- The user explicitly requested recording this issue and continuing the next
+  milestone. No control-path workaround, gating change, forced command, mode
+  write or headphone operation is included in alpha10.
+
+### Planned next step: M4 real-app Liquid Glass prototype
+
+This is the first incremental app-appearance milestone, not completion of all
+M4 work. Alpha10 adds an **off-by-default** Liquid Glass preview in About >
+Appearance. A sample card works without headphones and contains no simulated
+battery, connection or mode data. Enabling it affects only the headphone
+overview's backdrop, header and groups. Settings subpages, the accepted panel,
+SystemUI and the Bluetooth controller are not restyled or rewritten.
+
+The implementation uses the existing Haze dependency and static background
+layers. No shaders or UI loops are injected into Bluetooth, no continuous
+animation is added, and no API/framework migration or new scope is needed.
+Power saving, high-contrast text, explicit reduced transparency, non-visible
+pages and a non-resumed app all disable blur effects. Solid surfaces retain
+the existing theme's foreground colors and the same accessibility/control
+semantics. Appearance choices use a separate local preference file and never
+enter the headphone policy/command channel. Persistence failures are logged
+and visibly reported.
+
+Local validation: **23 JVM tests passed** (6 appearance, 7 mode-state,
+7 settings, 3 freshness); the appearance policy enumerates all 64 gate
+combinations. Debug assembly and Android Lint passed. No in-case defect
+resolution, screenshot acceptance or measured power improvement is claimed.
+
+Next independent check requires no headphones or scope reload: open About >
+Appearance, enable the preview and compare reduced transparency on/off.
+Connected-home appearance can be checked during ordinary use. Further
+24-hour use, power comparison, accessibility/large-font coverage, retained
+features and independent production signing remain later M4 gates.
