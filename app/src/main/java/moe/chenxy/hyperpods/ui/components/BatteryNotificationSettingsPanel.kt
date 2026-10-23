@@ -98,7 +98,6 @@ fun BatteryNotificationSettingsGroup(
     val preview = draft ?: settings
 
     Column(modifier.fillMaxWidth()) {
-        DashboardSection(stringResource(R.string.battery_notifications_title))
         DashboardGroup {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.battery_notifications_summary),

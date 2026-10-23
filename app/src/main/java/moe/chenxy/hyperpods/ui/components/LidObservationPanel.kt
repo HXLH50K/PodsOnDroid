@@ -33,19 +33,21 @@ import moe.chenxy.hyperpods.utils.LidObservationSession
 import top.yukonga.miuix.kmp.basic.BasicComponent
 
 @Composable
-fun LidObservationPanel() {
+fun LidObservationPanel(isActive: Boolean = true) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val show = remember { mutableStateOf(false) }
     val visible by rememberUpdatedState(show.value)
+    val active by rememberUpdatedState(isActive)
     val capture = remember(context) { LidObservationCapture(context.applicationContext) }
     val state by capture.state.collectAsState()
     val running = state.status == LidObservationCapture.Status.RUNNING
     val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        if (visible && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) capture.start()
+        if (visible && active && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) capture.start()
     }
-    LaunchedEffect(show.value) {
-        if (!show.value) capture.stop()
+    LaunchedEffect(show.value, isActive) {
+        if (!show.value || !isActive) capture.stop()
+        if (!isActive) show.value = false
     }
     DisposableEffect(capture, lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
@@ -58,7 +60,7 @@ fun LidObservationPanel() {
         }
     }
     BasicComponent(title = stringResource(R.string.lid_observation_title),
-        summary = stringResource(R.string.lid_observation_summary), onClick = { show.value = true })
+        summary = stringResource(R.string.lid_observation_summary), enabled = isActive, onClick = { show.value = true })
     CustomSuperBottomSheet(show = show, title = stringResource(R.string.lid_observation_title),
         onDismissRequest = { capture.stop(); show.value = false }) {
         Column(Modifier.fillMaxWidth().heightIn(max = 480.dp).verticalScroll(rememberScrollState())) {

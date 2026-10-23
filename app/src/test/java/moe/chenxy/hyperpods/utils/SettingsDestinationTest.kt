@@ -4,6 +4,26 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class SettingsDestinationTest {
+    @Test fun groupedMenusPreserveEveryAvailableDestinationExactlyOnce() {
+        for (debug in listOf(false, true)) for (menu in listOf(SettingsDestination.ROOT, SettingsDestination.TOOLS)) {
+            val grouped = menu.groups(debug).flatten()
+            assertEquals(menu.children(debug).toSet(), grouped.toSet())
+            assertEquals(grouped.size, grouped.toSet().size)
+        }
+        assertEquals(listOf(SettingsDestination.NOTIFICATIONS, SettingsDestination.APPEARANCE),
+            SettingsDestination.ROOT.groups(false).first())
+        assertEquals(listOf(SettingsDestination.TOOLS, SettingsDestination.ABOUT),
+            SettingsDestination.ROOT.groups(false).last())
+    }
+
+    @Test fun depthTracksTheActualHierarchyNotEnumDeclarationOrder() {
+        assertEquals(0, SettingsDestination.ROOT.depth)
+        assertEquals(1, SettingsDestination.ABOUT.depth)
+        assertEquals(1, SettingsDestination.TOOLS.depth)
+        assertEquals(2, SettingsDestination.CONNECTION.depth)
+        assertEquals(2, SettingsDestination.MODULES.depth)
+    }
+
     @Test fun rootContainsOnlyAppLevelCategories() {
         assertEquals(listOf(SettingsDestination.NOTIFICATIONS, SettingsDestination.APPEARANCE,
             SettingsDestination.ABOUT, SettingsDestination.TOOLS), SettingsDestination.ROOT.children(true))

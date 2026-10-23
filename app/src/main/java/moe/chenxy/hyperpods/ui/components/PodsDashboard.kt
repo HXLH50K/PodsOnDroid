@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -91,12 +92,19 @@ fun DashboardSection(title: String) {
         modifier = Modifier.padding(start = 8.dp, top = 16.dp, bottom = 8.dp))
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DashboardBattery(params: BatteryParams, ears: EarDetectionParams, model: AirPodsBase?, diagnostics: Bundle? = null,
     showUnknownCase: Boolean = false) {
     val showCase = showUnknownCase || params.case?.let { it.isConnected && it.battery in 0..100 } == true
-    Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Box(Modifier.fillMaxWidth().height(148.dp), contentAlignment = Alignment.Center) {
+        Image(painterResource(model?.budsRes ?: R.drawable.dashboard_headphones), null,
+            Modifier.size(if (model == null) 64.dp else 140.dp),
+            colorFilter = if (model == null) ColorFilter.tint(MiuixTheme.colorScheme.onSurfaceVariantSummary) else null)
+    }
+    FlowRow(Modifier.fillMaxWidth().padding(bottom = 4.dp),
+        maxItemsInEachRow = if (LocalDensity.current.fontScale > 1.3f) 2 else 3,
+        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         BatteryColumn(params.left, ears.left, model?.leftBudsRes ?: R.drawable.dashboard_headphones,
             stringResource(R.string.dashboard_left), Modifier.weight(1f), diagnostics, "left_battery_at", model == null)
         BatteryColumn(params.right, ears.right, model?.rightBudsRes ?: R.drawable.dashboard_headphones,
@@ -110,17 +118,19 @@ fun DashboardBattery(params: BatteryParams, ears: EarDetectionParams, model: Air
 private fun BatteryColumn(params: PodBatteryParams?, ear: Byte?, image: Int, title: String, modifier: Modifier,
     diagnostics: Bundle?, timeKey: String, generic: Boolean) {
     val available = params?.isConnected == true && params.battery in 0..100
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.height(104.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Image(painterResource(image), title, modifier = Modifier.size(if (generic) 48.dp else 104.dp),
+    Column(modifier.clip(RoundedCornerShape(20.dp))
+        .background(MiuixTheme.colorScheme.onSurface.copy(alpha = .055f)).padding(horizontal = 8.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Image(painterResource(image), null, modifier = Modifier.size(18.dp),
                 colorFilter = if (generic) ColorFilter.tint(MiuixTheme.colorScheme.onSurfaceVariantSummary) else null)
+            Text(title, fontSize = 12.sp, lineHeight = 16.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         }
-        Text(title, fontSize = 14.sp, lineHeight = 18.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             IconBattery(available, params?.isCharging == true)
             Text(if (available) "${params!!.battery}%" else "—",
-                fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold)
+                fontSize = 19.sp, lineHeight = 25.sp, fontWeight = FontWeight.Medium)
         }
         val wear = StatusFreshness.wear(diagnostics?.getBoolean("wear") == true,
             diagnostics?.getLong("wear_report_at") ?: 0, diagnostics?.getString("connection"))
@@ -163,18 +173,6 @@ private fun IconBattery(available: Boolean, charging: Boolean) {
         contentDescription = if (charging) stringResource(R.string.dashboard_charging) else null,
         tint = if (available) Color(0xFF147F66) else MiuixTheme.colorScheme.onSurfaceVariantSummary,
         modifier = Modifier.size(20.dp).rotate(90f))
-}
-
-@Composable
-fun DashboardPageHeader(title: String, onBack: (() -> Unit)? = null) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 88.dp).padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        if (onBack != null) IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-            Icon(MiuixIcons.Useful.Back, stringResource(R.string.dashboard_back), modifier = Modifier.size(22.dp))
-        }
-        Text(title, fontSize = if (onBack == null) 34.sp else 28.sp, lineHeight = 42.sp,
-            modifier = Modifier.padding(start = if (onBack == null) 8.dp else 0.dp))
-    }
 }
 
 @Composable

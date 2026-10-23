@@ -1,5 +1,26 @@
 # 03 Architecture
 
+## Current app page framework: alpha12
+
+The user accepted ordinary blur as an interim material and prioritized overall
+UI structure. `PageScaffold` reuses the installed Miuix 0.6.1 `TopAppBar` and
+`SmallTopAppBar`; the child navigation icon is outside the scrolling viewport,
+not a list item. Status-bar insets are applied once. Content retains the
+floating-dock clearance and bring-into-view policy.
+
+`PageTransitionHost` is shared by settings and headphone navigation, including
+About. It retains saveable state per destination, applies a consistent
+depth-based enter/pop treatment, and hides/disables outgoing interactions.
+Focus is cleared only for the active tab on destination changes. Head-motion
+and lid-observation UI sessions are deactivated when their page stops being
+current; delayed permission results cannot start a departed capture.
+
+The selected 260 ms motion and 140 ms exit fade are project tuning values, not
+claims of a system design standard. Compose motion-duration handling remains
+in use. This does not implement finger-progress-driven predictive back or
+claim measured visual acceptance. The previous research below motivated this
+framework; special glass/refraction work stays deferred.
+
 ## App design and material survey (2026-10-23)
 
 Scope: research first, following the user's rejection of alpha11 and clarification

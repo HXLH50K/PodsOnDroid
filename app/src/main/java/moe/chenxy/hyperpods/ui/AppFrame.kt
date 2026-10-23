@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
@@ -21,6 +22,8 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 internal fun AppFrame(pager: PagerState, content: @Composable (PaddingValues) -> Unit) {
     val state = remember { HazeState() }
+    val focus = LocalFocusManager.current
+    LaunchedEffect(pager.targetPage) { focus.clearFocus() }
     val navigation = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottom = navigation + (FloatingDockLayout.HEIGHT_DP + FloatingDockLayout.MARGIN_DP * 2).dp

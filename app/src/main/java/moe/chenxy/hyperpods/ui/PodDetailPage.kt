@@ -4,16 +4,10 @@ import android.os.Bundle
 import android.util.Log
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.progressSemantics
@@ -43,9 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.paneTitle
@@ -57,7 +48,8 @@ import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.ui.components.DashboardBattery
 import moe.chenxy.hyperpods.ui.components.DashboardHero
-import moe.chenxy.hyperpods.ui.components.DashboardPageHeader
+import moe.chenxy.hyperpods.ui.components.PageScaffold
+import moe.chenxy.hyperpods.ui.components.PageTransitionHost
 import moe.chenxy.hyperpods.ui.components.dashboardConnectionStatus
 import moe.chenxy.hyperpods.ui.components.DashboardDivider
 import moe.chenxy.hyperpods.ui.components.DashboardLink
@@ -162,42 +154,19 @@ fun PodDetailPage(
     // Keep every page's saveable state outside the animated content. Switching the
     // content key must not discard the previous page's scroll position.
     val listStates = listOf(rememberLazyListState(), rememberLazyListState(), rememberLazyListState())
-    val travel = with(LocalDensity.current) { 28.dp.roundToPx() }
-    AnimatedContent(
-        targetState = detailPage.takeIf { it in 0..2 } ?: 0,
-        modifier = Modifier.fillMaxSize().clipToBounds(),
-        transitionSpec = {
-            val direction = if (targetState < initialState) -1 else 1
-            ((fadeIn(tween(220)) + slideInHorizontally(tween(220, easing = FastOutSlowInEasing)) { direction * travel })
-                togetherWith (fadeOut(tween(120)) + slideOutHorizontally(tween(220, easing = FastOutSlowInEasing)) { -direction * travel / 2 }))
-                .using(null)
-        },
-        label = "SettingsPage",
-    ) { page ->
+    PageTransitionHost(detailPage.takeIf { it in 0..2 } ?: 0,
+        { if (it == 0) 0 else 1 }, isActive) { page, current ->
         val pageTitle = stringResource(when (page) {
             1 -> R.string.dashboard_more
             2 -> R.string.dashboard_device_info
             else -> R.string.dashboard_headphones
         })
-        val interaction = if (page == detailPage) Modifier.semantics { paneTitle = pageTitle }
-            else Modifier.clearAndSetSemantics {}.pointerInput(Unit) {
-                // The outgoing page remains visible briefly, but must not trigger
-                // stale setting writes or duplicate accessibility actions.
-                awaitPointerEventScope {
-                    while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
-                }
-            }
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        PageScaffold(pageTitle, padding, if (page == 0) null else ::back, current) { bodyPadding ->
             LazyColumn(
                 state = listStates[page],
-                modifier = Modifier.widthIn(max = 680.dp).fillMaxSize()
-                    .padding(top = padding.calculateTopPadding()).clipToBounds()
-                    .focusProperties { canFocus = page == detailPage && isActive }.then(interaction),
-                contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 24.dp),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = 8.dp, bottom = bodyPadding.calculateBottomPadding() + 24.dp),
             ) {
-                item(key = "page_title") {
-                    DashboardPageHeader(pageTitle, if (page == 0) null else ::back)
-                }
                 if (page == 0) {
                     item(key = "home_header") {
                         DashboardHero(diagnostics?.getBoolean("ready") == true,

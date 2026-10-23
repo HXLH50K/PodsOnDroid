@@ -1,5 +1,9 @@
 <resources>
     <string name="settings_title">设置</string>
+    <string name="settings_group_app">应用行为</string>
+    <string name="settings_group_support">帮助与信息</string>
+    <string name="settings_group_diagnostics">诊断与维护</string>
+    <string name="settings_group_tests">测试工具</string>
     <string name="settings_tools">高级与调试</string>
     <string name="settings_modules">模块与作用域重启</string>
     <string name="settings_lid_observation">开盖观测</string>

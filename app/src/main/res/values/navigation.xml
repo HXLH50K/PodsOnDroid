@@ -1,5 +1,9 @@
 <resources>
     <string name="settings_title">Settings</string>
+    <string name="settings_group_app">App behavior</string>
+    <string name="settings_group_support">Support &amp; information</string>
+    <string name="settings_group_diagnostics">Diagnostics &amp; maintenance</string>
+    <string name="settings_group_tests">Testing tools</string>
     <string name="settings_tools">Advanced &amp; diagnostics</string>
     <string name="settings_modules">Module &amp; scope reload</string>
     <string name="settings_lid_observation">Case observation</string>

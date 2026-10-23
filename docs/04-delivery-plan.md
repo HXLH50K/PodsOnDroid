@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-23 evening:** the user rejects alpha10's UI interpretation and requests a full app redesign using the latest Keimi screenshot. Old UI retention and a legacy/new switch are explicitly unnecessary. Section 22 records the new Headphones/Settings hierarchy, frosted dock, consolidated About and nested tools. The accepted alpha9 panel and unresolved issue #1 are unchanged. No automatic scope restart or earbud operation is authorized.
+**Current status, 2026-10-23 evening:** after the design/API survey, the user prioritized the overall UI and accepted ordinary blur as an interim effect. Alpha12 unifies fixed child navigation, page transitions and content hierarchy while retaining the agreed category split. Section 23 records this independent milestone. The accepted floating panel and unresolved issue #1 are unchanged. No automatic scope restart or earbud operation is authorized.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -988,3 +988,58 @@ is required for the menu/appearance check.
   the app; it does not require scope reload just to inspect these pages.
 - The raw reference and local logs are not in Git. Final visual acceptance and
   real keyboard/large-font behavior remain user checks. Issue #1 stays open.
+
+## 23. Alpha12 shared page frame, motion and hierarchy
+
+User direction: special Xiaomi/liquid-glass rendering is not a prerequisite.
+Use ordinary blur if necessary and fix the overall UI first. No new effect
+library or dependency upgrade was introduced.
+
+### Implemented structure
+
+- `PageScaffold` uses the installed Miuix 0.6.1 large/root and small/child app-bar
+  components. Child back icons are explicit, high-contrast 48 dp actions in a
+  fixed toolbar outside the `LazyColumn`; scrolling cannot remove them.
+- Headphones, Settings, About and the disconnected page share the same inset
+  and toolbar rules. Nested settings still return via their real parent; root
+  pages do not display a misleading Up action.
+- Settings categories are grouped into App behavior and Support & information.
+  Tools group diagnostics/maintenance separately from tests. Rows have consistent
+  icon, text, spacing and disclosure affordances rather than each being an
+  oversized standalone tile.
+- The headphone hero now has one untinted product image and compact per-ear/case
+  state tiles. Larger font scales allow tiles to wrap. Availability, charging,
+  wear and retained-value rules remain unchanged.
+- The duplicate notification-page section heading was removed; its fixed page
+  toolbar supplies the title. Existing policy storage/publish helpers are unchanged.
+
+### Navigation behavior
+
+- `PageTransitionHost` supplies the same enter/pop motion for Settings, About
+  and headphone pages. The 260 ms transition and 140 ms exit fade are local
+  tuning choices, not claimed system-standard values.
+- Per-page saveable state and independent list positions remain outside transient
+  content lifetimes. Top-level tab switching keeps its existing peer navigation.
+- Outgoing pages lose pointer, accessibility and focus interaction while still
+  being drawn. Only the active tab clears focus when its destination changes.
+- Head-motion and lid observation UI are inactive as soon as their page stops
+  being current. Pending permission callbacks also check activity before
+  beginning a capture. No observation/test is started merely by rendering a menu.
+- Normal system Back and visible Up both navigate through the same hierarchy.
+  This milestone does not claim interactive predictive-back progress support.
+
+### Validation boundary
+
+33 focused JVM tests passed: 5 page motion, 6 settings topology/grouping,
+5 dock focus clearance, 7 mode-state, 7 settings and 3 freshness cases. App and
+Android UI-test APKs build, and Lint passed without errors. Updated UI tests
+cover a pinned About return button after scrolling, nested Tools return order,
+state restoration and interruptible/no-motion settings transitions; they are
+compiled only, not run on the physical phone.
+
+No Bluetooth command/readiness code, native hook, accepted panel, app-policy
+storage or dependency version changed. Issue #1 remains open. There was no
+phone UI automation, scope restart, volume/mode command or earbud operation.
+The next user round is one UI-only check: open a long child page, scroll to its
+bottom and return using the fixed upper-left button, then inspect the Settings
+groups and enter/return motion. This does not require earbuds or a scope reload.

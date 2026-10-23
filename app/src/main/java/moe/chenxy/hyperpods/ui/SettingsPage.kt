@@ -27,6 +27,9 @@ import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.ui.components.*
 import moe.chenxy.hyperpods.utils.SettingsDestination
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.icons.basic.ArrowRight
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -36,43 +39,48 @@ fun SettingsPage(padding: PaddingValues, diagnostics: Bundle? = null, isActive: 
     val lists = SettingsDestination.entries.map { rememberLazyListState() }
     fun back() { destination = destination.parent ?: SettingsDestination.ROOT }
     BackHandler(isActive && destination.parent != null) { back() }
-    if (destination == SettingsDestination.ABOUT) {
-        AboutPage(padding, ::back)
-        return
-    }
-    val title = stringResource(destination.title)
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        LazyColumn(
-            state = lists[destination.ordinal],
-            modifier = Modifier.widthIn(max = 680.dp).fillMaxSize()
-                .padding(top = padding.calculateTopPadding()).semantics { paneTitle = title },
-            contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item(key = "title") {
-                DashboardPageHeader(title, if (destination == SettingsDestination.ROOT) null else ::back)
-            }
-            if (destination == SettingsDestination.ROOT || destination == SettingsDestination.TOOLS) {
-                if (destination == SettingsDestination.TOOLS) item(key = "tools_notice") {
-                    Text(stringResource(R.string.settings_tools_notice), fontSize = 14.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary, modifier = Modifier.padding(horizontal = 24.dp))
-                }
-                destination.children(BuildConfig.BUILD_TYPE == "debug").forEach { child ->
-                    item(key = child.name) { SettingsEntry(child) { destination = child } }
-                }
-            } else item(key = destination.name) {
-                Column(Modifier.padding(horizontal = 16.dp)) {
-                    when (destination) {
-                        SettingsDestination.NOTIFICATIONS -> BatteryNotificationSettingsPanel()
-                        SettingsDestination.APPEARANCE -> AppearanceSettings()
-                        SettingsDestination.CONNECTION -> DashboardGroup {
-                            ConnectionDiagnostics(diagnostics, includeModuleCheck = false, knownModuleReport = moduleReport)
+    PageTransitionHost(destination, { it.depth }, isActive) { page, current ->
+        if (page == SettingsDestination.ABOUT) {
+            AboutPage(padding, ::back, lists[page.ordinal], current)
+        } else PageScaffold(stringResource(page.title), padding,
+            if (page.parent == null) null else ::back, current) { bodyPadding ->
+            LazyColumn(state = lists[page.ordinal], modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = 8.dp, bottom = bodyPadding.calculateBottomPadding() + 24.dp)) {
+                if (page == SettingsDestination.ROOT || page == SettingsDestination.TOOLS) {
+                    if (page == SettingsDestination.TOOLS) item(key = "tools_notice") {
+                        Text(stringResource(R.string.settings_tools_notice), fontSize = 14.sp,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary, modifier = Modifier.padding(horizontal = 24.dp))
+                    }
+                    page.groups(BuildConfig.BUILD_TYPE == "debug").forEachIndexed { index, group ->
+                        item(key = "group_$index") {
+                            Column(Modifier.padding(horizontal = 16.dp)) {
+                                val heading = if (page == SettingsDestination.ROOT) {
+                                    if (index == 0) R.string.settings_group_app else R.string.settings_group_support
+                                } else if (index == 0) R.string.settings_group_diagnostics else R.string.settings_group_tests
+                                DashboardSection(stringResource(heading))
+                                DashboardGroup {
+                                    group.forEachIndexed { row, child ->
+                                        if (row > 0) DashboardDivider(Modifier.padding(start = 72.dp, end = 16.dp))
+                                        SettingsEntry(child, current) { destination = child }
+                                    }
+                                }
+                            }
                         }
-                        SettingsDestination.MODULES -> DashboardGroup { ModuleSelfCheck { moduleReport = it } }
-                        SettingsDestination.HEAD_TRACKING -> DashboardGroup { HeadTrackingPage(isActive) }
-                        SettingsDestination.LID_OBSERVATION -> if (BuildConfig.BUILD_TYPE == "debug")
-                            DashboardGroup { LidObservationPanel() }
-                        else -> Unit
+                    }
+                } else item(key = page.name) {
+                    Column(Modifier.padding(horizontal = 16.dp)) {
+                        when (page) {
+                            SettingsDestination.NOTIFICATIONS -> BatteryNotificationSettingsPanel()
+                            SettingsDestination.APPEARANCE -> AppearanceSettings()
+                            SettingsDestination.CONNECTION -> DashboardGroup {
+                                ConnectionDiagnostics(diagnostics, includeModuleCheck = false, knownModuleReport = moduleReport)
+                            }
+                            SettingsDestination.MODULES -> DashboardGroup { ModuleSelfCheck { moduleReport = it } }
+                            SettingsDestination.HEAD_TRACKING -> DashboardGroup { HeadTrackingPage(current) }
+                            SettingsDestination.LID_OBSERVATION -> if (BuildConfig.BUILD_TYPE == "debug")
+                                DashboardGroup { LidObservationPanel(current) }
+                            else -> Unit
+                        }
                     }
                 }
             }
@@ -94,7 +102,7 @@ private val SettingsDestination.title: Int
     }
 
 @Composable
-private fun SettingsEntry(destination: SettingsDestination, open: () -> Unit) {
+private fun SettingsEntry(destination: SettingsDestination, enabled: Boolean, open: () -> Unit) {
     val summary = when (destination) {
         SettingsDestination.NOTIFICATIONS -> R.string.settings_notifications_summary
         SettingsDestination.APPEARANCE -> R.string.settings_appearance_summary
@@ -111,20 +119,20 @@ private fun SettingsEntry(destination: SettingsDestination, open: () -> Unit) {
         SettingsDestination.HEAD_TRACKING, SettingsDestination.LID_OBSERVATION -> R.drawable.dashboard_headphones
         else -> R.drawable.dashboard_settings
     }
-    DashboardGroup(Modifier.padding(horizontal = 16.dp)) {
-        Row(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = open)
-            .heightIn(min = 104.dp).padding(20.dp), verticalAlignment = Alignment.CenterVertically,
+        Row(Modifier.fillMaxWidth().clickable(enabled = enabled, role = Role.Button, onClick = open)
+            .heightIn(min = 84.dp).padding(horizontal = 16.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            Box(Modifier.size(48.dp).clip(RoundedCornerShape(16.dp))
+            Box(Modifier.size(40.dp).clip(RoundedCornerShape(14.dp))
                 .background(MiuixTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                 Image(painterResource(icon), null, Modifier.size(24.dp),
                     colorFilter = ColorFilter.tint(MiuixTheme.colorScheme.primary))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(destination.title), fontSize = 19.sp)
+                Text(stringResource(destination.title), fontSize = 17.sp, lineHeight = 23.sp)
                 Text(stringResource(summary), fontSize = 13.sp, lineHeight = 19.sp,
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
             }
+            Icon(MiuixIcons.Basic.ArrowRight, null, modifier = Modifier.size(18.dp),
+                tint = MiuixTheme.colorScheme.onSurfaceVariantSummary)
         }
-    }
 }

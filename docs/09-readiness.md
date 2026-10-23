@@ -1,6 +1,14 @@
 # 09 Readiness and stage boundaries
 
-**Latest checkpoint, 2026-10-23 evening:** alpha11 supersedes the rejected
+**Latest checkpoint, 2026-10-23 evening:** alpha12 prioritizes the overall UI
+using ordinary blur, as requested. A shared Miuix page frame keeps child back
+buttons fixed; settings, About and headphone pages share enter/pop motion,
+saved state and outgoing-interaction guards. Settings groups and headphone
+overview hierarchy are consolidated. Local tests/build/Lint pass; actual visual
+and interaction acceptance remains a user step. No advanced glass dependency,
+device-control change or fix for issue #1 is claimed.
+
+**Previous checkpoint:** alpha11 supersedes the rejected
 alpha10 prototype. The user explicitly permits replacing the inherited UI and
 does not want a style switch. The actual Keimi screenshot guides flat layered
 cards and a frosted floating dock over real scroll content. Headphones contains

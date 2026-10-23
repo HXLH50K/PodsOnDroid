@@ -2,7 +2,28 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha11 app redesign and information architecture
+## Current checkpoint: alpha12 unified page framework
+
+The user prioritized the overall UI over special glass optics; ordinary blur
+is acceptable while navigation and hierarchy are corrected. Alpha12 retains
+the agreed Headphones/Settings split and replaces per-page headers with one
+shared frame using the pinned Miuix app bars. Child back buttons remain outside
+scrollable content, with explicit 48 dp touch targets and contrast.
+
+Settings, About and headphone pages now share depth-aware enter/return
+transitions, saved page state and outgoing-interaction protection. Root settings
+use grouped app/support rows instead of a large card for every destination.
+The headphone overview has one original product image and compact per-part
+battery/state tiles. The accepted panel and device-control logic are unchanged.
+No new glass library, framework API or special Xiaomi rendering hook was added.
+
+Local verification: **33 focused JVM tests passed**; app and UI-test APKs build,
+and Lint has no errors. Pinned-back/scroll and interruptible navigation UI tests
+were compiled, not phone-executed. Actual visual and motion acceptance remains
+a user check. The in-case noise-control defect [#1](https://github.com/HXLH50K/PodsOnDroid/issues/1)
+is still open and was not addressed by this UI milestone.
+
+## Previous checkpoint: alpha11 app redesign and information architecture
 
 The user rejected alpha10's visual interpretation and supplied a Keimi reference:
 flat backgrounds, layered solid cards and a floating frosted navigation capsule

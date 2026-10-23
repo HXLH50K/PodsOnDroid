@@ -11,6 +11,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.semantics.Role
@@ -59,6 +60,27 @@ class SettingsNavigationTest(private val durationScale: Float) {
     private fun back() {
         compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
+    }
+
+    @Test
+    fun settingsUsesTheSameInterruptibleEnterAndReturnMotion() {
+        compose.onNode(hasText(text(R.string.settings_title)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
+        reveal(R.string.settings_tools)
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithText(text(R.string.settings_tools)).performClick()
+        compose.mainClock.advanceTimeBy(64)
+        val page = compose.onNode(SemanticsMatcher.expectValue(
+            SemanticsProperties.PaneTitle, text(R.string.settings_tools)))
+        val left = page.fetchSemanticsNode().boundsInRoot.left
+        if (durationScale == 0f) assertEquals(0f, left, .01f)
+        else assertTrue("Settings should enter rather than be instantly swapped", left > 0f)
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        compose.onNodeWithTag("page_up").assertDoesNotExist()
+        compose.onNode(SemanticsMatcher.expectValue(
+            SemanticsProperties.PaneTitle, text(R.string.settings_title))).assertExists()
     }
 
     @Test

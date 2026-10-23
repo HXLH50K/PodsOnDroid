@@ -7,7 +7,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import org.junit.Assert.assertEquals
 import moe.chenxy.hyperpods.R
 import org.junit.Rule
 import org.junit.Test
@@ -50,5 +52,36 @@ class SettingsHierarchyTest {
         compose.revealSetting(text(R.string.about_sources)).assertIsDisplayed()
         compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.revealSetting(text(R.string.appearance_title)).assertIsDisplayed()
+    }
+
+    @Test fun childBackButtonStaysPinnedAfterScrollingToTheLicense() {
+        settingsTab()
+        compose.revealSetting(text(R.string.about_hyperpods)).performClick()
+        compose.waitForIdle()
+        val before = compose.onNodeWithTag("page_up").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        compose.revealSetting(text(R.string.about_view_license)).assertIsDisplayed()
+        val after = compose.onNodeWithTag("page_up").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        assertEquals(before.top, after.top, .5f)
+        assertEquals(before.left, after.left, .5f)
+        compose.onNodeWithTag("page_up").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("page_up").assertDoesNotExist()
+        compose.revealSetting(text(R.string.settings_tools)).assertIsDisplayed()
+    }
+
+    @Test fun nestedToolbarReturnsThroughToolsBeforeTheRoot() {
+        settingsTab()
+        compose.revealSetting(text(R.string.settings_tools)).performClick()
+        compose.revealSetting(text(R.string.diagnostics_title)).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("page_up").performClick()
+        compose.waitForIdle()
+        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle,
+            text(R.string.settings_tools))).assertExists()
+        compose.onNodeWithTag("page_up").performClick()
+        compose.waitForIdle()
+        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle,
+            text(R.string.settings_title))).assertExists()
+        compose.onNodeWithTag("page_up").assertDoesNotExist()
     }
 }

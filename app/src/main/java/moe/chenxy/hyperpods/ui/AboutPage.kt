@@ -5,6 +5,8 @@ import androidx.core.net.toUri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,21 +23,20 @@ import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.ui.components.DashboardGroup
 import moe.chenxy.hyperpods.ui.components.DashboardLink
-import moe.chenxy.hyperpods.ui.components.DashboardPageHeader
+import moe.chenxy.hyperpods.ui.components.PageScaffold
 import moe.chenxy.hyperpods.ui.components.DashboardSection
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun AboutPage(padding: PaddingValues, onBack: (() -> Unit)? = null) {
+fun AboutPage(padding: PaddingValues, onBack: (() -> Unit)? = null,
+              listState: LazyListState = rememberLazyListState(), isActive: Boolean = true) {
     val context = LocalContext.current
     val title = stringResource(R.string.about_hyperpods)
     fun open(url: String) { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) }
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        LazyColumn(Modifier.widthIn(max = 680.dp).fillMaxSize()
-            .padding(top = padding.calculateTopPadding()).semantics { paneTitle = title },
-            contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 24.dp)) {
-            item { DashboardPageHeader(title, onBack) }
+    PageScaffold(title, padding, onBack, isActive) { bodyPadding ->
+        LazyColumn(Modifier.fillMaxSize(), state = listState,
+            contentPadding = PaddingValues(top = 8.dp, bottom = bodyPadding.calculateBottomPadding() + 24.dp)) {
             item {
                 DashboardGroup(Modifier.padding(horizontal = 16.dp)) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
