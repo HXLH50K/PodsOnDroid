@@ -59,6 +59,14 @@ The island must appear **briefly for a real connection**, then leave **no persis
 
 ## 4. Native versus fallback panel
 
+**2026-10-23 clarification:** the user specified card -> dedicated small panel
+(earbud/case artwork, batteries, simple frequent controls) -> More settings ->
+full app, and requested an appropriate implementation. Alpha8 uses an app-owned
+floating dialog and the existing authenticated control channel, avoiding the
+unverified native MiLink state adapter and competing OEM AirPods SDK. This
+supersedes the earlier unapproved-fallback restriction below for this preview;
+it does not claim native MiLink integration or physical acceptance.
+
 - **Native route:** feed AirPods 5 state and actions into Xiaomi's existing headphone panel.
 - **Fallback route:** only if native integration cannot be made safe, the same Interconnectivity entry would open a small P.O.D.S.-rendered control panel.
 - The fallback is still a small panel, not the full app or Bluetooth settings. Its necessity has not been demonstrated and the user has not approved it.

@@ -1,5 +1,28 @@
 # 07 Test device and Xiaomi native integration
 
+## Alpha8 read-only survey on the current phone
+
+On 2026-10-23 the attached phone is `pandora`, `OS4.0.4.0.XBLCNXM`, API 37,
+not the historical `houji` target below. Only ordinary ADB shell UID 2000 was
+used. Current plugin SHA-256:
+`a7abb534697ad0638bd82e932de9c622b5f2f124ffe717e5342fc4011a1ded2f`;
+MiLink SHA-256:
+`6c05c0566ae696fd2594ec03d4e700050e0eaa2837fe3f16c61228c451143652`.
+
+Targeted local inspection confirmed `DeviceItemViewHolder.bindDeviceInfo`
+selects binding `fullIcon`/`textIcon`, prefers a Drawable, otherwise asynchronously
+loads an Icon. Its static drawable-loaded callback is guarded for owned artwork
+only. Card identity comes from `DeviceInfoWrapper.getDeviceInfo`, never the
+display name. Unknown schemas leave the optional artwork hook uninstalled.
+
+The native card route still uses package metadata to select a service; resolution
+returns MiLink and Mi Home candidates. SHOW_CARD remains signature|privileged.
+MiLink distinguishes `third_headset` from `headset` strategies, and the old
+AirPods SDK owns its own state/control path. Alpha8 does not change those types,
+permissions, services or SDK methods: the clarified panel route is an app-owned
+floating window using P.O.D.S.' existing command writer. Static inspection is not
+evidence of native or app-owned panel acceptance on this phone.
+
 ## Alpha7 correction: actual content endpoint and cold-start width
 
 The user's alpha6 reload/reconnect produced `native_schema_unsupported` at the concrete-controller name check in `NativeBatteryIslandSchema`, followed by a real audio connection, battery IPC submission and `native_failed`. This is runtime evidence, not an inferred battery readiness issue.

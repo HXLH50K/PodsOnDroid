@@ -246,6 +246,7 @@ object L2CAPController {
                 if (mContext == null || aacpManager == null) return
                 Intent(HyperPodsAction.ACTION_PODS_MAC_RECEIVED).apply {
                     this.putExtra("mac", mDevice.address)
+                    this.putExtra("model_number", currentPodsInfo?.modelNumber)
                     this.putExtra("request_id", intent.getStringExtra("request_id"))
                     this.addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
                     HyperPodsBroadcasts.send(context, this, HyperPodsBroadcasts.SYSTEM_UI)

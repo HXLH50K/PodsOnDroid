@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-23:** the user reports preliminary alpha7 validation passed and will use it on the primary phone for one day. Freeze functionality and the existing verified APK pending feedback. The current task is documentation and the user-authorized initial push to the private repository only. Earlier dated priority/task notes below are historical, not authorization to resume implementation or phone operations.
+**Current status, 2026-10-23 afternoon:** the user resumed development after no obvious alpha7 issues and clarified the Interconnectivity flow. Alpha8 implementation and local validation are recorded in section 18. The earlier daily-use freeze and task notes below are historical. Device acceptance remains collaborative.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -573,3 +573,114 @@ During ordinary use, useful observations are connection/dropout behavior, System
 Deferred work remains unchanged: the dedicated Interconnectivity headphone panel, Liquid Glass UI, broader acceptance and independent production signing/distribution. First-pairing discovery popup work is provisionally deferred; rootless and legacy-framework support are not active workstreams.
 
 Publication constraints: private `HXLH50K/PodsOnDroid`, independent `main` ancestry rooted at `781b4b6`, no force push, no imported HyperPods commit ancestry, and no raw logs, extracted OEM APKs, signing keys or local APK binaries in Git. Existing CI may run after the push; it is not permission to resume feature work.
+
+## 18. Alpha8 Interconnectivity preview
+
+The user resumed development and clarified the desired flow: card -> small
+headphone panel -> More settings -> app. They authorized choosing an appropriate
+implementation rather than requiring a particular native service, and requested
+plain handoffs instead of interactive question forms.
+
+Implementation:
+
+- Only a Bluetooth-UID-authenticated identity reply matching the bound card may
+  replace its artwork. Model-specific original images are loaded from module
+  resources. Binding tokens reject replies for recycled holders; requests expire
+  after 500 ms and are bounded to eight. The inspected OEM asynchronous icon
+  callback cannot overwrite owned artwork; reuse restores the original tint.
+- Existing authenticated click routing now opens an app-owned floating Activity
+  in a separate task, not MainActivity. More settings opens the normal app task.
+- The panel reuses battery/artwork/capability components and the existing single
+  Bluetooth command writer. Case artwork is visible even when its battery is
+  unknown; unknown values are not replaced with zero.
+- Mode highlighting comes from reported diagnostics, not optimistic broadcasts.
+  Unsupported/unready/pending controls are disabled. Failed or unconfirmed
+  changes remain explicit, with a 6.5-second local response deadline.
+- Back, outside touch, Close and backgrounding end the panel. No root shell,
+  MiLink permission bypass, new module scope, native SDK writer, or volume
+  manipulation was added. Native MiLink reuse and volume controls are not
+  claimed as completed.
+
+Validation:
+
+- 22 focused JVM tests passed: 7 panel mode-state, 8 AirPods 5 support, 7 settings.
+- Debug APK assembly and development signature verification passed.
+- Preview: `dist/PODS-0.1.0-alpha.8-debug.apk`, application ID
+  `com.hxlh50k.pods.debug`, version code 8. SHA-256:
+  `2d0f9302b1be0b3cab0d855dd9b7d7bdfe6569ecbc37ea07fd826592bc2e5221`.
+  Built from the uncommitted working tree based on `75a404c`; the embedded base
+  revision alone does not identify these changes. No commit/push occurred during
+  preview packaging; the later source-only transfer checkpoint includes them.
+- An additional controller suite has 10 failures among 64 tests. The identical
+  failures reproduce on pristine `75a404c`: mock Bluetooth addresses are null at
+  notification helpers. They are not caused by this preview and were not fixed.
+- Artwork rendering, floating-window geometry/lifecycle and actual headphone
+  controls still require a user-operated test. Compilation is not acceptance.
+
+Environment and deployment blocker:
+
+- Official ADB 37.0.1 installed in the per-user Android SDK; user PATH updated.
+  JDK 22.0.2, SDK 36, Gradle 8.13, CMake 3.22.1 and NDK 27 restored.
+- Current attached device: `pandora`, `OS4.0.4.0.XBLCNXM`, API 37. All device
+  access used ordinary UID 2000 shell; no `su` or `adb root`.
+- Installed alpha7 signer SHA-256:
+  `092596c4c2e3b35ed33c7f09c2ce96d2dfdf8ed24989c2813612598976acd8c0`.
+  New computer's debug signer SHA-256:
+  `e279b440e547dd2df2f6da8da61d3b74cd42d539d44e4059e38226dd42157c98`.
+  Android will reject an in-place update. No install/uninstall was attempted.
+- Preferred next step: the user securely restores the previous development
+  signing key locally (never in Git/chat), then rebuild with that identity.
+  Uninstalling alpha7 would lose app data and require module setup again; that
+  requires explicit user authorization and is not an automatic workaround.
+
+After signing continuity is restored and the user performs installation and
+module reload, use one agreed round: (1) inspect the card icon and open/close
+the small panel, then More settings; (2) with AirPods 5 connected, compare live
+batteries and change one supported mode, then restore it. Do not manipulate
+the earbuds, restart hosts or automate additional rounds without agreement.
+
+### Cross-machine transfer checklist
+
+At 16:35 on 2026-10-23 the user requested saving and pushing the current progress
+for continued work on another computer. **Testing is paused**, not failed or
+accepted. This transfer does not rebuild the preview, operate the phone, change
+signing identity, or publish a binary release.
+
+1. Clone/pull private `HXLH50K/PodsOnDroid`, branch `main`. Preserve independent
+   history and the existing source/license attribution. No force push is needed.
+2. Configure this identity in the new clone; Git's repository-local settings do
+   not travel with commits:
+
+   ```powershell
+   git config --local user.name "HXLH50K"
+   git config --local user.email "hxlh50k@gmail.com"
+   ```
+
+3. Restore JDK 22, Android SDK 36, build-tools 35.0.0, CMake 3.22.1 and NDK
+   27.0.12077973. The checked-in wrapper selects Gradle 8.13. Configure
+   `JAVA_HOME` and `ANDROID_HOME` locally; do not copy this computer's absolute
+   paths or commit `local.properties`.
+4. Securely restore the development signing key used for installed alpha7.
+   Compare its certificate digest with the installed-alpha7 digest above before
+   any update. A newly generated debug key is not an upgrade-compatible
+   replacement. Never commit or send key contents in chat.
+5. The source, resources, tests and this handoff travel through Git. The APK
+   under `dist`, SDK/JDK caches, local test logs, credentials and signing keys do
+   **not**. Temporary extracted system APKs and decompiler files were removed.
+   The recorded alpha8 APK hash belongs only to the pre-commit build on this
+   computer; a later rebuild has a different build instance and may have a
+   different signing certificate/hash.
+6. When the user resumes validation, the focused local command is:
+
+   ```powershell
+   .\gradlew.bat :app:testDebugUnitTest --tests '*PanelModeStateTest' --tests '*AirPods5SupportTest' --tests '*PodsSettingsTest' :app:assembleDebug --console=plain
+   ```
+
+   Expect 22 tests for these selectors. Do not describe the wider controller
+   suite as passing; the 10 pre-existing mock-address failures are documented
+   above. New code does not yet have on-device rendering/control evidence.
+7. After signing continuity and explicit user readiness, perform only the two
+   collaborative checks above. No root shell is needed for normal installation
+   or read-only diagnostics. Do not automatically restart scopes or operate
+   headphones. Future requests for input should use a plain task-completion
+   handoff and stop, not an interactive questionnaire.

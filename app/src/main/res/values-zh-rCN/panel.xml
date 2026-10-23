@@ -1,0 +1,7 @@
+<resources>
+    <string name="panel_more">更多设置</string>
+    <string name="panel_close">关闭</string>
+    <string name="panel_reported">耳机已回报</string>
+    <string name="panel_sending">正在等待耳机回报…</string>
+    <string name="panel_failed">修改未确认，请检查连接后重试。</string>
+</resources>

@@ -78,8 +78,9 @@ fun DashboardSection(title: String) {
 }
 
 @Composable
-fun DashboardBattery(params: BatteryParams, ears: EarDetectionParams, model: AirPodsBase?, diagnostics: Bundle? = null) {
-    val showCase = params.case?.let { it.isConnected && it.battery in 0..100 } == true
+fun DashboardBattery(params: BatteryParams, ears: EarDetectionParams, model: AirPodsBase?, diagnostics: Bundle? = null,
+    showUnknownCase: Boolean = false) {
+    val showCase = showUnknownCase || params.case?.let { it.isConnected && it.battery in 0..100 } == true
     Row(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         BatteryColumn(params.left, ears.left, model?.leftBudsRes ?: R.drawable.dashboard_headphones,

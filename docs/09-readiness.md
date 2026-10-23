@@ -1,5 +1,14 @@
 # 09 Readiness and stage boundaries
 
+**Latest handoff, 2026-10-23 afternoon:** alpha8 implements an app-owned
+Interconnectivity floating panel and scoped AirPods artwork. The user paused
+testing and requested source transfer to another computer because the old
+development signing key is unavailable here. The 22 focused tests/build passed;
+device installation and acceptance have not happened. Start with the
+[transfer checklist](04-delivery-plan.md#cross-machine-transfer-checklist).
+The early-stage readiness records below are historical, not the current task
+or authorization to install/restart/test.
+
 Updated: 2026-10-22. Authority: [confirmed decisions](05-decisions.md), including the later private-repository and language instructions.
 
 ## 1. Current checkpoint

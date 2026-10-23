@@ -1,0 +1,7 @@
+<resources>
+    <string name="panel_more">More settings</string>
+    <string name="panel_close">Close</string>
+    <string name="panel_reported">Reported by headphones</string>
+    <string name="panel_sending">Waiting for headphones…</string>
+    <string name="panel_failed">Change not confirmed. Check connection and try again.</string>
+</resources>

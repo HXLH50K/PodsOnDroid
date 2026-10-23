@@ -61,6 +61,7 @@ object SystemUIPluginHook {
 
     private fun installPlugin(framework: XposedInterface, loader: ClassLoader) {
         installHook("SystemUI device card") { DeviceCardHook.install(framework, loader) }
+        installHook("SystemUI AirPods artwork") { DeviceCardArtworkHook.install(framework, loader) }
         optionalHook("focus footer", loader,
             "miui.systemui.notification.focus.moduleV3.ModuleTextButtonViewHolder") { type ->
             HostReflection.methods(type, "bind", 2).forEach { method ->

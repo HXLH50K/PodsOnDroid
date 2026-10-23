@@ -62,7 +62,7 @@ object DeviceCardHook {
                 handler.removeCallbacks(timeout)
                 try {
                     if (mac == id) {
-                        context.startActivity(Intent("com.hxlh50k.pods.action.show_airpods_ui")
+                        context.startActivity(Intent("com.hxlh50k.pods.action.show_headphone_panel")
                             .setPackage(BuildConfig.APPLICATION_ID).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         panelController?.let { HostReflection.call(it, "exitOrHide") }
                     } else {

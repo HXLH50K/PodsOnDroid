@@ -2,9 +2,33 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha7 daily-use freeze
+## Current checkpoint: alpha8 Interconnectivity preview
 
-On 2026-10-23 the user reported preliminary validation passed and chose a one-day trial on the primary phone. **Feature development is paused pending that feedback.** This checkpoint updates documentation and publishes the private source repository only; it does not change functionality, rebuild the APK or operate the phone.
+Development resumed on 2026-10-23 after the user reported no obvious alpha7 issues.
+Alpha8 adds identity-scoped AirPods artwork in Interconnectivity and a dedicated
+P.O.D.S. floating panel with earbud/case images, battery readings, capability-gated
+listening modes, and **More settings** to open the full app. Unknown batteries
+remain unknown; mode selection is not treated as a headphone report. The panel
+uses the existing authenticated Bluetooth channel, not Xiaomi's old AirPods SDK.
+It is an app-owned dialog window, **not** a claimed native MiLink headphone panel.
+No additional module scope or root shell is required for these changes.
+
+Local validation: 22 focused JVM tests passed; debug assembly succeeded. Ten
+broader controller-test failures were reproduced on pristine HEAD and traced to
+unstubbed mock Bluetooth addresses. Device acceptance is blocked by different
+debug signing certificates on this new computer and the installed alpha7 APK.
+No uninstall, deployment, host restart or earbud operation was performed.
+See [the alpha8 handoff](docs/04-delivery-plan.md#18-alpha8-interconnectivity-preview).
+
+**Cross-machine handoff, 2026-10-23:** the user requested committing/pushing this
+checkpoint and explicitly paused testing because the previous signing key was
+not brought to this computer. Resume from the [transfer checklist](docs/04-delivery-plan.md#cross-machine-transfer-checklist),
+not from the historical alpha7 freeze below. Do not install, uninstall, reload
+hosts or resume physical tests until the user returns with the signing setup.
+
+## Historical checkpoint: alpha7 daily-use freeze
+
+Earlier on 2026-10-23 the user reported preliminary validation passed and chose a one-day trial on the primary phone. That freeze was superseded by the alpha8 request above. The following receipt describes the previous checkpoint.
 
 - User-confirmed: basic preview functionality, complete DEBUG scope reload, and the corrected native connection island.
 - Runtime-confirmed: actual dual-ear visibility followed by normal expiry exactly **5,000 ms** later.
