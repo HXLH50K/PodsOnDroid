@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-23 afternoon:** the user resumed development after no obvious alpha7 issues and clarified the Interconnectivity flow. Alpha8 implementation and local validation are recorded in section 18. The earlier daily-use freeze and task notes below are historical. Device acceptance remains collaborative.
+**Current status, 2026-10-23 evening:** the user confirmed the earlier work passed and authorized pulling, packaging and deploying alpha8 on the original workstation. The committed preview was built without functional changes and installed in place on the connected `houji` test phone. Section 19 records signer continuity, focused checks and installed-file verification. The panel itself is not yet accepted; scope reload and physical checks remain user-operated.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -684,3 +684,58 @@ signing identity, or publish a binary release.
    or read-only diagnostics. Do not automatically restart scopes or operate
    headphones. Future requests for input should use a plain task-completion
    handoff and stop, not an interactive questionnaire.
+
+## 19. Alpha8 original-workstation build and deployment
+
+The user returned to the original development workstation and explicitly requested
+pulling the latest source, catching up with the handoff, packaging and deployment.
+Clean `main` was fast-forwarded from `75a404c` to
+`8ad93c7b771d43d8f6b1ece69b51b204c4035489`. The private repository and independent
+history were preserved. No functionality, dependency or workflow was changed.
+
+The preview remains an app-owned Interconnectivity headphone panel, not a claim
+of native MiLink integration. Read-only inspection confirmed the incoming changes
+and the other workstation's signing blocker before proceeding.
+
+### Local verification
+
+- **45 focused JVM tests passed:** PanelModeState 7, AirPods5Support 8,
+  PodsSettings 7, NativeBatteryIslandEndpoint 7, NativeBatteryIslandPayload 9,
+  NativeBatteryIslandQueue 3 and BatteryEarbudArtwork 4.
+- Debug assembly from committed source succeeded. No full-suite or Lint success
+  is claimed for this build. The upstream CI run remains failed in the already
+  documented broader controller tests; those unrelated fixture failures were
+  not changed as part of packaging/deployment.
+- Package: `com.hxlh50k.pods.debug`, display name `P.O.D.S.`,
+  version `0.1.0-alpha.8`, code `8`.
+- Artifact: `dist/PODS-0.1.0-alpha.8-debug.apk`, **31,883,723 bytes**.
+- SHA-256: `4275348421f68bc15a191d68c8ec01644861dcd6ce370ef7521153c5e05eef8d`.
+- API102 metadata, absence of the legacy Java entry, packaged panel Activity,
+  embedded committed revision and APK v2 signature were checked.
+- Installed alpha7 and rebuilt alpha8 both use development signer SHA-256
+  `092596c4c2e3b35ed33c7f09c2ce96d2dfdf8ed24989c2813612598976acd8c0`.
+  The other workstation's signer mismatch is not present here. No key was
+  exported, generated, printed or committed.
+
+### Deployment evidence and acceptance boundary
+
+- Target was the sole connected `houji` test phone, not the `pandora` phone used
+  on the other workstation. Existing permission for root package-manager
+  installation on this ROM was used; no device security setting was changed.
+- `pm install -r -t` returned `Success`; no uninstall or data reset occurred.
+- Installed package reports alpha8/code8 and update time `2026-10-23 17:57:57`;
+  the original first-install time remains `2026-10-22 21:25:55`.
+- SHA-256 of the installed base APK exactly matches the artifact above.
+- The `show_headphone_panel` action resolves to
+  `moe.chenxy.hyperpods.HeadphonePanelActivity` without launching it.
+- Exact temporary device-staging and local comparison APKs were deleted.
+- No UI launch, scope restart, phone reboot, audio-mode command, earbud operation
+  or computer power action was performed. Existing injected host code may remain
+  alpha7 until the user performs the full DEBUG scope reload.
+
+Next user round: after full DEBUG scope reload, (1) inspect the Interconnectivity
+AirPods artwork, open/close the panel and try More settings; (2) compare actual
+battery readings and, if a listening mode is supported and ready, change one
+mode and restore it. Start and verify a bounded module-log collector before
+handoff. Unknown readings should stay unknown. Successful package installation
+and action resolution do not establish artwork/control acceptance.

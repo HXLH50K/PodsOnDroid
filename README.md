@@ -13,18 +13,22 @@ uses the existing authenticated Bluetooth channel, not Xiaomi's old AirPods SDK.
 It is an app-owned dialog window, **not** a claimed native MiLink headphone panel.
 No additional module scope or root shell is required for these changes.
 
-Local validation: 22 focused JVM tests passed; debug assembly succeeded. Ten
-broader controller-test failures were reproduced on pristine HEAD and traced to
-unstubbed mock Bluetooth addresses. Device acceptance is blocked by different
-debug signing certificates on this new computer and the installed alpha7 APK.
-No uninstall, deployment, host restart or earbud operation was performed.
-See [the alpha8 handoff](docs/04-delivery-plan.md#18-alpha8-interconnectivity-preview).
+**Deployment update, 2026-10-23:** the user returned to the original workstation
+and authorized pulling, packaging and deploying alpha8. Source `8ad93c7b` was
+fast-forwarded without modification. **45 focused JVM tests passed** (22 panel/
+model/settings cases plus 23 native-island/artwork regressions), and debug
+assembly succeeded. The development signer matches the installed alpha7 signer.
+Alpha8 was installed in place on the connected `houji` test phone; installed APK
+bytes/version and panel action registration were verified. App data was not
+cleared, and no scope restart, UI launch or earbud operation was performed.
+See [the deployment receipt](docs/04-delivery-plan.md#19-alpha8-original-workstation-build-and-deployment).
 
-**Cross-machine handoff, 2026-10-23:** the user requested committing/pushing this
-checkpoint and explicitly paused testing because the previous signing key was
-not brought to this computer. Resume from the [transfer checklist](docs/04-delivery-plan.md#cross-machine-transfer-checklist),
-not from the historical alpha7 freeze below. Do not install, uninstall, reload
-hosts or resume physical tests until the user returns with the signing setup.
+The previous cross-machine signing blocker was specific to the other
+workstation; its [transfer checklist](docs/04-delivery-plan.md#cross-machine-transfer-checklist)
+remains historical context. Broader controller CI still fails at the documented
+unstubbed mock-address tests; this deployment does not claim those tests pass.
+Actual Interconnectivity artwork, floating-panel rendering and headphone
+controls still await the user-operated round after full DEBUG scope reload.
 
 ## Historical checkpoint: alpha7 daily-use freeze
 
@@ -41,7 +45,7 @@ Earlier on 2026-10-23 the user reported preliminary validation passed and chose 
 
 The battery path no longer creates a `Notification`, notification channel, or `StatusBarNotification`, and has no notification publication fallback. It sends bounded authenticated data to SystemUI, which creates owned native island content using the contract inspected in this phone's system APKs. Ordinary notification access is retained only to remove proved-owned older-version remnants.
 
-The priority full DEBUG scope reload was introduced in alpha5 and subsequently confirmed working by the user. Older builds, their validation boundaries and the last assistant-managed deployment remain historical receipts in the [delivery plan](docs/04-delivery-plan.md); alpha7 is the current trial baseline.
+The priority full DEBUG scope reload was introduced in alpha5 and subsequently confirmed working by the user. Older builds and their validation boundaries remain historical receipts in the [delivery plan](docs/04-delivery-plan.md); alpha7 is the accepted baseline and alpha8 is the deployed, not-yet-accepted panel preview.
 
 The user's Xiaomi comparison found silent paired reconnect/wearing and a quick-connect card in discovery/first-pairing mode. P.O.D.S. intentionally keeps the user's preferred brief battery island for reconnect. First-pairing popup work is **provisionally deferred**, not permanently cancelled; ordinary Android Bluetooth pairing remains available. The dedicated Interconnectivity control panel and Liquid Glass remain planned. See the [latest UX evidence](docs/07-device-and-native-integration.md#manual-xiaomi-comparison-and-ios-distinction) and [decisions](docs/05-decisions.md).
 
