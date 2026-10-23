@@ -967,3 +967,24 @@ or host restart was performed. Next user check: inspect the new bottom dock
 while scrolling and the Headphones/Settings separation, then use Back through
 Settings > Advanced & diagnostics and Settings > About. No earbud manipulation
 is required for the menu/appearance check.
+
+### Alpha11 package and deployment receipt
+
+- Source: `b8713bc5417390905f2af94ad44abb5b9330ed3b`.
+- File: `dist/PODS-0.1.0-alpha.11-debug.apk`; **31,973,791 bytes**.
+- SHA-256: `9ece6a2c101a52a152e2f1db7bc97aa30739cf66852170749a87bd1fa8991310`.
+- Verified identity: `com.hxlh50k.pods.debug`, `P.O.D.S.`, alpha11/code11.
+  Development v2 certificate, embedded revision, API102 metadata and the
+  unchanged original three scopes were checked. No donation URL remains in
+  packaged application code.
+- Final committed-source validation: 29 JVM tests passed; both app and updated
+  instrumentation APKs assembled. Final Lint: **0 errors, 129 warnings, 2 hints**.
+  Instrumentation was compiled only, not installed/executed on the phone.
+- Root package-manager update returned `Success` on `houji`. Installed base APK
+  matches the artifact hash; update time is `2026-10-23 19:20:55`, with original
+  install time and app data retained. The exact staging APK was removed.
+- No UI launch, scope restart, battery-policy edit, mode/volume command or
+  earbud operation was performed. The main-app redesign is available on opening
+  the app; it does not require scope reload just to inspect these pages.
+- The raw reference and local logs are not in Git. Final visual acceptance and
+  real keyboard/large-font behavior remain user checks. Issue #1 stays open.
