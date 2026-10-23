@@ -12,7 +12,7 @@ The user has reported the complete debug scope reload as working. Battery presen
 - Original model earbud resources are loaded without icon tint or image color filters. Each `TimerTextEffectView` percentage uses its own threshold color, with original appearance/accessibility/image state restored on release.
 - The old notification manager is used only for proved-owned upgrade cleanup. It is not a display transport or fallback.
 
-This is implementation plus static contract evidence, not a claim of hardware rendering acceptance. Unknown or changed native schemas fail closed and report an explicit failure.
+The alpha7 user-operated round confirmed this path reaching actual owned dual-ear pre-draw visibility and normal expiry exactly 5,000 ms later. That verifies the missing-island repair, not every visual or threshold acceptance case. Unknown or changed native schemas fail closed and report an explicit failure.
 
 **Morning follow-up:** full debug scope reload is prioritized over another hardware notification test. The old interface-only runner cannot replace module code inside the Bluetooth main hosts. The update path must accept authenticated old-build reports, explicitly authorize process-exit disruption, preflight all required hosts and verify replacement builds. This does not enable API102 hot reload or computer power operations.
 

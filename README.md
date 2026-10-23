@@ -2,7 +2,7 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-**Alpha7, 2026-10-23:** the user's alpha6 test produced no island. A user-operated reload/reconnect captured the failure: the OEM returns a **lazy content proxy**, which alpha6 incorrectly treated as the concrete window controller. Alpha7 resolves the verified proxy on demand and preserves the native width-request handshake instead of rejecting an initially zero width. Model-specific artwork remains untinted; colors apply only to percentage text. Rendering acceptance remains a separate user-led check.
+**Alpha7, 2026-10-23:** the user's alpha6 test produced no island. A user-operated reload/reconnect captured the failure: the OEM returns a **lazy content proxy**, which alpha6 incorrectly treated as the concrete window controller. Alpha7 resolves the verified proxy on demand and preserves the native width-request handshake instead of rejecting an initially zero width. The subsequent user-operated round confirmed actual dual-ear visibility and normal expiry exactly 5,000 ms later. Model-specific artwork remains untinted; colors apply only to percentage text. This verifies the missing-island repair, not every visual or battery-policy acceptance case.
 
 The battery path no longer creates a `Notification`, notification channel, or `StatusBarNotification`, and has no notification publication fallback. It sends bounded authenticated data to SystemUI, which creates owned native island content using the contract inspected in this phone's system APKs. Ordinary notification access is retained only to remove proved-owned older-version remnants.
 
@@ -33,7 +33,9 @@ Hardware-gated validation requires the user's AirPods 5 wireless-charging varian
 
 The debug app uses the same three declared scopes. Live restart behavior remains unverified. Alpha1's AboutPage automation was blocked by old Espresso reflection; test-only dependencies now use the official stable fix. No autonomous host-process restart or physical earbud manipulation is part of this iteration.
 
-## Next joint check: direct native battery island
+## Manual native-island regression check
+
+The alpha7 missing-island repair is runtime-verified in the delivery record. The following procedure is for future agreed regression rounds, not an outstanding step for that repair.
 
 1. Install alpha7, then use the now user-verified full DEBUG scope reload while no call is active and Bluetooth interruption is acceptable. Verify that the required three hosts report the new build.
 2. In one agreed round, reconnect the earbuds once. Expect direct native island animation with no preceding ordinary notification/card and no notification remaining after it closes.

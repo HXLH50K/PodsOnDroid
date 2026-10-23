@@ -538,3 +538,18 @@ For subsequent physical rounds, start and verify the log collector before handof
 - Both extracted OEM APK hashes still match the evidence recorded in document 07. Named temporary APK/disassembly files were removed; the real diagnostic capture remains local and uncommitted.
 - Alpha7 has not been installed or accepted on the phone. The captured failure belongs to alpha6; a separate user-led installation/reload/reconnect round is needed to validate this fix.
 - No remote push, autonomous process restart, earbud operation or power action.
+
+### Alpha7 user-operated runtime verification
+
+The collector saved the user's installation/reload/reconnect round on 2026-10-23:
+
+- `09:13:02.227`: SystemUI accepted the actual OEM lazy content endpoint.
+- `09:13:13.900`: the next audio connection reached the connected state.
+- `09:13:15.213`: the real native controller was bound.
+- `09:13:15.244`: native island data was submitted.
+- `09:13:15.760`: the owned dual-ear content passed the actual pre-draw visibility checks; Xiaomi Bluetooth acknowledged visibility at `09:13:15.764`.
+- `09:13:20.760`: SystemUI ended the island through `native_visible_timeout`; the host ended its presentation at `09:13:20.764`.
+
+The observed visible interval was exactly **5,000 ms**. This verifies the requested missing-island repair through the real native display lifecycle, rather than merely successful IPC or compilation. An earlier reconnect during scope reload had reached the previous bridge before the new SystemUI process was ready; it is not the post-reload verification result.
+
+The collector has exited. No additional physical round is required for this repair. This record does not claim subjective artwork/animation approval or execution of every battery threshold/edge-case acceptance test. The verified APK, source revision and checksum above are unchanged; this follow-up is documentation only.
