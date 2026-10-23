@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current alpha7 task:** user-operated alpha6 testing showed neither card nor island. Captured logs identified a rejected lazy native content proxy; alpha7 corrects endpoint resolution and the coupled cold-start width handshake. No notification fallback is reintroduced. Packaging/local checks and the next user-led render check are recorded separately below; no automatic UI, process restart, radio capture or computer power operation is authorized by this iteration.
+**Current status, 2026-10-23:** the user reports preliminary alpha7 validation passed and will use it on the primary phone for one day. Freeze functionality and the existing verified APK pending feedback. The current task is documentation and the user-authorized initial push to the private repository only. Earlier dated priority/task notes below are historical, not authorization to resume implementation or phone operations.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -553,3 +553,23 @@ The collector saved the user's installation/reload/reconnect round on 2026-10-23
 The observed visible interval was exactly **5,000 ms**. This verifies the requested missing-island repair through the real native display lifecycle, rather than merely successful IPC or compilation. An earlier reconnect during scope reload had reached the previous bridge before the new SystemUI process was ready; it is not the post-reload verification result.
 
 The collector has exited. No additional physical round is required for this repair. This record does not claim subjective artwork/animation approval or execution of every battery threshold/edge-case acceptance test. The verified APK, source revision and checksum above are unchanged; this follow-up is documentation only.
+
+## 17. Preliminary acceptance and one-day usage freeze
+
+On 2026-10-23 the user confirmed preliminary validation passed, chose a one-day primary-phone trial, authorized pushing the current source and explicitly prohibited further functional changes.
+
+Freeze baseline: alpha7/code7, source `d3227eec`, with the exact APK/hash in section 16. Do not rebuild, replace, deploy or alter that APK merely to publish the repository. All current changes are documentation only.
+
+Confirmed so far:
+
+- Basic preview functionality and full DEBUG scope reload are user-confirmed.
+- The missing native-island defect is repaired and the user-operated runtime round reached actual dual-ear visibility with exactly five seconds before normal expiry.
+- The latest 23 focused local regressions and package/signature/API102 checks passed.
+
+Implemented but not exhaustively accepted: threshold colors, independently configurable Low/Medium reminders, downward-crossing suppression/budgets, single-ear/unknown readings, long idle recovery and phone-side interaction with inherited controls.
+
+During ordinary use, useful observations are connection/dropout behavior, SystemUI/Bluetooth stability, audio/call recovery, persistent or repeated unwanted surfaces, reminder behavior at naturally occurring thresholds, and unusual power use. Do not force battery depletion or require repetitive test cycles. Primary-phone use extends validation beyond the specific test-phone contract; report model/ROM context only if needed for a failure.
+
+Deferred work remains unchanged: the dedicated Interconnectivity headphone panel, Liquid Glass UI, broader acceptance and independent production signing/distribution. First-pairing discovery popup work is provisionally deferred; rootless and legacy-framework support are not active workstreams.
+
+Publication constraints: private `HXLH50K/PodsOnDroid`, independent `main` ancestry rooted at `781b4b6`, no force push, no imported HyperPods commit ancestry, and no raw logs, extracted OEM APKs, signing keys or local APK binaries in Git. Existing CI may run after the push; it is not permission to resume feature work.

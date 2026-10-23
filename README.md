@@ -2,17 +2,24 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
+## Current checkpoint: alpha7 daily-use freeze
+
+On 2026-10-23 the user reported preliminary validation passed and chose a one-day trial on the primary phone. **Feature development is paused pending that feedback.** This checkpoint updates documentation and publishes the private source repository only; it does not change functionality, rebuild the APK or operate the phone.
+
+- User-confirmed: basic preview functionality, complete DEBUG scope reload, and the corrected native connection island.
+- Runtime-confirmed: actual dual-ear visibility followed by normal expiry exactly **5,000 ms** later.
+- Implemented: no ordinary notification carrier or persistent battery surface; original untinted earbud artwork; independently colored battery text; editable Low/Medium thresholds (20/50 defaults), separate reminder switches, downward crossings and initial-reading suppression.
+- Latest focused validation: **23 JVM tests passed**, debug assembly and APK identity/signature/API102 checks passed. Full-day stability, power use, recovery and the complete reminder/edge-case matrix remain unverified.
+- Frozen trial APK: `dist\PODS-0.1.0-alpha.7-debug.apk`, source `d3227eec`, SHA-256 `32afa88fde3922839829ff8d54eb402785a7e4a670e1c1c1d194c3284b9224bc`. See the [package and runtime receipt](docs/04-delivery-plan.md#alpha7-package-receipt).
+- Still planned, not part of this checkpoint: dedicated Interconnectivity headphone panel, Liquid Glass UI, broader device/ROM acceptance and independently signed production delivery. Discovery/first-pairing popup work remains provisionally deferred.
+
 **Alpha7, 2026-10-23:** the user's alpha6 test produced no island. A user-operated reload/reconnect captured the failure: the OEM returns a **lazy content proxy**, which alpha6 incorrectly treated as the concrete window controller. Alpha7 resolves the verified proxy on demand and preserves the native width-request handshake instead of rejecting an initially zero width. The subsequent user-operated round confirmed actual dual-ear visibility and normal expiry exactly 5,000 ms later. Model-specific artwork remains untinted; colors apply only to percentage text. This verifies the missing-island repair, not every visual or battery-policy acceptance case.
 
 The battery path no longer creates a `Notification`, notification channel, or `StatusBarNotification`, and has no notification publication fallback. It sends bounded authenticated data to SystemUI, which creates owned native island content using the contract inspected in this phone's system APKs. Ordinary notification access is retained only to remove proved-owned older-version remnants.
 
-Alpha5 implements the priority debug reload path and passed **46 focused JVM tests** plus debug assembly. Alpha4's [build-only receipt](docs/04-delivery-plan.md#alpha4-package-receipt) remains historical; the [alpha5 record](docs/04-delivery-plan.md#14-alpha5-priority-full-debug-scope-reload) distinguishes local checks from live acceptance. No autonomous device restart, installation, headset operation or computer shutdown is part of this iteration.
-
-The locally saved preview is `dist\PODS-0.1.0-alpha.5-debug.apk`, built from `6e60f3a`; its signature, version and SHA-256 are recorded in the [package receipt](docs/04-delivery-plan.md#alpha5-local-package-receipt). It has not been installed by the assistant.
+The priority full DEBUG scope reload was introduced in alpha5 and subsequently confirmed working by the user. Older builds, their validation boundaries and the last assistant-managed deployment remain historical receipts in the [delivery plan](docs/04-delivery-plan.md); alpha7 is the current trial baseline.
 
 The user's Xiaomi comparison found silent paired reconnect/wearing and a quick-connect card in discovery/first-pairing mode. P.O.D.S. intentionally keeps the user's preferred brief battery island for reconnect. First-pairing popup work is **provisionally deferred**, not permanently cancelled; ordinary Android Bluetooth pairing remains available. The dedicated Interconnectivity control panel and Liquid Glass remain planned. See the [latest UX evidence](docs/07-device-and-native-integration.md#manual-xiaomi-comparison-and-ios-distinction) and [decisions](docs/05-decisions.md).
-
-The last assistant-managed device deployment was alpha2 (`03f18a5`); alpha3 was built locally and handed to the user. Its **55 focused JVM tests**, assembly and Lint results do not override the subsequent failed manual presentation test. Physical acceptance remains a joint user-led step. Historical receipts remain in the [delivery plan](docs/04-delivery-plan.md).
 
 At the user's request, `main` now starts at the independent P.O.D.S. snapshot **`781b4b6`**, with an identical source tree and no HyperPods commit ancestry. The former local history, including preview implementation `5013f04`, was verified and archived outside the repository before rewriting. Historical receipt hashes refer to that archive, not the new branch ancestry.
 
@@ -20,18 +27,18 @@ At the user's request, `main` now starts at the independent P.O.D.S. snapshot **
 
 - App/module title: **P.O.D.S.**; release application ID `com.hxlh50k.pods` (unsigned), isolated debug ID `com.hxlh50k.pods.debug`. The Kotlin/Android namespace remains `moe.chenxy.hyperpods`.
 - Per-app locales implemented: **English and Simplified Chinese (`zh-CN`) only**. Coding documentation and commit messages are English.
-- Repository: [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid), created **private**; no initial push at this documentation checkpoint. Keep it private unless the user explicitly authorizes a visibility change.
+- Repository: [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid), **private**. The user authorized publication of this checkpoint; keep the repository private unless explicitly instructed otherwise.
 - Preserve HyperPods attribution, pinned source provenance, and applicable [GPL terms](LICENSE), not its Git ancestry. Private hosting and independent history do not waive distribution obligations.
 
 ## Prerequisites and validation
 
 Development uses Gradle 8.13, a JDK 22 toolchain, Android SDK 36, CMake 3.22.1, and the Android NDK selected by the build. The baseline used a JDK 17 launcher and cached distributions. After the initial download timeout, the wrapper now bootstraps `8.13-bin` using this environment's existing proxy process-locally; its network timeout is 60 seconds. See [build configuration](app/build.gradle.kts) and the separately [recorded build/test results](docs/04-delivery-plan.md#9-measured-baseline-checkpoint).
 
-Runtime work targets the rooted `houji` test phone, `OS4.0.0.14.XNCCNXM`, Android 17/API 37. **Daemon-reported API 102 is verified**, and a read-only official manager UI check also showed API 102 active. P.O.D.S. host injection and new API calls remain **unverified** until app testing. Legacy Xposed and a dedicated rootless backend are out of scope. See the [framework evidence and CLI boundary](docs/07-device-and-native-integration.md#read-only-daemon-status-follow-up).
+Runtime work targets the rooted `houji` test phone, `OS4.0.0.14.XNCCNXM`, Android 17/API 37. **Daemon-reported API 102 is verified**; user-led module/reload checks and the alpha7 native-island lifecycle provide actual host integration evidence. This does not certify every hook or another phone/ROM. Legacy Xposed and a dedicated rootless backend are out of scope. See the [framework evidence and CLI boundary](docs/07-device-and-native-integration.md#read-only-daemon-status-follow-up).
 
 Hardware-gated validation requires the user's AirPods 5 wireless-charging variant (reported firmware `1.0.0`). Xiaomi Open-ear Headphones Pro (reported `1.1.0.3`) provide a native-behavior comparison. Neither imported tests nor synthetic previews prove real AirPods 5 control, lid detection, or native-window compatibility. Do not install or restart system hosts outside the controlled test plan.
 
-The debug app uses the same three declared scopes. Live restart behavior remains unverified. Alpha1's AboutPage automation was blocked by old Espresso reflection; test-only dependencies now use the official stable fix. No autonomous host-process restart or physical earbud manipulation is part of this iteration.
+The debug app uses the same three declared scopes: Android Bluetooth, Xiaomi Bluetooth and SystemUI. Full DEBUG scope reload is user-confirmed working; optional Xiaomi `:ui` handling remains conditional. No autonomous host-process restart or physical earbud manipulation is part of the daily-use freeze.
 
 ## Manual native-island regression check
 
@@ -42,7 +49,7 @@ The alpha7 missing-island repair is runtime-verified in the delivery record. The
 3. Confirm both earbud pictures retain their original shading/material. Only the respective percentage text should use the Low/Medium color rules.
 4. If nothing appears or the lifecycle is wrong, report that result before retrying. Native schema mismatch fails closed instead of falling back to a notification. No repeated automated phone tests or power actions are performed.
 
-The user has completed the initial basic-function check and requested continued development. Future hardware interactions still remain user-driven; hand off a verified preview or capture procedure rather than autonomously manipulating the headphones.
+The user has completed preliminary alpha7 validation and paused development for daily use. Future hardware interactions remain user-driven; hand off a verified preview or capture procedure rather than autonomously manipulating the headphones.
 
 Device acceptance is collaborative: after focused local validation, agree on one or two checks with the user and wait for their observations. Do not extend the handoff into repeated UI automation, wake/unlock retries, scope restarts, or radio capture. The previous computer-shutdown request is withdrawn.
 
