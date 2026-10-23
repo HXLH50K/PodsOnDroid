@@ -2,11 +2,11 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-**Alpha4 implementation, 2026-10-23:** the [battery notification specification](docs/10-battery-notification-spec.md) now has a new dual-ear renderer, Low20/Medium50 settings, independent reminder switches, per-ear downward-crossing state and initial-low suppression. Native dual-region pre-draw acknowledgment starts the five-second display timer; an unconfirmed presentation has a bounded watchdog. This addresses the earlier flash at the implementation level, **not as a verified hardware fix**.
+**Latest feedback, 2026-10-23:** alpha4 shows an ordinary notification/card before collapsing into the island, uses battery-shaped icons instead of earbuds, and its interface-only restart does not reload the Bluetooth hosts after updates. The immediate priority is **complete debug scope reload with actual new-build verification**. This is process restart, not API102 hot reload and not a phone reboot.
 
-Per the user's request, this iteration runs **compilation/packaging only: no tests, Lint, device installation, radio capture or phone operations**. The APK is a development build; native timing, colors and reminder behavior remain for the next jointly agreed manual check.
+The next presentation changes use separate model-appropriate left/right earbud icons and disable ordinary focus expansion. The renderer still has a backing Android notification: that interim change is **not** completion of the requested pure charging-style native animation channel. That route needs a separately verified system contract rather than a guessed template or a hidden persistent notification.
 
-The versioned local handoff is `dist\PODS-0.1.0-alpha.4-debug.apk` with an adjacent SHA-256 file. Implementation `7052323` compiled successfully and the APK identity/development signature were inspected; see the [package receipt](docs/04-delivery-plan.md#alpha4-package-receipt). No test results from older previews apply to this new implementation.
+Alpha5 implements the priority debug reload path and passed **46 focused JVM tests** plus debug assembly. Alpha4's [build-only receipt](docs/04-delivery-plan.md#alpha4-package-receipt) remains historical; the [alpha5 record](docs/04-delivery-plan.md#14-alpha5-priority-full-debug-scope-reload) distinguishes local checks from live acceptance. No autonomous device restart, installation, headset operation or computer shutdown is part of this iteration.
 
 The user's Xiaomi comparison found silent paired reconnect/wearing and a quick-connect card in discovery/first-pairing mode. P.O.D.S. intentionally keeps the user's preferred brief battery island for reconnect. First-pairing popup work is **provisionally deferred**, not permanently cancelled; ordinary Android Bluetooth pairing remains available. The dedicated Interconnectivity control panel and Liquid Glass remain planned. See the [latest UX evidence](docs/07-device-and-native-integration.md#manual-xiaomi-comparison-and-ios-distinction) and [decisions](docs/05-decisions.md).
 
@@ -31,16 +31,16 @@ Hardware-gated validation requires the user's AirPods 5 wireless-charging varian
 
 The debug app uses the same three declared scopes. Live restart behavior remains unverified. Alpha1's AboutPage automation was blocked by old Espresso reflection; test-only dependencies now use the official stable fix. No autonomous host-process restart or physical earbud manipulation is part of this iteration.
 
-## Next manual check (not executed in this iteration)
+## Next joint check: debug scope reload
 
-1. After installing the update, **reload all three scopes, normally by restarting the phone once**. The interface-only restart button cannot update the Bluetooth hosts.
-2. Jointly verify **five seconds of useful visible dual-ear battery content**, followed by no persistent island or ordinary status notification. A brief flash does not pass merely because it disappears within five seconds. If the host visibility callback cannot be observed, the new code logs an unconfirmed presentation instead of claiming success.
-3. If anything remains, report its app name and a screenshot before changing other modules. Do not assume inherited appearance proves a separately installed HyperPods is responsible, or delete another app's notifications.
-4. Lid observations are not required for this correction. The debug tool remains opt-in and is **not** a native popup. Do not expect the planned dedicated panel, Liquid Glass, or Bluetooth-inclusive restart.
+1. After installing the next debug APK, open the module-loading diagnostics while the **old** module is still running in the hosts. Do not preemptively reboot just to make the new action available.
+2. When no call is active and Bluetooth interruption is acceptable, explicitly confirm the new full debug reload. The expected required hosts are Android Bluetooth, Xiaomi Bluetooth main and SystemUI; an observed Xiaomi `:ui` process is handled separately.
+3. Read the per-host result. Success requires replacement-process evidence and the currently installed build, not merely a successful signal. If a host stays old or disappears, report that exact outcome; do not loop restarts or change the framework automatically.
+4. Only after the reload path is understood, agree on a separate island-rendering round. Pure notification-free animation and the dedicated native control panel remain distinct follow-up work.
 
 The user has completed the initial basic-function check and requested continued development. Future hardware interactions still remain user-driven; hand off a verified preview or capture procedure rather than autonomously manipulating the headphones.
 
-Device acceptance is collaborative: after focused local validation and deployment, agree on one or two checks with the user and wait for their observations. Do not extend the handoff into repeated UI automation, wake/unlock retries, scope restarts, or radio capture. The next suggested check is the brief connection island; lid capture remains opt-in and is not started automatically.
+Device acceptance is collaborative: after focused local validation, agree on one or two checks with the user and wait for their observations. Do not extend the handoff into repeated UI automation, wake/unlock retries, scope restarts, or radio capture. The previous computer-shutdown request is withdrawn.
 
 ## Documentation
 

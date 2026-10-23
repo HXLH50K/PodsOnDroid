@@ -1,16 +1,11 @@
 package moe.chenxy.hyperpods.utils
 
-import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.RectF
 import android.graphics.drawable.Icon
 import android.os.Bundle
 import android.os.Process
@@ -22,7 +17,7 @@ import moe.chenxy.hyperpods.utils.SystemApisUtils.notifyAsUser
 import moe.chenxy.hyperpods.utils.SystemApisUtils.supportsIsland
 import org.json.JSONObject
 
-/** One native dual-region card. Only its owner decides lifetime and event eligibility. */
+/** Native dual-region content, currently notification-backed; not the charging-animation channel. */
 internal class BatteryIslandRenderer(private val context: Context) {
     data class Content(
         val title: String,
@@ -30,6 +25,7 @@ internal class BatteryIslandRenderer(private val context: Context) {
         val left: Int?,
         val right: Int?,
         val settings: BatteryNotificationSettings,
+        val modelNumber: String? = null,
     )
 
     data class Presentation(
@@ -69,8 +65,11 @@ internal class BatteryIslandRenderer(private val context: Context) {
         val rightLabel = resources.getString(R.string.battery_island_right, content.right?.let { "$it%" } ?: "--")
         val leftColor = content.settings.color(content.left)
         val rightColor = content.settings.color(content.right)
-        val leftIcon = batteryIcon(content.left, leftColor)
-        val rightIcon = batteryIcon(content.right, rightColor)
+        val model = PodsIslandData.modelForIcons(content.modelNumber)
+        val leftIcon = Icon.createWithResource(BuildConfig.APPLICATION_ID,
+            model?.leftBudsRes ?: R.drawable.pods_earbud_left).setTint(leftColor)
+        val rightIcon = Icon.createWithResource(BuildConfig.APPLICATION_ID,
+            model?.rightBudsRes ?: R.drawable.pods_earbud_right).setTint(rightColor)
         val seconds = ((remaining + 999) / 1000).toInt().coerceAtLeast(1)
         fun ear(type: Int, key: String, title: String) = JSONObject()
             .put("type", type)
@@ -89,7 +88,7 @@ internal class BatteryIslandRenderer(private val context: Context) {
         val focus = FocusApi.sendFocus(
             title = presentation.key.tag, cancel = false, isShowNotification = false, showSmallIcon = false,
             baseInfo = FocusApi.baseinfo(title = content.title, basetype = 0, content = content.reason),
-            island = island, updatable = true, islandFirstFloat = first, enableFloat = true,
+            island = island, updatable = true, islandFirstFloat = first, enableFloat = false,
             reopen = "false", picInfo = leftIcon, picInfotype = 2, timeout = seconds,
             ticker = "$leftLabel | $rightLabel", picticker = leftIcon,
             addpics = Bundle().apply {
@@ -101,7 +100,8 @@ internal class BatteryIslandRenderer(private val context: Context) {
         wire.getJSONObject("param_v2").apply {
             put("updatable", true)
             put("islandFirstFloat", first)
-            put("enableFloat", true)
+            // Ordinary focus expansion is independent of the island's initial animation.
+            put("enableFloat", false)
         }
         focus.putString("miui.focus.param", wire.toString())
         val extras = Bundle().apply {
@@ -137,20 +137,4 @@ internal class BatteryIslandRenderer(private val context: Context) {
         presentation.lastContent = content
     }
 
-    @SuppressLint("UseKtx")
-    private fun batteryIcon(level: Int?, color: Int): Icon {
-        val bitmap = Bitmap.createBitmap(64, 80, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
-        canvas.drawRoundRect(RectF(22f, 3f, 42f, 11f), 3f, 3f, paint)
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 4f
-        canvas.drawRoundRect(RectF(11f, 12f, 53f, 75f), 7f, 7f, paint)
-        paint.style = Paint.Style.FILL
-        if (level != null) {
-            val height = 51f * level.coerceIn(0, 100) / 100f
-            canvas.drawRoundRect(RectF(17f, 69f - height, 47f, 69f), 3f, 3f, paint)
-        }
-        return Icon.createWithBitmap(bitmap)
-    }
 }

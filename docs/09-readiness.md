@@ -73,11 +73,15 @@ Place **Restart scoped processes** under diagnostics/module management:
 
 ### Implementation limits
 
+**2026-10-23 priority update:** the interface-only preview is insufficient for APK updates because the old module remains in Bluetooth and Xiaomi Bluetooth main processes. The next debug action must reload all three required main hosts, use authenticated **old** module reports as eligible evidence, and verify the new build afterward. It cannot depend on a cooperative command that the already-installed alpha4 does not implement.
+
+For this explicitly confirmed, debug-only operation, controlled process exit is a distinct authorization from graceful quiescence: warn that all Bluetooth audio/connections may be interrupted, check idle call state, preflight every required target, validate exact PID/UID/start identity and stop on failure. Do not set a fake `controlIpcStopped=true` acknowledgment. The operating system reclaims resources when a process exits; that is not a claim that the old controller cooperatively shut down. Normal/release/UI-only operations retain their existing guards.
+
 1. Prefer a verified, restricted framework restart facility if one exists; otherwise use an app-side controlled root helper. This alone does not justify a KSU package.
 2. Allow only statically allowlisted hosts/subprocesses actually injected by this module. Resolve exact PIDs and verify name, UID, and start-time/process identity immediately before acting, including PID reuse/shared-UID risks.
 3. Act on exact PIDs only: no name-based bulk killing, wildcards, user-supplied commands, generic remote shell, or package-wide force-stop.
 4. Never target PID 1, `system_server`, `zygote`, root/framework daemons, or unrelated apps. Never wipe data, weaken policy, or reboot the phone automatically.
-5. Quiesce affected commands/subscriptions/sockets, then restart hosts one at a time in a verified dependency order. UI-only restart must not close a healthy AACP session.
+5. Prefer genuine quiescence when both sides support it. For the debug-only upgrade path described above, explicitly authorized process exit may be used for old builds without that protocol; do not falsely report graceful preparation. Restart hosts sequentially, verifying dependencies. UI-only restart must not close a healthy AACP session.
 6. Wait for the normal system lifecycle to restore each host. A process existing is insufficient: verify APK versionCode/build identity, API 102, and relevant hook readiness from the new host.
 7. Distinguish **New build loaded**, **Host restored but module absent**, **Old build still loaded**, **Restore timed out**, and **Framework action/phone reboot required**. Stop on failure; do not retry indefinitely or broaden targets.
 8. External broadcasts/intents cannot directly invoke root operations. No exported arbitrary-command surface; retain only necessary diagnostic results.
@@ -87,6 +91,8 @@ Place **Restart scoped processes** under diagnostics/module management:
 This action recreates controlled host processes; it is **not API 102 hot reload**. Hot reload remains disabled.
 
 It may avoid a phone reboot for ordinary module APK updates once the framework recognizes the new APK. Framework upgrades, Zygisk/native changes, or stale framework caches may still require a reboot. Report that boundary instead of promising reboot-free updates.
+
+The optional Xiaomi `:ui` process may not immediately relaunch when no window needs it. Distinguish "stopped, awaiting normal launch" from "new module verified"; it must not hide failure in one of the three required main hosts or force a private Activity to open merely to make the check pass.
 
 ## 5. Work now versus hardware gates
 

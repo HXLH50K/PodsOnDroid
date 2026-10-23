@@ -1,6 +1,7 @@
 package moe.chenxy.hyperpods.utils
 
 import kotlinx.coroutines.runBlocking
+import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.utils.ScopeRestart.Command
 import moe.chenxy.hyperpods.utils.ScopeRestart.CommandFailure
 import moe.chenxy.hyperpods.utils.ScopeRestart.CommandResult
@@ -23,6 +24,66 @@ class ScopeRestartTest {
             commands.add(command)
             return reply(command)
         }
+    }
+
+    @Test fun explicitExitUsesTheVariantNotTheDisabledAndroidDebuggableFlag() {
+        assertEquals("debug", BuildConfig.BUILD_TYPE)
+        assertFalse(BuildConfig.DEBUG)
+        assertTrue(ScopeRestart.debugProcessExitAllowed("debug", true))
+        assertFalse(ScopeRestart.debugProcessExitAllowed("debug", false))
+        assertFalse(ScopeRestart.debugProcessExitAllowed("release", true))
+        assertFalse(ScopeRestart.debugProcessExitAllowed("Debug", true))
+    }
+
+    @Test fun explicitDebugExitNeedsImmutableApprovalAndAllThreeRequiredHosts() = runBlocking {
+        val runner = Runner()
+        val core = ScopeRestart(runner)
+        val required = ScopeRestart.requiredReloadHosts.map { host(it) }
+        val unapproved = core.discoverDebugProcessExit(required, false) as ScopeRestart.DebugDiscoveryResult.Rejected
+        assertEquals(FailureCode.DEBUG_PROCESS_EXIT_NOT_APPROVED, unapproved.failure.code)
+        for (missing in ScopeRestart.requiredReloadHosts) {
+            val rejected = core.discoverDebugProcessExit(required.filter { it.processName != missing.processName }, true)
+                as ScopeRestart.DebugDiscoveryResult.Rejected
+            assertEquals(FailureCode.MISSING_REQUIRED_HOST, rejected.failure.code)
+        }
+        assertTrue(runner.commands.isEmpty())
+        val plan = (core.discoverDebugProcessExit(required, true) as ScopeRestart.DebugDiscoveryResult.Ready).plan
+        assertEquals(ScopeRestart.requiredReloadHosts, plan.targets.map { it.host })
+        try {
+            (plan.targets as MutableList<*>).clear()
+            fail("Debug approval must be immutable")
+        } catch (_: UnsupportedOperationException) {
+            assertEquals(3, plan.targets.size)
+        }
+        val target = plan.targets.first()
+        assertEquals(FailureCode.INVALID_PLAN,
+            (ScopeRestart(runner).signalDebugProcessExit(plan, target) as SignalResult.Stopped).failure.code)
+        assertEquals(3, runner.commands.size)
+        assertTrue(core.signalDebugProcessExit(plan, target) is SignalResult.Completed)
+        assertEquals(FailureCode.PLAN_ALREADY_USED,
+            (core.signalDebugProcessExit(plan, target) as SignalResult.Stopped).failure.code)
+    }
+
+    @Test fun debugExitDoesNotBypassNormalControlShutdownGuardOrAuthorizeUnapprovedIdentity() = runBlocking {
+        val runner = Runner()
+        val core = ScopeRestart(runner)
+        val evidence = ScopeRestart.requiredReloadHosts.map { host(it) }
+        val normal = (core.discover(Preset.ALL_VERIFIED, evidence) as DiscoveryResult.Ready).plan
+        assertEquals(FailureCode.CONTROL_IPC_NOT_STOPPED, (core.signal(normal) as SignalResult.Stopped).failure.code)
+        val debug = (core.discoverDebugProcessExit(evidence, true) as ScopeRestart.DebugDiscoveryResult.Ready).plan
+        val changed = debug.targets.first().copy(pid = 900)
+        assertEquals(FailureCode.INVALID_PLAN,
+            (core.signalDebugProcessExit(debug, changed) as SignalResult.Stopped).failure.code)
+        assertTrue(runner.commands.none { it.phase == Phase.SIGNAL })
+    }
+
+    @Test fun debugSignalsRevalidateOriginalStartTimeAndNeverResnapshotToAuthorizePidReuse() = runBlocking {
+        val runner = Runner { if (it.phase == Phase.SIGNAL) response(it, start = 999) else response(it) }
+        val core = ScopeRestart(runner)
+        val plan = (core.discoverDebugProcessExit(ScopeRestart.requiredReloadHosts.map { host(it) }, true)
+            as ScopeRestart.DebugDiscoveryResult.Ready).plan
+        assertEquals(FailureCode.PID_REUSED,
+            (core.signalDebugProcessExit(plan, plan.targets.first()) as SignalResult.Stopped).failure.code)
     }
 
     @Test fun rejectsUnauthorizedNamesAndInjectionBeforeStartingRoot() = runBlocking {

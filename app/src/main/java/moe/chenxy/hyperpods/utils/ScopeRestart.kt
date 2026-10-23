@@ -8,7 +8,10 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.runInterruptible
+import moe.chenxy.hyperpods.BuildConfig
 
 /**
  * Explicit, user-confirmed recovery only. The caller authenticates module reports, obtains each
@@ -56,9 +59,20 @@ class ScopeRestart(private val runner: CommandRunner = RootCommandRunner()) {
         val requiresControlIpcStop: Boolean
     }
 
+    /** Explicit process-exit approval is not evidence of cooperative control-channel shutdown. */
+    sealed interface DebugProcessExitPlan {
+        val targets: List<Target>
+    }
+
+    sealed interface DebugDiscoveryResult {
+        data class Ready(val plan: DebugProcessExitPlan) : DebugDiscoveryResult
+        data class Rejected(val failure: Failure) : DebugDiscoveryResult
+    }
+
     enum class FailureCode {
         NO_VERIFIED_TARGETS, UNAUTHORIZED_HOST, INVALID_EVIDENCE, INVALID_PID, INVALID_UID,
         DUPLICATE_TARGET, INVALID_PLAN, PLAN_ALREADY_USED, CONTROL_IPC_NOT_STOPPED,
+        DEBUG_PROCESS_EXIT_NOT_APPROVED, MISSING_REQUIRED_HOST,
         ROOT_DENIED, ROOT_UNAVAILABLE, TIMEOUT, OUTPUT_LIMIT, IO_ERROR, INTERRUPTED,
         UNKNOWN_RESULT, MALFORMED_SNAPSHOT, PROCESS_VANISHED, PROCESS_NAME_MISMATCH,
         UID_MISMATCH, PID_REUSED, SIGNAL_FAILED
@@ -102,7 +116,14 @@ class ScopeRestart(private val runner: CommandRunner = RootCommandRunner()) {
 
     private val owner = Any()
 
-    suspend fun discover(preset: Preset, verifiedHosts: List<VerifiedHost>): DiscoveryResult {
+    suspend fun discover(preset: Preset, verifiedHosts: List<VerifiedHost>): DiscoveryResult =
+        discover(preset, verifiedHosts, allowAbsentOptionalUi = false)
+
+    private suspend fun discover(
+        preset: Preset,
+        verifiedHosts: List<VerifiedHost>,
+        allowAbsentOptionalUi: Boolean,
+    ): DiscoveryResult {
         if (verifiedHosts.isEmpty()) return rejected(FailureCode.NO_VERIFIED_TARGETS)
         if (verifiedHosts.size > Host.entries.size) return rejected(FailureCode.INVALID_EVIDENCE)
         val candidates = ArrayList<Pair<Host, VerifiedHost>>()
@@ -128,9 +149,14 @@ class ScopeRestart(private val runner: CommandRunner = RootCommandRunner()) {
         if (candidates.isEmpty()) return rejected(FailureCode.NO_VERIFIED_TARGETS)
         val targets = ArrayList<Target>()
         for ((host, evidence) in candidates.sortedBy { it.first.ordinal }) {
+            currentCoroutineContext().ensureActive()
             val command = SnapshotCommand(host, evidence.pid, evidence.expectedUid)
             when (val response = ScopeRestartProtocol.read(runner.run(command), command)) {
-                is ScopeRestartResponse.Rejected -> return DiscoveryResult.Rejected(response.failure)
+                is ScopeRestartResponse.Rejected -> {
+                    if (allowAbsentOptionalUi && host == Host.XIAOMI_UI &&
+                        response.failure.code == FailureCode.PROCESS_VANISHED) continue
+                    return DiscoveryResult.Rejected(response.failure)
+                }
                 is ScopeRestartResponse.Snapshot -> targets.add(
                     Target(host, evidence.pid, evidence.expectedUid, response.startTimeTicks, evidence)
                 )
@@ -138,6 +164,49 @@ class ScopeRestart(private val runner: CommandRunner = RootCommandRunner()) {
             }
         }
         return DiscoveryResult.Ready(ApprovedPlan(owner, immutable(targets)))
+    }
+
+    suspend fun discoverDebugProcessExit(
+        verifiedHosts: List<VerifiedHost>,
+        explicitUserApproval: Boolean,
+    ): DebugDiscoveryResult {
+        if (!debugProcessExitAllowed(BuildConfig.BUILD_TYPE, explicitUserApproval)) {
+            return DebugDiscoveryResult.Rejected(Failure(FailureCode.DEBUG_PROCESS_EXIT_NOT_APPROVED))
+        }
+        val evidence = verifiedHosts.toList()
+        for (host in requiredReloadHosts) {
+            if (evidence.none { Host.exact(it.packageName, it.processName) == host }) {
+                return DebugDiscoveryResult.Rejected(Failure(FailureCode.MISSING_REQUIRED_HOST, host))
+            }
+        }
+        return when (val discovered = discover(Preset.ALL_VERIFIED, evidence, allowAbsentOptionalUi = true)) {
+            is DiscoveryResult.Rejected -> DebugDiscoveryResult.Rejected(discovered.failure)
+            is DiscoveryResult.Ready -> DebugDiscoveryResult.Ready(ApprovedDebugProcessExitPlan(
+                owner, immutable(discovered.plan.targets.sortedBy { reloadOrder.indexOf(it.host) })
+            ))
+        }
+    }
+
+    /** Signals one preflight-approved identity; callers must verify it before advancing. */
+    suspend fun signalDebugProcessExit(plan: DebugProcessExitPlan, target: Target): SignalResult {
+        if (!debugProcessExitAllowed(BuildConfig.BUILD_TYPE, true)) {
+            return stopped(emptyList(), Failure(FailureCode.DEBUG_PROCESS_EXIT_NOT_APPROVED, target.host))
+        }
+        val approved = plan as? ApprovedDebugProcessExitPlan
+        if (approved == null || approved.owner !== owner || target !in approved.targets) {
+            return stopped(emptyList(), Failure(FailureCode.INVALID_PLAN, target.host))
+        }
+        currentCoroutineContext().ensureActive()
+        if (!approved.claim(target)) {
+            return stopped(emptyList(), Failure(FailureCode.PLAN_ALREADY_USED, target.host))
+        }
+        val command = SignalCommand(target)
+        return when (val response = ScopeRestartProtocol.read(runner.run(command), command)) {
+            ScopeRestartResponse.Signalled -> SignalResult.Completed(immutable(listOf(target)))
+            is ScopeRestartResponse.Rejected -> stopped(emptyList(), response.failure)
+            is ScopeRestartResponse.Snapshot ->
+                stopped(emptyList(), Failure(FailureCode.UNKNOWN_RESULT, target.host))
+        }
     }
 
     /**
@@ -157,6 +226,7 @@ class ScopeRestart(private val runner: CommandRunner = RootCommandRunner()) {
         }
         val signalled = ArrayList<Target>()
         for (target in approved.targets) {
+            currentCoroutineContext().ensureActive()
             val command = SignalCommand(target)
             when (val response = ScopeRestartProtocol.read(runner.run(command), command)) {
                 ScopeRestartResponse.Signalled -> signalled.add(target)
@@ -174,6 +244,18 @@ class ScopeRestart(private val runner: CommandRunner = RootCommandRunner()) {
 
     private fun stopped(targets: List<Target>, failure: Failure) =
         SignalResult.Stopped(immutable(targets), failure)
+
+    companion object {
+        // Restart providers before consumers; a provider can indirectly replace a later host.
+        // The lazy Xiaomi UI is last and is never launched just to obtain a status report.
+        val requiredReloadHosts: List<Host> = immutable(listOf(
+            Host.BLUETOOTH, Host.XIAOMI_BLUETOOTH, Host.SYSTEM_UI
+        ))
+        val reloadOrder: List<Host> = immutable(requiredReloadHosts + Host.XIAOMI_UI)
+
+        internal fun debugProcessExitAllowed(buildType: String, explicitUserApproval: Boolean) =
+            buildType == "debug" && explicitUserApproval
+    }
 }
 
 private fun <T> immutable(values: List<T>): List<T> = Collections.unmodifiableList(ArrayList(values))
@@ -184,6 +266,14 @@ private class ApprovedPlan(
 ) : ScopeRestart.Plan {
     val used = AtomicBoolean()
     override val requiresControlIpcStop = targets.any { it.host.affectsControlIpc }
+}
+
+private class ApprovedDebugProcessExitPlan(
+    val owner: Any,
+    override val targets: List<ScopeRestart.Target>,
+) : ScopeRestart.DebugProcessExitPlan {
+    private val used = HashSet<ScopeRestart.Target>()
+    @Synchronized fun claim(target: ScopeRestart.Target): Boolean = used.add(target)
 }
 
 private class SnapshotCommand(

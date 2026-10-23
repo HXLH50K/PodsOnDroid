@@ -34,6 +34,7 @@ internal class BatteryNotificationHost(private val context: Context) {
     ) {
         var controlGeneration: Long? = null
         var lastObservation = -1L
+        var modelNumber: String? = null
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -131,6 +132,9 @@ internal class BatteryNotificationHost(private val context: Context) {
         val observedAt = intent.getLongExtra(BatteryIslandContract.OBSERVED_AT, -1)
         if (observedAt < 0 || observedAt <= current.lastObservation) return
         current.lastObservation = observedAt
+        intent.getStringExtra("modelNumber")?.let { model ->
+            if (PodsIslandData.modelForIcons(model) != null) current.modelNumber = model
+        }
         if (settings != current.reducer.snapshot().settings) {
             cancelBatch()
             check(current.reducer.settingsChanged(settings))
@@ -311,6 +315,7 @@ internal class BatteryNotificationHost(private val context: Context) {
         return BatteryIslandRenderer.Content(
             PodsIslandData.displayName(current.device.alias, current.device.name), reasonText,
             current.reducer.left.level, current.reducer.right.level, current.reducer.snapshot().settings,
+            current.modelNumber,
         )
     }
 

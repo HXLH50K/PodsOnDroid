@@ -6,6 +6,12 @@ Implementation note: alpha4 introduces the threshold model/UI, per-ear session r
 
 This is the authoritative battery-notification contract for the next iteration. It supersedes conflicting battery-presentation and reminder assumptions in earlier planning documents. It does not change pairing, audio routing, the dedicated Interconnectivity panel, or firmware behavior.
 
+### Later presentation clarification (2026-10-23 morning)
+
+The user's alpha4 observation was a standard notification/card first, followed by collapse into the island. The requested final surface is **direct native island animation without an ordinary notification**, analogous to a charger insertion, and the two icons must depict earbuds rather than battery gauges.
+
+The alpha4 renderer is explicitly notification-backed through `NotificationManager`; hiding its tray entry or turning off a floating-card flag does not by itself implement a notification-free charging-style channel. The next prioritized iteration addresses complete debug scope reloading, replaces the icons with model-appropriate earbuds (generic earbud silhouettes when unknown), and disables ordinary focus expansion. A true no-notification animation path still requires a verified native lifecycle/payload contract, including two colored ear regions, update/cancel behavior and timing. Do not silently fall back to an ordinary notification or mark the stricter native-animation requirement complete.
+
 ## 1. Problem and evidence
 
 The user reports that the current connection notification **flashes briefly rather than remaining as a useful five-second island**. This is a failed presentation result, not an accepted implementation.

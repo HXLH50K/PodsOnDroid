@@ -1,5 +1,7 @@
 # 04 Delivery and acceptance plan
 
+**Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
+
 **Current task, 2026-10-23:** after requesting the [battery notification specification](10-battery-notification-spec.md), the user requested implementation, packaging **without tests**, and then computer shutdown. Alpha4 follows that contract. Only compilation/packaging and artifact checks are permitted in this iteration; BAT-01 through BAT-36 and native timing/rendering remain unexecuted, not passed.
 
 Updated: 2026-10-22. The user accepted the basic alpha1 behavior and requested further development with independent Git history. Section 10 records the alpha2 notification/capture changes; section 9 preserves the original preview receipt. Native-window, live R01 and broader hardware acceptance remain incomplete. The release plan remains a future acceptance contract, not a completed-MVP claim.
@@ -447,3 +449,26 @@ No unit tests, instrumentation tests, Lint, ADB, installation, scope restart, ra
 - APK v2 development signature and modern API102 metadata inspected successfully. No new release key was created or reused from another product.
 - Not installed. No test, Lint, or hardware acceptance is claimed. The native pre-draw signal, actual continuous visibility, independent colors and threshold behavior remain for a jointly agreed later test.
 - The source and documentation are saved locally; no remote push. After saving this receipt, the requested non-forced computer shutdown can be scheduled with a short grace period.
+
+## 14. Alpha5: priority full debug scope reload
+
+The user withdrew shutdown instructions and reported that alpha4 still required a phone reboot to update module code. The previous UI-only action intentionally excluded the Android Bluetooth and Xiaomi Bluetooth main hosts; it could not satisfy full APK-update loading.
+
+Implemented:
+
+- A debug-only **Reload all module scopes** action, with a separate explicit process-exit confirmation; the lower-impact interface-only option remains.
+- Old alpha4 host reports are eligible. The action does not require a new cooperative command inside already-running old module code, and it never fabricates a graceful-quiescence acknowledgment.
+- Fresh authenticated reports for all three required main hosts, real PackageManager UIDs, idle call/audio state and root PID/UID/start identities are preflighted before the first signal.
+- Sequence: Android Bluetooth -> Xiaomi Bluetooth main -> SystemUI -> optional observed Xiaomi `:ui`. Each target is revalidated immediately before a one-time signal, then its replacement must prove a new PID and the installed version/revision/build instance before progression.
+- Providers may indirectly recreate later hosts; a verified current replacement is accepted without signalling it again. Lazy optional `:ui` is reported as awaiting normal launch, never counted as verified.
+- Bounded application-owned progress survives navigation; explicit cancellation interrupts pending root work and records uncertain already-signalled outcomes. Busy/unknown call state, missing required hosts, stale modules or identity failures stop further signals. No system-core process, framework daemon, data wipe, package-wide force-stop or phone reboot is used.
+
+Related presentation changes:
+
+- Model-specific left/right earbud icons replace the battery gauges; unknown models use separate generic earbud silhouettes.
+- Ordinary focus expansion is disabled independently of the island's initial animation.
+- **The transport still uses a backing notification.** This does not yet implement the user's stricter pure charging-style native animation requirement. Public/source examples establish `strong_toast_action` as a different path, but not the complete safe dual-ear/update/cancel/visibility contract on this ROM. That work stays separate from the priority reload handoff.
+
+Local validation: **46 focused JVM tests passed**, covering policy, root cancellation, full coordinator sequencing and failure/old-build handling. Debug assembly passed. No ADB command, installation, real root process signal, headset operation or computer power command was performed.
+
+Next agreed manual check: install alpha5 without first rebooting, open module diagnostics, and while no call is active explicitly confirm full debug reload. Report the individual outcomes for the three required hosts. A successful signal or an old module in a replacement PID is not success. Framework cache or Zygisk/framework updates can still require separate framework action; the app reports that limitation rather than automatically rebooting or pretending all updates are reboot-free.

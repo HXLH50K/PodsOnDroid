@@ -9,7 +9,7 @@ class InterfaceScopeRestartTest {
         ModuleStatus.Report(host, 1, "12345678", "receiver_ready", process, 1234, 1000,
             api, "LSPosed", "test-build", "unknown")
 
-    @Test fun theInitialSurfaceNeverOffersBluetoothControlOrUnhookedMiLink() {
+    @Test fun theSecondaryInterfaceOptionNeverOffersBluetoothControlOrUnhookedMiLink() {
         val reports = listOf(report(HyperPodsBroadcasts.SYSTEM_UI),
             report(HyperPodsBroadcasts.XIAOMI_BLUETOOTH),
             report(HyperPodsBroadcasts.BLUETOOTH), report("com.milink.service"))
@@ -26,5 +26,22 @@ class InterfaceScopeRestartTest {
 
     @Test fun legacyFrameworkEvidenceCannotExposeAProcessRestart() {
         assertTrue(InterfaceScopeRestart.eligible(listOf(report(HyperPodsBroadcasts.SYSTEM_UI, api = 101))).isEmpty())
+    }
+
+    @Test fun fullReloadAcceptsOldAlphaReportsWithoutRequiringNewCapabilities() {
+        val reports = ScopeRestart.Host.entries.map { report(it.packageName, it.processName).copy(
+            version = 4, buildInstance = "old-alpha4", callState = if (it == ScopeRestart.Host.BLUETOOTH) "idle" else "unknown"
+        ) }
+        assertEquals(ScopeRestart.reloadOrder.map { it.processName },
+            InterfaceScopeRestart.eligible(reports, InterfaceScopeRestart.Mode.DEBUG_ALL).map { it.processName })
+    }
+
+    @Test fun fullReloadRequiresExactProcessesValidPidUidAndModernApi() {
+        val valid = report(HyperPodsBroadcasts.BLUETOOTH)
+        for (invalid in listOf(valid.copy(processName = "${valid.processName}:other"),
+            valid.copy(pid = 1), valid.copy(uid = 0), valid.copy(frameworkApi = 101),
+            valid.copy(frameworkApi = 1001), valid.copy(packageName = "system_server"))) {
+            assertTrue(InterfaceScopeRestart.eligible(listOf(invalid), InterfaceScopeRestart.Mode.DEBUG_ALL).isEmpty())
+        }
     }
 }
