@@ -2,7 +2,27 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha12 unified page framework
+## Current checkpoint: alpha13 dropdown repair
+
+The user accepts the overall alpha12 UI and defers miscellaneous polish. The
+blocking secondary-page dropdown problem is repaired: the custom app frame
+had omitted Miuix's shared popup host that its original Scaffold provided.
+Alpha13 restores that host once at the app root, outside page animations,
+blur-source and IME-padding layers. No selector readiness or value callback
+was changed.
+
+Direct authorized phone UI checks confirmed press-speed and hold-duration
+menus render their options, Back closes them without leaving More controls,
+and a normal outside-body tap dismisses a reopened menu. Both displayed values
+remained Default; no option, toggle, mode or slider value was changed.
+
+16 focused JVM tests, app/UI-test APK assembly and Lint passed. Three dropdown
+regression tests were added and compiled. A single instrumentation attempt did
+not complete and was explicitly aborted; it is not counted as passing. Actual
+UI validation used direct app interaction and screenshots, **not background log
+collection**. See the [alpha13 receipt](docs/04-delivery-plan.md#24-alpha13-shared-dropdown-popup-host-repair).
+
+## Previous checkpoint: alpha12 unified page framework
 
 The user prioritized the overall UI over special glass optics; ordinary blur
 is acceptable while navigation and hierarchy are corrected. Alpha12 retains

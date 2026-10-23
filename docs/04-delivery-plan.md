@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-23 evening:** after the design/API survey, the user prioritized the overall UI and accepted ordinary blur as an interim effect. Alpha12 unifies fixed child navigation, page transitions and content hierarchy while retaining the agreed category split. Section 23 records this independent milestone. The accepted floating panel and unresolved issue #1 are unchanged. No automatic scope restart or earbud operation is authorized.
+**Current status, 2026-10-23 evening:** the user accepts the overall alpha12 UI, defers miscellaneous polish, and reports that all secondary-page dropdowns fail to open. Direct app-only UI testing is authorized for this repair; background log collection is not wanted for routine UI work. Section 24 records the alpha13 root popup-host fix and direct-device evidence. No scope restart, live headphone-value change or earbud operation is authorized by this UI check.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -1065,3 +1065,72 @@ groups and enter/return motion. This does not require earbuds or a scope reload.
   performed. The user can inspect the updated app directly; the UI-only check
   does not require a scope reload. A bounded UI-error collector is prepared
   before handoff; visual acceptance remains pending.
+
+## 24. Alpha13 shared dropdown popup-host repair
+
+### Reproduction and root cause
+
+The user reported that secondary-page dropdowns all failed while toggles and
+sliders worked. A direct tap on the enabled press-speed row reproduced the
+failure on installed alpha12: the row highlighted, but no option menu appeared.
+No value was selected.
+
+Inspection of the pinned Miuix 0.6.1 implementation confirmed that `Scaffold`
+normally provides `MiuixPopupUtils.MiuixPopupHost`. The custom `AppFrame`
+replacement omitted it. `SuperDropdown` registers `ListPopup` content with
+this shared mechanism, so the missing host affects all such controls without
+affecting ordinary switches/sliders.
+
+The fix adds one popup host at the app-frame root, outside page transitions,
+the Haze source and IME padding. The same production frame is used by the
+synthetic-data preview activity. No per-dropdown workaround, settings readiness
+change or Bluetooth protocol change is included.
+
+### Direct phone UI results
+
+The user expressly permitted app UI control for this round. After in-place
+installation of alpha13 on `houji`:
+
+- Press speed showed Default / Slower / Slowest, with Default checked.
+- Back dismissed that menu and retained the More controls page.
+- Hold duration showed Default / Longer / Longest, with Default checked.
+- Back dismissed the second menu. Reopening press speed and tapping an empty
+  body area outside the menu also dismissed it.
+- Both visible values remained Default. No option, toggle, mode, slider or
+  other live setting was changed; no headphone operation or scope restart
+  occurred. Unavailable controls were not forcibly enabled.
+
+An initial tap near the extreme screen edge did not dismiss the popup; Back
+and a normal outside-body tap did. Do not count the edge tap as successful or
+claim every possible dismissal gesture has been tested.
+
+### Local tests and instrumentation limitation
+
+- 16 focused JVM tests passed (5 page motion, 6 settings hierarchy/grouping,
+  5 dock focus-clearance cases).
+- App and Android UI-test APK builds passed; Lint **0 errors, 129 warnings,
+  2 hints**.
+- Added three production-secondary-page dropdown open/dismiss regression tests,
+  including duration/microphone and return/reopen coverage. They compiled.
+- A single baseline instrumentation attempt started but produced no completed
+  assertion/result. It was aborted by terminating only its verified target-app
+  PID; the runner then reported process termination. This is an environment/
+  harness limitation, **not a passing test or an app-crash finding**. It was not
+  repeatedly retried. Real-device acceptance above came from direct taps and
+  screenshots, not that stalled runner. Microphone selection was not live-tested.
+- No `logcat` collector was started. Unrelated foreground screenshots were
+  discarded; app-only evidence remains local and outside Git.
+
+### Package and cleanup receipt
+
+- Source: `cb56d6011adc7a8636515c81ecc7171beb4cdfe2`.
+- File: `dist/PODS-0.1.0-alpha.13-debug.apk`; **31,990,651 bytes**.
+- SHA-256: `b82ee0a5408fd00d1737b92231c30a0ce703ad927dc4dbe454ae46e9328292e9`.
+- Verified identity: `com.hxlh50k.pods.debug`, alpha13/code13; matching
+  development v2 certificate, committed revision, API102 and original scopes.
+- In-place update returned `Success`; installed APK hash matched. Update time:
+  `2026-10-23 21:32:08`, with original install time and app data retained.
+- Removed the temporary `.debug.test` harness package, explicitly named device
+  screenshot/APK staging files and local dependency-inspection scratch.
+  The main app remains installed, with no popup left open.
+- No background collector remains. Issue #1 and deferred UI polish are unchanged.

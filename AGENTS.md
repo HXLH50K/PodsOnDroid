@@ -8,6 +8,8 @@
 - Never commit signing keys, passwords, captured system APKs, raw device logs, or local environment configuration.
 - Target the current HyperOS 4 test device first. Do not claim earbud functionality without testing the user's AirPods 5.
 - When physical earbud interaction is required, finish and verify the independent milestone, report the exact setup needed, and wait for the user.
-- Treat device and earbud acceptance as collaborative testing. After focused local checks and deployment, agree on one or two concrete checks; the user operates the phone and headphones.
+- Treat earbud and system-host acceptance as collaborative testing. After focused local checks and deployment, agree on one or two concrete checks; the user operates the phone and headphones.
+- For app-only UI fixes, the user permits bounded direct phone UI testing. Do not turn menu validation into live headphone-setting changes, earbud operations, scope restarts, or radio capture without separate agreement.
+- Do not start background log collectors for routine UI changes unless the user explicitly requests them.
 - Do not extend a handoff into repeated device UI automation, wake/unlock attempts, host restarts, or radio capture without an agreed test round. Record environment blockers and stop instead of pursuing a fully automatic acceptance run.
 - The previous computer-shutdown request was withdrawn. Do not perform further power operations unless the user explicitly requests a new one.
