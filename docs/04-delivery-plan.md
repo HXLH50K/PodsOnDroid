@@ -500,3 +500,15 @@ The alpha5 normal-notification-before-island behavior is addressed by replacing 
 Local validation: **11 focused JVM tests passed** (4 artwork cases and 7 payload/trust/lease cases) and debug assembly succeeded. No broad suite, Lint, runtime display, scan, restart, installation or earbud operation was performed. The only ADB work was read-only copying of system APKs for local static inspection; those binaries are not product artifacts.
 
 Next joint check: install alpha6, use the now user-verified full debug reload, then reconnect once. Verify direct island appearance with no preceding ordinary notification/card and untinted pictorial ear images with independently colored percentage text. If there is no island or timing is wrong, report that first instead of running repeated automated trials.
+
+### Alpha6 package receipt
+
+- Committed source: `4bae5498db014330124cd1eaddb739f79ebc5e4f`.
+- File: `dist/PODS-0.1.0-alpha.6-debug.apk`; **31,850,099 bytes**.
+- SHA-256: `318646455db71e7e9165ea8334ec1b9ff3373f6844c033534fcbbddc3f56e3c9`.
+- Identity verified from the APK: `com.hxlh50k.pods.debug`, display name `P.O.D.S.`, version `0.1.0-alpha.6`, code `6`.
+- Modern API102 Java entry/scopes and absence of the legacy Java entry verified; the committed source revision is present in packaged DEX.
+- APK v2 signature verified with the existing development certificate. This is not the independent production signing key.
+- Final debug assembly from committed source passed. The 11 focused local regressions above are not substitutes for native rendering acceptance.
+- Temporary system APK/decompiler analysis directory removed after recording contract evidence. No APK, decompiler output, private key or device log was added to Git.
+- Not installed or exercised on the phone; no remote push and no power operation.
