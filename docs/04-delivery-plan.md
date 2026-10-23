@@ -800,3 +800,26 @@ restart, mode change, volume change or earbud operation was performed by the
 assistant. The next user round checks the glass layout and preserved artwork,
 then checks the controls only if the user chooses. Do not report this preview
 as an accepted native MiLink implementation.
+
+### Alpha9 package and deployment receipt
+
+- Source: `e94dde4bc720f5d137b92abb621f4dbd2972567b`.
+- File: `dist/PODS-0.1.0-alpha.9-debug.apk`; **31,935,551 bytes**.
+- SHA-256: `b984c961d0e783171527589bd92e0faa0eb1b51e0193d49ee5c12af12f2bdbb6`.
+- Identity: `com.hxlh50k.pods.debug`, `P.O.D.S.`, alpha9/code9.
+- Final committed-source build and all 28 focused tests passed. Final Lint:
+  **0 errors, 136 warnings, 2 hints**; broader existing controller-suite failures
+  were not part of this targeted run and are not claimed fixed.
+- Development v2 signature matches alpha8; packaged revision/API102 metadata
+  and the unchanged original three scopes were verified.
+- Root package-manager in-place installation returned `Success` on `houji`;
+  installed base-APK hash matches the artifact. Update time:
+  `2026-10-23 18:18:20`; original first-install time remains unchanged.
+- The normal `MODIFY_AUDIO_SETTINGS` permission is granted. No media-volume
+  command, UI launch, scope restart or earbud operation was executed.
+- Task-specific MiLink APK/disassembly files and device install staging were
+  removed. Reference image and diagnostic capture remain local, outside Git.
+- Start a verified 20-minute collector including `PODS-Panel`, `PODS-Battery`
+  and `Art_Chen` before handoff. The user reloads scopes, opens the panel and
+  judges layout/glass/artwork; control interaction is user-operated. Native
+  MiLink reuse is still explicitly unimplemented, not silently claimed.
