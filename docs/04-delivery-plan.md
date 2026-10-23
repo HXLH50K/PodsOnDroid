@@ -1043,3 +1043,25 @@ phone UI automation, scope restart, volume/mode command or earbud operation.
 The next user round is one UI-only check: open a long child page, scroll to its
 bottom and return using the fixed upper-left button, then inspect the Settings
 groups and enter/return motion. This does not require earbuds or a scope reload.
+
+### Alpha12 package and deployment receipt
+
+- Source: `f41f91a61d8f2c3eb394863fda28fc051168568b`.
+- File: `dist/PODS-0.1.0-alpha.12-debug.apk`; **31,990,651 bytes**.
+- SHA-256: `a3df53d3a99e15c11fabc542e38a2f90c0b7cea821f287bfbe8358c671f1c910`.
+- Verified package: `com.hxlh50k.pods.debug`, `P.O.D.S.`, alpha12/code12,
+  matching development v2 certificate, embedded source revision, shared toolbar
+  implementation, API102 metadata and the original three scopes.
+- Final committed-source validation: all 33 focused tests passed, both app
+  and Android UI-test APKs assembled; Lint **0 errors, 129 warnings, 2 hints**.
+  UI instrumentation was compiled only, not installed or executed.
+- In-place root package-manager installation returned `Success` on `houji`;
+  installed APK hash exactly matches the handoff. Update time:
+  `2026-10-23 20:18:06`; original install time and app data are preserved.
+- The named device staging APK and temporary local Miuix API-inspection JAR
+  were removed. No dependency version, native hook, Bluetooth controller or
+  accepted panel implementation was changed.
+- No app launch, scope restart, mode/volume write or headphone operation was
+  performed. The user can inspect the updated app directly; the UI-only check
+  does not require a scope reload. A bounded UI-error collector is prepared
+  before handoff; visual acceptance remains pending.
