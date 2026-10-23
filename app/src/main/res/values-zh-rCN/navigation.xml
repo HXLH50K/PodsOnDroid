@@ -1,0 +1,22 @@
+<resources>
+    <string name="settings_title">设置</string>
+    <string name="settings_tools">高级与调试</string>
+    <string name="settings_modules">模块与作用域重启</string>
+    <string name="settings_lid_observation">开盖观测</string>
+    <string name="settings_notifications_summary">连接电量岛、电量阈值与提醒</string>
+    <string name="settings_appearance_summary">导航栏透明度与可读性</string>
+    <string name="settings_about_summary">项目介绍、源码来源与开源声明</string>
+    <string name="settings_tools_summary">连接报告、作用域重启与测试工具</string>
+    <string name="settings_connection_summary">状态回报、恢复与脱敏导出</string>
+    <string name="settings_modules_summary">检查已加载版本，并手动重启已验证的作用域</string>
+    <string name="settings_lid_summary">手动启动短时诊断观测</string>
+    <string name="settings_tools_notice">这些工具按需使用。打开本菜单不会重启进程或开始耳机测试。</string>
+    <string name="about_project_description">面向小米 HyperOS 的 AirPods 控制与系统集成，保持真实设备状态与单一控制通道。</string>
+    <string name="about_project_maintainer">由 HXLH50K 维护</string>
+    <string name="about_sources">源码来源</string>
+    <string name="about_sources_description">P.O.D.S. 基于 HyperPods 开发，保留了 Art_Chen 及包括 Mo-SeTian 在内的继承分支贡献者提供的协议、控制、图片与其他源代码。\n\n导入基线固定为 a44bc10e387f527062b9ba2b8f90b154b2e61248。P.O.D.S. 维护独立 Git 历史，源代码中的上游声明继续保留。</string>
+    <string name="about_upstream_source">HyperPods 源码</string>
+    <string name="about_licenses">开源声明</string>
+    <string name="about_license_description">项目保留 GPLv3 许可证及继承文件中的许可声明，包括 AACP 源码中的 AGPLv3 声明。具体适用条款请参阅源码及各文件说明。独立历史不代表可以移除上游归属或许可义务。</string>
+    <string name="about_view_license">查看项目许可证</string>
+</resources>

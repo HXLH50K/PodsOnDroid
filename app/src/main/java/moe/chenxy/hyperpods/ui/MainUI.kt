@@ -33,19 +33,12 @@ import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AppPreferences
-import moe.chenxy.hyperpods.utils.BatteryNotificationSettings
 import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
 import moe.chenxy.hyperpods.utils.PodsSettings
-import moe.chenxy.hyperpods.utils.LowBatterySettings
 import moe.chenxy.hyperpods.utils.data.BatteryParams
 import moe.chenxy.hyperpods.utils.data.EarDetectionParams
 import moe.chenxy.hyperpods.utils.data.HyperPodsAction
 import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey
-import moe.chenxy.hyperpods.ui.components.DashboardTopBar
-import moe.chenxy.hyperpods.ui.components.DashboardNavigation
-import moe.chenxy.hyperpods.ui.components.rememberBatteryNotificationPreferences
-import moe.chenxy.hyperpods.ui.components.saveBatteryNotificationSettings
-import top.yukonga.miuix.kmp.basic.Scaffold
 
 var currentPodsInfo by mutableStateOf<AACPManager.Companion.AirPodsInformation?>(null)
 
@@ -63,12 +56,6 @@ fun MainUI() {
     val pagerState = rememberPagerState(pageCount = { 2 })
 
     val mainTitle = remember { mutableStateOf("") }
-    val aboutTitle = stringResource(R.string.about_hyperpods)
-    val currentTitle = when (pagerState.currentPage) {
-        0 -> stringResource(R.string.app_name)
-        else -> aboutTitle
-    }
-
     val context = LocalContext.current
 
     val initialPolicy = remember(context) { AppPreferences.read(context) }
@@ -81,7 +68,6 @@ fun MainUI() {
     val settingFeedback = remember { mutableStateMapOf<String, String>() }
     var conversationPhoneVolume by remember { mutableStateOf(initialPolicy.conversationVolume) }
     var headGestures by remember { mutableStateOf(initialPolicy.headGestures) }
-    val batteryPolicy by rememberBatteryNotificationPreferences()
     var diagnostics by remember { mutableStateOf<Bundle?>(null) }
     val personlizedVolume = remember { mutableStateOf(false) }
     val adaptiveAudioLevel = remember { mutableFloatStateOf(0.5f) }
@@ -238,19 +224,9 @@ fun MainUI() {
         sendBooleanSetting(context, HyperPodsPrefsKey.SINGLE_POD_ANC, it)
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            DashboardTopBar(title = currentTitle) {
-                (context as? MainActivity)?.onBackPressedDispatcher?.onBackPressed()
-            }
-        },
-        bottomBar = {
-            DashboardNavigation(pagerState)
-        },
-    ) { padding ->
+    AppFrame(pagerState) { padding ->
         AppHorizontalPager(
-            modifier = Modifier.imePadding(),
+            modifier = Modifier.fillMaxSize(),
             pagerState = pagerState,
             padding = padding,
             canShowDetailPage = canShowDetailPage.value,
@@ -301,9 +277,6 @@ fun MainUI() {
             noiseCancellationSingleAirPod = noiseCancellationSingleAirPod.value,
             settings = settings.toMap(), pendingSettings = pendingSettings,
             settingFeedback = settingFeedback.toMap(),
-            batteryNotificationSettings = batteryPolicy.batteryNotifications,
-            batteryNotificationsMigrationRequired = batteryPolicy.batteryNotificationsMigrationRequired,
-            onBatteryNotificationSettingsSave = { saveBatteryNotificationSettings(context, it) },
             conversationPhoneVolume = conversationPhoneVolume,
             headGestures = headGestures,
             onHeadGesturesChange = {
@@ -351,8 +324,6 @@ fun AppHorizontalPager(
     settings: Map<String, Int> = emptyMap(),
     pendingSettings: Set<String> = emptySet(),
     settingFeedback: Map<String, String> = emptyMap(),
-    lowBatterySettings: LowBatterySettings = LowBatterySettings(),
-    onLowBatterySettingsChange: (LowBatterySettings) -> Unit = {},
     conversationPhoneVolume: Boolean = true,
     onConversationPhoneVolumeChange: (Boolean) -> Unit = {},
     headGestures: Boolean = false,
@@ -360,9 +331,6 @@ fun AppHorizontalPager(
     onAllowOffChange: (Boolean) -> Unit = {},
     onSettingChange: (String, Int) -> Unit = { _, _ -> },
     diagnostics: Bundle? = null,
-    batteryNotificationSettings: BatteryNotificationSettings = BatteryNotificationSettings(),
-    batteryNotificationsMigrationRequired: Boolean = false,
-    onBatteryNotificationSettingsSave: (BatteryNotificationSettings) -> Boolean = { false },
 ) {
     HorizontalPager(
         state = pagerState,
@@ -374,9 +342,6 @@ fun AppHorizontalPager(
                             PodDetailPage(
                                 settings = settings, pendingSettings = pendingSettings, onAllowOffChange = onAllowOffChange,
                                 settingFeedback = settingFeedback, conversationPhoneVolume = conversationPhoneVolume,
-                                batteryNotificationSettings = batteryNotificationSettings,
-                                batteryNotificationsMigrationRequired = batteryNotificationsMigrationRequired,
-                                onBatteryNotificationSettingsSave = onBatteryNotificationSettingsSave,
                                 onConversationPhoneVolumeChange = onConversationPhoneVolumeChange,
                                 headGestures = headGestures, onHeadGesturesChange = onHeadGesturesChange,
                                 onSettingChange = onSettingChange, diagnostics = diagnostics,
@@ -408,11 +373,11 @@ fun AppHorizontalPager(
                                 noiseCancellationSingleAirPod = noiseCancellationSingleAirPod,
                             )
                         } else {
-                            WaitingPodsPage()
+                            WaitingPodsPage(padding)
                         }
                     }
 
-                1 -> AboutPage(
+                1 -> SettingsPage(
                     diagnostics = diagnostics,
                     isActive = pagerState.currentPage == 1,
                     padding = padding

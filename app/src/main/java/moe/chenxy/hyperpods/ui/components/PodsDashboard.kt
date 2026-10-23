@@ -26,6 +26,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -38,8 +40,9 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import moe.chenxy.hyperpods.R
-import moe.chenxy.hyperpods.ui.LocalGlassSurface
-import moe.chenxy.hyperpods.ui.glassSurface
+import moe.chenxy.hyperpods.ui.NavigationSurface
+import moe.chenxy.hyperpods.utils.FloatingDockLayout
+import dev.chrisbanes.haze.HazeState
 import moe.chenxy.hyperpods.pods.EarDetectionStatus
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AirPodsBase
@@ -69,9 +72,16 @@ fun DashboardDivider(modifier: Modifier = Modifier) {
 
 @Composable
 fun DashboardGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    val glass = LocalGlassSurface.current
-    if (glass == null) Card(modifier = modifier.fillMaxWidth(), cornerRadius = 24.dp, content = content)
-    else Column(modifier.fillMaxWidth().glassSurface(glass), content = content)
+    Card(modifier = modifier.fillMaxWidth(), cornerRadius = 28.dp, content = content)
+}
+
+@Composable
+fun DashboardHero(ready: Boolean, modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val dark = MiuixTheme.colorScheme.background.luminance() < .5f
+    val color = if (!ready) MiuixTheme.colorScheme.surface else
+        if (dark) Color(0xFF1C3933) else Color(0xFFE3F0EC)
+    Column(modifier.fillMaxWidth().clip(RoundedCornerShape(32.dp)).background(color).padding(12.dp),
+        content = content)
 }
 
 @Composable
@@ -156,46 +166,50 @@ private fun IconBattery(available: Boolean, charging: Boolean) {
 }
 
 @Composable
-fun DashboardTopBar(title: String = stringResource(R.string.app_name), onBack: () -> Unit) {
-    Row(Modifier.fillMaxWidth().background(MiuixTheme.colorScheme.background)
-        .statusBarsPadding().height(48.dp).padding(horizontal = 12.dp),
+fun DashboardPageHeader(title: String, onBack: (() -> Unit)? = null) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 88.dp).padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+        if (onBack != null) IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
             Icon(MiuixIcons.Useful.Back, stringResource(R.string.dashboard_back), modifier = Modifier.size(22.dp))
         }
-        Text(title, fontSize = 16.sp, color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+        Text(title, fontSize = if (onBack == null) 34.sp else 28.sp, lineHeight = 42.sp,
+            modifier = Modifier.padding(start = if (onBack == null) 8.dp else 0.dp))
     }
 }
 
 @Composable
-fun DashboardNavigation(pagerState: PagerState) {
+fun DashboardNavigation(pagerState: PagerState, modifier: Modifier = Modifier, hazeState: HazeState? = null) {
     val scope = rememberCoroutineScope()
     var animation by remember { mutableStateOf<Job?>(null) }
-    DashboardNavigation(pagerState.targetPage) { index ->
+    DashboardNavigation(pagerState.targetPage, { index ->
         // Retarget from the currently rendered offset, not a delayed selected-tab
         // copy. A new tap or pager swipe can immediately take over the animation.
         animation?.cancel()
         animation = scope.launch {
             pagerState.animateScrollToPage(index, animationSpec = tween(240, easing = FastOutSlowInEasing))
         }
-    }
+    }, modifier, hazeState)
 }
 
 @Composable
-fun DashboardNavigation(selected: Int, onSelect: (Int) -> Unit) {
-    Column(Modifier.background(MiuixTheme.colorScheme.background).navigationBarsPadding()) {
-        DashboardDivider()
-        Row(Modifier.fillMaxWidth().selectableGroup()) {
-            listOf(R.string.dashboard_headphones, R.string.dashboard_about).forEachIndexed { index, label ->
+fun DashboardNavigation(selected: Int, onSelect: (Int) -> Unit,
+                        modifier: Modifier = Modifier, hazeState: HazeState? = null) {
+    NavigationSurface(hazeState, modifier.widthIn(max = 340.dp).fillMaxWidth()
+        .shadow(12.dp, RoundedCornerShape(40.dp))) {
+        Row(Modifier.fillMaxWidth().height(FloatingDockLayout.HEIGHT_DP.dp).padding(6.dp).selectableGroup(),
+            verticalAlignment = Alignment.CenterVertically) {
+            listOf(R.string.dashboard_headphones, R.string.settings_title).forEachIndexed { index, label ->
                 val tint by animateColorAsState(
                     if (selected == index) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     animationSpec = tween(180), label = "DashboardTabTint")
-                Column(Modifier.weight(1f).selectable(selected == index, role = Role.Tab,
-                    onClick = { onSelect(index) }).padding(vertical = 5.dp),
+                Column(Modifier.weight(1f).clip(RoundedCornerShape(32.dp))
+                    .background(if (selected == index) MiuixTheme.colorScheme.onSurface.copy(alpha = .10f) else Color.Transparent)
+                    .selectable(selected == index, role = Role.Tab,
+                    onClick = { onSelect(index) }).padding(vertical = 7.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     if (index == 0) Icon(painterResource(R.drawable.dashboard_headphones), null,
                         tint = tint, modifier = Modifier.size(24.dp))
-                    else Icon(MiuixIcons.Useful.Info, null, tint = tint, modifier = Modifier.size(24.dp))
+                    else Icon(painterResource(R.drawable.dashboard_settings), null, tint = tint, modifier = Modifier.size(24.dp))
                     Text(stringResource(label), color = tint, fontSize = 12.sp, lineHeight = 16.sp,
                         modifier = Modifier.padding(top = 4.dp))
                 }
@@ -250,10 +264,8 @@ fun DashboardNoise(mode: NoiseControlMode?, onSelect: (NoiseControlMode) -> Unit
         R.string.dashboard_transparency, R.string.adaptive_title)
     val icons = listOf(R.drawable.dashboard_mode_off, R.drawable.dashboard_mode_anc,
         R.drawable.dashboard_mode_transparency, R.drawable.dashboard_mode_adaptive)
-    val glass = LocalGlassSurface.current
-    val surface = if (glass == null) Modifier.clip(RoundedCornerShape(24.dp)).background(MiuixTheme.colorScheme.surface)
-        else Modifier.glassSurface(glass)
-    Row(Modifier.fillMaxWidth().then(surface).padding(4.dp).selectableGroup()) {
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).background(MiuixTheme.colorScheme.surface)
+        .padding(6.dp).selectableGroup()) {
         modes.forEachIndexed { index, value ->
             val selected = value == mode
             val enabled = index + 1 in allowedModes

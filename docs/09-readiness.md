@@ -1,16 +1,16 @@
 # 09 Readiness and stage boundaries
 
-**Latest checkpoint, 2026-10-23 evening:** alpha8/alpha9 were deployed from the
-original signing workstation. The user accepts the basic alpha9 floating-panel
-experience, not final aesthetic polish or native MiLink reuse. The in-case
-noise-control defect shared by the app and panel is tracked as
-[#1](https://github.com/HXLH50K/PodsOnDroid/issues/1), recorded and deliberately
-not fixed in the next milestone. Work now proceeds to M4's opt-in main-app
-Liquid Glass prototype: About-page sample without headphones, main-overview
-surfaces, reduced-transparency/readability/power/background gates and unchanged
-control semantics. Full debug scope reload and the brief native island have
-already been user-verified. Production signing, full stability/power acceptance
-and native MiLink integration are not complete.
+**Latest checkpoint, 2026-10-23 evening:** alpha11 supersedes the rejected
+alpha10 prototype. The user explicitly permits replacing the inherited UI and
+does not want a style switch. The actual Keimi screenshot guides flat layered
+cards and a frosted floating dock over real scroll content. Headphones contains
+only headphone functions; Settings links to notifications, appearance, project
+About and nested diagnostic tools. Sponsor entries are removed; provenance and
+licenses remain. This is local implementation/validation, not yet visual
+acceptance. The accepted alpha9 panel and issue
+[#1](https://github.com/HXLH50K/PodsOnDroid/issues/1) are unchanged. Formal M4
+stability/power acceptance, production signing and native MiLink reuse remain
+incomplete.
 
 The early-stage readiness and restart notes below are historical, not the
 current task or authorization to repeat device operations.

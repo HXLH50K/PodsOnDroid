@@ -1,12 +1,9 @@
 <resources>
     <string name="appearance_title">Appearance</string>
-    <string name="appearance_glass">Liquid Glass preview</string>
-    <string name="appearance_glass_summary">Try glass surfaces on the headphone overview. Controls and device behavior stay unchanged.</string>
     <string name="appearance_reduced">Reduce transparency</string>
-    <string name="appearance_reduced_summary">Use solid surfaces for clearer text and lower rendering cost.</string>
-    <string name="appearance_preview">Appearance preview</string>
-    <string name="appearance_preview_summary">Preview the surface without headphones. No device data or commands are simulated.</string>
-    <string name="appearance_opaque_active">Solid surfaces are active for readability, power saving, or the selected preference.</string>
+    <string name="appearance_reduced_summary">Use an opaque navigation dock for clearer text and lower rendering cost.</string>
+    <string name="appearance_navigation_summary">Cards use solid layers. The floating navigation dock blurs actual page content behind it, not an artificial gradient. There is no legacy-layout switch.</string>
+    <string name="appearance_opaque_active">The navigation dock is opaque for readability, power saving, or the selected preference.</string>
     <string name="appearance_read_failed">Unable to read appearance preferences. The current readable style was retained.</string>
     <string name="appearance_save_failed">Unable to save appearance preferences. Please try again.</string>
 </resources>

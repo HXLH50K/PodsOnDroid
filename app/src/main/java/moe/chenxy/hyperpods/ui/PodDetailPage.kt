@@ -1,6 +1,7 @@
 package moe.chenxy.hyperpods.ui
 
 import android.os.Bundle
+import android.util.Log
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedContent
@@ -31,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableFloatStateOf
@@ -54,6 +56,8 @@ import androidx.compose.ui.unit.sp
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.ui.components.DashboardBattery
+import moe.chenxy.hyperpods.ui.components.DashboardHero
+import moe.chenxy.hyperpods.ui.components.DashboardPageHeader
 import moe.chenxy.hyperpods.ui.components.dashboardConnectionStatus
 import moe.chenxy.hyperpods.ui.components.DashboardDivider
 import moe.chenxy.hyperpods.ui.components.DashboardLink
@@ -64,16 +68,11 @@ import moe.chenxy.hyperpods.ui.components.DashboardGroup as Card
 import moe.chenxy.hyperpods.ui.components.PodsInfoPage
 import moe.chenxy.hyperpods.ui.components.PressAndHoldSettingPage
 import moe.chenxy.hyperpods.ui.components.RenamePod
-import moe.chenxy.hyperpods.ui.components.ConnectionDiagnostics
 import moe.chenxy.hyperpods.ui.components.headGestureStatus
-import moe.chenxy.hyperpods.ui.components.HeadTrackingPage
-import moe.chenxy.hyperpods.ui.components.BatteryNotificationSettingsGroup
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AirPodsModels.getModelByModelNumber
 import moe.chenxy.hyperpods.utils.Capability
-import moe.chenxy.hyperpods.utils.BatteryNotificationSettings
 import moe.chenxy.hyperpods.utils.PodsSettings
-import moe.chenxy.hyperpods.utils.LowBatterySettings
 import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey as Key
 import moe.chenxy.hyperpods.utils.data.BatteryParams
 import moe.chenxy.hyperpods.utils.data.EarDetectionParams
@@ -115,8 +114,6 @@ fun PodDetailPage(
     settings: Map<String, Int> = emptyMap(),
     pendingSettings: Set<String> = emptySet(),
     settingFeedback: Map<String, String> = emptyMap(),
-    lowBatterySettings: LowBatterySettings = LowBatterySettings(),
-    onLowBatterySettingsChange: (LowBatterySettings) -> Unit = {},
     conversationPhoneVolume: Boolean = true,
     onConversationPhoneVolumeChange: (Boolean) -> Unit = {},
     headGestures: Boolean = false,
@@ -124,9 +121,6 @@ fun PodDetailPage(
     onAllowOffChange: (Boolean) -> Unit = {},
     onSettingChange: (String, Int) -> Unit = { _, _ -> },
     diagnostics: Bundle? = null,
-    batteryNotificationSettings: BatteryNotificationSettings = BatteryNotificationSettings(),
-    batteryNotificationsMigrationRequired: Boolean = false,
-    onBatteryNotificationSettingsSave: (BatteryNotificationSettings) -> Boolean = { false },
 ) {
     val model = podsInfo?.let { getModelByModelNumber(it.modelNumber) }
     fun ready(key: String) = PodsSettings.supports(key, model) && key !in pendingSettings &&
@@ -157,15 +151,20 @@ fun PodDetailPage(
         mutableFloatStateOf((settings[Key.CHIME_VOLUME] ?: 0).toFloat())
     }
     var detailPage by rememberSaveable { mutableIntStateOf(0) }
-    fun back() { detailPage = if (detailPage == 4) 1 else 0 }
+    LaunchedEffect(detailPage) {
+        if (detailPage !in 0..2) {
+            Log.i("PODS-Navigation", "Retired headphone debug route reset to overview")
+            detailPage = 0
+        }
+    }
+    fun back() { detailPage = 0 }
     BackHandler(enabled = isActive && detailPage != 0) { back() }
     // Keep every page's saveable state outside the animated content. Switching the
     // content key must not discard the previous page's scroll position.
-    val listStates = listOf(rememberLazyListState(), rememberLazyListState(),
-        rememberLazyListState(), rememberLazyListState(), rememberLazyListState())
+    val listStates = listOf(rememberLazyListState(), rememberLazyListState(), rememberLazyListState())
     val travel = with(LocalDensity.current) { 28.dp.roundToPx() }
     AnimatedContent(
-        targetState = detailPage,
+        targetState = detailPage.takeIf { it in 0..2 } ?: 0,
         modifier = Modifier.fillMaxSize().clipToBounds(),
         transitionSpec = {
             val direction = if (targetState < initialState) -1 else 1
@@ -178,8 +177,6 @@ fun PodDetailPage(
         val pageTitle = stringResource(when (page) {
             1 -> R.string.dashboard_more
             2 -> R.string.dashboard_device_info
-            3 -> R.string.diagnostics_title
-            4 -> R.string.head_test_title
             else -> R.string.dashboard_headphones
         })
         val interaction = if (page == detailPage) Modifier.semantics { paneTitle = pageTitle }
@@ -190,22 +187,25 @@ fun PodDetailPage(
                     while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
                 }
             }
-        GlassPage(active = isActive && page == 0, modifier = Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             LazyColumn(
                 state = listStates[page],
-                // Keep the scroll/focus viewport between the fixed bars. Item-only
-                // padding lets bring-into-view place a clickable row under a bar.
-                modifier = Modifier.widthIn(max = 680.dp).fillMaxSize().padding(padding).clipToBounds()
+                modifier = Modifier.widthIn(max = 680.dp).fillMaxSize()
+                    .padding(top = padding.calculateTopPadding()).clipToBounds()
                     .focusProperties { canFocus = page == detailPage && isActive }.then(interaction),
-                contentPadding = PaddingValues(bottom = 24.dp),
+                contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 24.dp),
             ) {
+                item(key = "page_title") {
+                    DashboardPageHeader(pageTitle, if (page == 0) null else ::back)
+                }
                 if (page == 0) {
                     item(key = "home_header") {
-                        GlassHero(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                        DashboardHero(diagnostics?.getBoolean("ready") == true,
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                             Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(podsInfo?.name?.takeIf { it.isNotBlank() }
                                     ?: deviceName.takeIf { it.isNotBlank() } ?: "AirPods",
-                                    fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                    fontSize = 24.sp, lineHeight = 30.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
                                 RenamePod(Modifier.size(48.dp), onNameChange,
                                     podsInfo?.name ?: deviceName, compact = true, pending = PodsSettings.RENAME in pendingSettings)
                             }
@@ -271,26 +271,8 @@ fun PodDetailPage(
                             Card {
                                 DashboardLink(stringResource(R.string.dashboard_device_info),
                                     if (podsInfo == null) stringResource(R.string.dashboard_info_pending) else null) { detailPage = 2 }
-                                DashboardDivider(Modifier.padding(horizontal = 16.dp))
-                                DashboardLink(stringResource(R.string.diagnostics_title), null) { detailPage = 3 }
                             }
                         }
-                    }
-                    return@LazyColumn
-                }
-                item(key = "page_title") {
-                    Text(pageTitle, fontSize = 26.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp))
-                }
-                if (page == 4) {
-                    item(key = "head_tracking") {
-                        HeadTrackingPage(isActive && page == detailPage)
-                    }
-                    return@LazyColumn
-                }
-                if (page == 3) {
-                    item(key = "diagnostics") {
-                        Card(modifier = Modifier.padding(16.dp)) { ConnectionDiagnostics(diagnostics) }
                     }
                     return@LazyColumn
                 }
@@ -313,9 +295,6 @@ fun PodDetailPage(
                                     stringResource(R.string.head_gestures_summary) + "\n" +
                                         stringResource(headGestureStatus(diagnostics?.getString("head_gestures"))),
                                     headGestures, onHeadGesturesChange)
-                                DashboardDivider(Modifier.padding(horizontal = 16.dp))
-                                DashboardLink(stringResource(R.string.head_test_title),
-                                    stringResource(R.string.head_test_summary)) { detailPage = 4 }
                             }
                             if (PodsSettings.supports(Key.SLEEP_DETECTION, model)) {
                                 DashboardDivider(Modifier.padding(horizontal = 16.dp))
@@ -328,15 +307,6 @@ fun PodDetailPage(
                             }
                         }
                     }
-                }
-
-                item(key = "more_battery_notifications") {
-                    BatteryNotificationSettingsGroup(
-                        settings = batteryNotificationSettings,
-                        migrationRequired = batteryNotificationsMigrationRequired,
-                        onSave = onBatteryNotificationSettingsSave,
-                        modifier = cardModifier,
-                    )
                 }
 
                     // Press & Hold Settings

@@ -91,6 +91,15 @@ it does not claim native MiLink integration or physical acceptance.
 
 ## 5. Decisions that remain deferred
 
+**2026-10-23 app redesign override:** the old HyperPods app UI need not be
+retained. Do not ship a legacy/new-layout switch. The actual Keimi reference
+places glass on the floating navigation dock, over real scroll content, with
+solid layered cards. Use Headphones and Settings tabs; put battery notifications
+in Settings, project/provenance information behind About, and diagnostics/reload
+and test tools under Advanced & diagnostics. Remove sponsor links, not source
+or license attribution. Reduced transparency is a readability option rather
+than a switch back to the old interface.
+
 1. Before generating the release key: password custody, delivery, and independent encrypted backup.
 2. Before distribution: authorize the specific push/release operation and review what is included. The repository URL is already known; **private visibility remains mandatory**.
 3. If native-panel reuse encounters a demonstrated hard limit: present the alternative and obtain the user's decision.

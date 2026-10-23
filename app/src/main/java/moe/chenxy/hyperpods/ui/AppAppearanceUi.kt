@@ -12,19 +12,16 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -36,9 +33,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
 import moe.chenxy.hyperpods.R
-import moe.chenxy.hyperpods.ui.components.DashboardDivider
 import moe.chenxy.hyperpods.ui.components.DashboardGroup
 import moe.chenxy.hyperpods.ui.components.DashboardSection
 import moe.chenxy.hyperpods.ui.components.DashboardToggle
@@ -50,9 +45,7 @@ internal val LocalAppAppearance = staticCompositionLocalOf { AppAppearance() }
 private val LocalSaveAppearance = staticCompositionLocalOf<(AppAppearance) -> Unit> {
     { error("Appearance provider is not installed") }
 }
-private val LocalGlassRuntimeAllowed = staticCompositionLocalOf { false }
-internal data class GlassSurface(val state: HazeState?, val style: HazeStyle, val border: Color)
-internal val LocalGlassSurface = staticCompositionLocalOf<GlassSurface?> { null }
+internal val LocalNavigationEffects = staticCompositionLocalOf { false }
 
 @Composable
 internal fun AppAppearanceProvider(content: @Composable () -> Unit) {
@@ -112,81 +105,37 @@ internal fun AppAppearanceProvider(content: @Composable () -> Unit) {
         }
     }
     CompositionLocalProvider(LocalAppAppearance provides appearance, LocalSaveAppearance provides save,
-        LocalGlassRuntimeAllowed provides appearance.effectsAllowed(true, resumed, powerSave, highContrast),
+        LocalNavigationEffects provides appearance.effectsAllowed(true, resumed, powerSave, highContrast),
         content = content)
 }
 
 @Composable
-internal fun GlassPage(active: Boolean, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    val appearance = LocalAppAppearance.current
-    val enabled = appearance.glassEnabled && active
-    val effects = enabled && LocalGlassRuntimeAllowed.current
-    val state = remember { HazeState() }
+internal fun NavigationSurface(state: HazeState?, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    val effects = state != null && LocalNavigationEffects.current
     val colors = MiuixTheme.colorScheme
-    val dark = isSystemInDarkTheme()
-    val background = colors.background
-    val accent = colors.primary
-    val style = HazeStyle(backgroundColor = background,
-        tint = HazeTint(colors.surface.copy(alpha = if (dark) .88f else .86f)),
-        blurRadius = 18.dp, noiseFactor = .015f,
+    val dark = colors.background.luminance() < .5f
+    val style = HazeStyle(backgroundColor = colors.background,
+        tint = HazeTint(colors.surface.copy(alpha = if (dark) .65f else .72f)),
+        blurRadius = 24.dp, noiseFactor = .02f,
         fallbackTint = HazeTint(colors.surface))
-    val glass = if (enabled) GlassSurface(if (effects) state else null, style,
-        if (dark) Color.White.copy(alpha = .16f) else Color.White.copy(alpha = .85f)) else null
-    Box(modifier, contentAlignment = Alignment.TopCenter) {
-        if (enabled) {
-            Canvas(Modifier.matchParentSize().then(if (effects) Modifier.hazeSource(state) else Modifier)) {
-                drawRect(background)
-                if (effects) {
-                    val radius = size.width * .9f
-                    val start = Offset(size.width * .1f, size.height * .12f)
-                    val end = Offset(size.width * .95f, size.height * .66f)
-                    drawCircle(Brush.radialGradient(listOf(accent.copy(alpha = .24f), Color.Transparent),
-                        center = start, radius = radius), radius, start)
-                    drawCircle(Brush.radialGradient(listOf(Color(0xFF5ABFBE).copy(alpha = .13f), Color.Transparent),
-                        center = end, radius = radius), radius, end)
-                }
-            }
-        }
-        CompositionLocalProvider(LocalGlassSurface provides glass, content = content)
-    }
+    val shape = RoundedCornerShape(40.dp)
+    val material = if (effects) Modifier.hazeEffect(requireNotNull(state), style = style)
+        else Modifier.background(colors.surface)
+    Box(modifier.clip(shape).then(material).border(1.dp,
+        if (dark) Color.White.copy(alpha = .22f) else Color.Black.copy(alpha = .10f), shape)) { content() }
 }
 
 @Composable
-internal fun Modifier.glassSurface(surface: GlassSurface): Modifier {
-    val shape = RoundedCornerShape(24.dp)
-    val material = surface.state?.let { Modifier.hazeEffect(it, style = surface.style) }
-        ?: Modifier.background(MiuixTheme.colorScheme.surface)
-    return clip(shape).then(material).border(1.dp, surface.border, shape)
-}
-
-@Composable
-internal fun GlassHero(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    if (LocalGlassSurface.current != null) DashboardGroup(modifier, content)
-    else Column(modifier, content = content)
-}
-
-@Composable
-internal fun AppearanceSettings(active: Boolean) {
+internal fun AppearanceSettings() {
     val settings = LocalAppAppearance.current
     val save = LocalSaveAppearance.current
-    DashboardSection(stringResource(R.string.appearance_title))
     DashboardGroup {
-        DashboardToggle(stringResource(R.string.appearance_glass), stringResource(R.string.appearance_glass_summary),
-            settings.glassEnabled, { save(settings.copy(glassEnabled = it)) })
-        DashboardDivider(Modifier.padding(horizontal = 16.dp))
         DashboardToggle(stringResource(R.string.appearance_reduced), stringResource(R.string.appearance_reduced_summary),
-            settings.reducedTransparency, { save(settings.copy(reducedTransparency = it)) }, settings.glassEnabled)
+            settings.reducedTransparency, { save(settings.copy(reducedTransparency = it)) })
     }
-    GlassPage(active, Modifier.fillMaxWidth().padding(top = 12.dp).clip(RoundedCornerShape(24.dp))) {
-        DashboardGroup(Modifier.padding(16.dp)) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.appearance_preview), fontSize = 17.sp)
-                Text(stringResource(R.string.appearance_preview_summary), fontSize = 13.sp,
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-                if (settings.glassEnabled && !LocalGlassRuntimeAllowed.current)
-                    Text(stringResource(R.string.appearance_opaque_active), fontSize = 12.sp,
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
-            }
-        }
-    }
+    Text(stringResource(R.string.appearance_navigation_summary), fontSize = 14.sp,
+        modifier = Modifier.padding(16.dp), color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+    if (!LocalNavigationEffects.current) Text(stringResource(R.string.appearance_opaque_active),
+        modifier = Modifier.padding(horizontal = 16.dp), fontSize = 12.sp,
+        color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
 }

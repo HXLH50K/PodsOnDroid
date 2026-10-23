@@ -1,0 +1,22 @@
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_tools">Advanced &amp; diagnostics</string>
+    <string name="settings_modules">Module &amp; scope reload</string>
+    <string name="settings_lid_observation">Case observation</string>
+    <string name="settings_notifications_summary">Connection island, battery thresholds and reminders</string>
+    <string name="settings_appearance_summary">Navigation transparency and readability</string>
+    <string name="settings_about_summary">Project, source provenance and open-source notices</string>
+    <string name="settings_tools_summary">Connection reports, scope reload and testing tools</string>
+    <string name="settings_connection_summary">Reported state, recovery and redacted export</string>
+    <string name="settings_modules_summary">Check loaded builds and explicitly restart verified scopes</string>
+    <string name="settings_lid_summary">Manually start a short diagnostic observation</string>
+    <string name="settings_tools_notice">These tools are optional. Opening this menu does not restart processes or begin a headset test.</string>
+    <string name="about_project_description">AirPods controls and Xiaomi HyperOS integration, with truthful device state and a single control channel.</string>
+    <string name="about_project_maintainer">Maintained by HXLH50K</string>
+    <string name="about_sources">Source provenance</string>
+    <string name="about_sources_description">P.O.D.S. is derived from HyperPods. It retains protocol, control, artwork and other source contributions by Art_Chen and inherited fork contributors including Mo-SeTian.\n\nThe imported baseline is pinned to a44bc10e387f527062b9ba2b8f90b154b2e61248. P.O.D.S. maintains independent Git history; upstream notices remain in the source.</string>
+    <string name="about_upstream_source">HyperPods source</string>
+    <string name="about_licenses">Open-source notices</string>
+    <string name="about_license_description">The project retains its GPLv3 license and inherited file-level notices, including AGPLv3 notices in AACP sources. Refer to the source and individual files for the applicable terms. Independent history does not remove upstream attribution or license obligations.</string>
+    <string name="about_view_license">View project license</string>
+</resources>

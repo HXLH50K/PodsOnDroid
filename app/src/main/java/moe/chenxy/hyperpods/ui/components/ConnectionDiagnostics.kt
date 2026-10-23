@@ -29,7 +29,7 @@ import java.util.Locale
 
 /** Only fixed diagnostic fields are displayed/copied; no addresses, names, serials or keys. */
 @Composable
-fun ConnectionDiagnostics(snapshot: Bundle?) {
+fun ConnectionDiagnostics(snapshot: Bundle?, includeModuleCheck: Boolean = true, knownModuleReport: String = "") {
     val context = LocalContext.current
     val preferences = remember(context) { DiagnosticsHistory.preferences(context) }
     var history by remember(preferences) { mutableStateOf(DiagnosticsHistory.read(preferences)) }
@@ -147,7 +147,7 @@ fun ConnectionDiagnostics(snapshot: Bundle?) {
         received == 0 -> R.string.diagnostics_no_packets
         else -> R.string.diagnostics_incomplete
     }
-    ModuleSelfCheck { moduleReport = it }
+    if (includeModuleCheck) ModuleSelfCheck { moduleReport = it }
     // Read-only information is not a disabled action; keep its text contrast intact.
     BasicComponent(title = stringResource(R.string.diagnostics_title), summary = stringResource(explanation))
     fields.forEach { (label, value) -> BasicComponent(title = label, summary = value) }
@@ -157,7 +157,8 @@ fun ConnectionDiagnostics(snapshot: Bundle?) {
         .joinToString("\n").ifEmpty { stringResource(R.string.diagnostics_no_events) }
     BasicComponent(title = stringResource(R.string.diagnostics_timeline), summary = timeline)
     val report = "${stringResource(R.string.app_name)} ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}, ${BuildConfig.BUILD_REVISION})\n" +
-        moduleReport + "\n\n" + fields.joinToString("\n") { (label, value) -> "$label: $value" } +
+        moduleReport.ifEmpty { knownModuleReport.ifEmpty { context.getString(R.string.module_no_report) } } +
+        "\n\n" + fields.joinToString("\n") { (label, value) -> "$label: $value" } +
         "\n\n" + (historyReport ?: context.getString(R.string.diagnostics_no_history)) + "\n\n" + timeline
     BasicComponent(title = stringResource(R.string.diagnostics_refresh), onClick = {
         HyperPodsBroadcasts.send(context, Intent(HyperPodsAction.ACTION_PODS_DIAGNOSTICS_REQUEST), HyperPodsBroadcasts.BLUETOOTH)

@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.onNodeWithText
 import moe.chenxy.hyperpods.R
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -43,35 +44,25 @@ class AboutPageTest(private val theme: Int) {
         }
     }
 
-    @Test fun originalAndForkAttributionsRemainVisible() {
-        for (label in listOf(R.string.project_maintainer, R.string.project_repository,
-            R.string.dashboard_author, R.string.dashboard_fork_author,
-            R.string.dashboard_fork_repository, R.string.dashboard_fork_donate)) {
+    @Test fun sourceAndLicenseAttributionsRemainVisibleWithoutSponsorEntries() {
+        for (label in listOf(R.string.about_project_maintainer, R.string.project_repository,
+            R.string.about_sources, R.string.about_sources_description, R.string.about_licenses,
+            R.string.about_license_description)) {
             compose.revealSetting(compose.activity.getString(label)).assertIsDisplayed()
         }
-        compose.revealSetting("Art_Chen").assertIsDisplayed()
-        compose.revealSetting("Mo-SeTian").assertIsDisplayed()
-        compose.revealSetting("HXLH50K").assertIsDisplayed()
+        compose.onNodeWithText("AFDIAN", substring = true, ignoreCase = true).assertDoesNotExist()
+        compose.onNodeWithText("afdian.com", substring = true).assertDoesNotExist()
     }
 
     @Test fun eachRepositoryLinkOpensItsOwnRepository() {
         val repositories = listOf("https://github.com/HXLH50K/PodsOnDroid",
-            "https://github.com/Art-Chen/HyperPods", "https://github.com/Mo-SeTian/HyperPods")
-        repositories.forEach { compose.revealSetting(it).assertIsDisplayed().performClick() }
+            "https://github.com/Art-Chen/HyperPods", "https://github.com/HXLH50K/PodsOnDroid/blob/main/LICENSE")
+        listOf(R.string.project_repository, R.string.about_upstream_source, R.string.about_view_license)
+            .forEach { compose.revealSetting(compose.activity.getString(it)).assertIsDisplayed().performClick() }
         compose.runOnIdle {
             assertEquals(repositories, launched.map { it.dataString })
             assertEquals(List(repositories.size) { Intent.ACTION_VIEW }, launched.map { it.action })
         }
     }
 
-    @Test fun eachDonationLinkOpensItsOwnCreator() {
-        for (label in listOf(R.string.donate, R.string.dashboard_fork_donate)) {
-            compose.revealSetting(compose.activity.getString(label)).assertIsDisplayed().performClick()
-        }
-        compose.runOnIdle {
-            assertEquals(listOf("https://afdian.com/a/art_chen?tab=home", "https://afdian.com/a/mosetian"),
-                launched.map { it.dataString })
-            assertEquals(listOf(Intent.ACTION_VIEW, Intent.ACTION_VIEW), launched.map { it.action })
-        }
-    }
 }

@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-23 evening:** the user accepts alpha9 as basically meeting the floating-panel requirement and asks to record the shared in-case noise-control issue before continuing the plan. Section 21 records issue #1 and the next M4 opt-in app appearance prototype. The defect is not fixed or declared a firmware limitation. No automatic scope restart or earbud operation is authorized.
+**Current status, 2026-10-23 evening:** the user rejects alpha10's UI interpretation and requests a full app redesign using the latest Keimi screenshot. Old UI retention and a legacy/new switch are explicitly unnecessary. Section 22 records the new Headphones/Settings hierarchy, frosted dock, consolidated About and nested tools. The accepted alpha9 panel and unresolved issue #1 are unchanged. No automatic scope restart or earbud operation is authorized.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -898,3 +898,72 @@ features and independent production signing remain later M4 gates.
 - Appearance remains off by default. The user can view the About-page sample
   without headphones, enable the preview and toggle reduced transparency.
   This independent prototype is delivered; broader M4 and issue #1 remain open.
+
+## 22. Alpha11 app redesign and category separation
+
+The newest user-specified Keimi screenshot was read from the connected phone.
+Its relevant design is a flat dark background, solid tinted rounded cards,
+large page headings and a floating frosted bottom capsule with actual scrolling
+content behind it. Alpha10's artificial gradient and glass-card treatment did
+not match that reference and are removed. The image is retained locally only;
+no Keimi implementation or asset was imported.
+
+The user explicitly allows dropping the old HyperPods UI entirely and does not
+want an old/new UI toggle. The new structure is therefore the default:
+
+```text
+Headphones
+  Battery / connection state / listening modes
+  Headphone features and More controls
+  Device information
+Settings
+  Battery notifications
+  Appearance (reduced transparency only)
+  About P.O.D.S. (purpose, version, source provenance, licenses)
+  Advanced & diagnostics
+    Connection diagnostics / recovery / redacted export
+    Module checks / scope reload
+    Head-motion test
+    Case observation (debug builds only)
+```
+
+The root Settings page exposes category links, not diagnostic fields or scope
+actions. Diagnostic screens are composed only after entering the specific
+route; opening the Tools menu does not start scans, restart scopes or send
+headphone test commands. Back handling and per-route scroll state remain
+separate. Module reports obtained in the module screen remain available to
+connection export; an absent report stays explicitly absent.
+
+Battery notification editing uses the existing app-policy store/publish helper
+in its own Settings route. The old duplicate editor, diagnostic entry and
+head-test entry were removed from headphone pages; headphone-related settings
+and their command callbacks were preserved. The older retired detail routes
+are safely reset on state restoration.
+
+The dock uses the existing Haze source/effect API against the real page layer.
+It is not a blurred snapshot, fabricated gradient or globally restyled system
+window. All cards are solid layered surfaces. The alpha10 preview flag is no
+longer read or displayed; only reduced transparency is retained. Power saving,
+high-contrast text and background lifecycle states turn off blur. The bottom
+overlay has explicit scroll padding and a tested bring-into-view policy so
+focused fields are not hidden under the dock.
+
+About contains the P.O.D.S. purpose/version, HyperPods pinned source and concise
+upstream contributor/individual-license notices. Donation/sponsorship links and
+their string resources are removed. LICENSE, retained file headers, attribution
+and independent history are not removed or rewritten.
+
+Validation: **29 focused JVM tests passed** (6 appearance, 4 route topology,
+5 exact dock-occlusion cases, 7 settings, 7 mode-state). App and Android UI-test
+APKs compile; the adjusted About/navigation/gesture/screenshot tests and new
+hierarchy tests are **not phone-executed**. Lint passed without errors.
+One transient Windows DEX-file lock was resolved by a bounded nonparallel
+build retry without stopping other processes or deleting the workspace.
+
+This is an app UI change only. The accepted floating panel, native connection
+island, scope-restart implementation, Bluetooth transport, settings readiness
+and issue #1 are unchanged. No physical headphone, UI automation, power action
+or host restart was performed. Next user check: inspect the new bottom dock
+while scrolling and the Headphones/Settings separation, then use Back through
+Settings > Advanced & diagnostics and Settings > About. No earbud manipulation
+is required for the menu/appearance check.

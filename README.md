@@ -2,7 +2,39 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha10 opt-in app appearance prototype
+## Current checkpoint: alpha11 app redesign and information architecture
+
+The user rejected alpha10's visual interpretation and supplied a Keimi reference:
+flat backgrounds, layered solid cards and a floating frosted navigation capsule
+that blurs the real content scrolling behind it. Alpha11 replaces the inherited
+app layout accordingly. There is **no legacy/new UI switch** and no glass-preview
+opt-in. Reduced transparency remains an accessibility/power option only.
+
+- **Headphones:** device battery/state, listening modes, headphone controls and
+  device information. Notification settings and diagnostic/test screens no
+  longer live in More controls.
+- **Settings:** battery notifications, appearance, project About and Advanced &
+  diagnostics. This root contains category links, not expanded diagnostic data.
+- **Settings > Advanced & diagnostics:** connection reports/export, module
+  checks and scope reload, head-motion tests and debug-only case observation.
+  Entering the menu does not restart processes or begin a headset test.
+- **Settings > About:** project purpose/version, pinned HyperPods provenance
+  and source/license notices. All sponsorship/donation entries were removed;
+  legal attribution remains intact.
+
+The dock uses the existing Haze renderer against the actual page content; the
+artificial gradient and glass-card demo are removed. Dark/light themes, readable
+opaque fallback, lifecycle/power/high-contrast gates and keyboard/focus clearance
+remain supported. Changes are app-side only: the accepted panel, native island,
+controller semantics and the recorded in-case noise issue [#1](https://github.com/HXLH50K/PodsOnDroid/issues/1)
+are unchanged.
+
+Local validation: **29 focused JVM tests passed**; app and updated UI-test APKs
+build successfully. UI tests are compiled, not executed on the phone. Android
+Lint has no errors. Final visual acceptance still belongs to the user-operated
+round; the reference image and Keimi implementation are not redistributed.
+
+## Previous checkpoint: alpha10 opt-in app appearance prototype
 
 The user accepted alpha9's basic floating-panel experience, while noting that
 its aesthetics still need refinement. A shared control defect is recorded as

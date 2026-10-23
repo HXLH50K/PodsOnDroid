@@ -6,6 +6,10 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
 import moe.chenxy.hyperpods.R
 import org.junit.Before
 import org.junit.Rule
@@ -47,9 +51,14 @@ class GestureSleepUiTest(private val number: String, private val supported: Bool
         for (label in listOf(R.string.head_gestures_title, R.string.sleep_detection_title)) {
             compose.revealSetting(hasContentDescription(text(label))).performClick()
         }
+        compose.onNode(hasText(text(R.string.settings_title)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
+        compose.revealSetting(text(R.string.settings_tools)).performClick()
         compose.revealSetting(text(R.string.head_test_title)).performClick()
         compose.waitForIdle()
         compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNode(hasText(text(R.string.dashboard_headphones)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
         compose.waitForIdle()
         for (label in listOf(R.string.head_gestures_title, R.string.sleep_detection_title)) {
             compose.revealSetting(hasContentDescription(text(label))).assertIsOn()

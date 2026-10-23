@@ -19,11 +19,11 @@ class MiuixLayoutTest {
         for (value in listOf("92%", "87%", "73%")) compose.onNodeWithText(value).assertIsDisplayed()
         val bounds = listOf(R.string.off, R.string.noise_cancellation_title,
             R.string.dashboard_transparency, R.string.adaptive_title).map {
-            compose.onNodeWithText(text(it)).assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+            compose.revealSetting(text(it)).assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         }
         bounds.forEach { assertEquals(bounds.first().top, it.top, 1f) }
         for (index in 1..3) org.junit.Assert.assertTrue(bounds[index].left >= bounds[index - 1].right - .5f)
-        compose.onNodeWithText(text(R.string.dashboard_more_summary)).assertIsDisplayed()
+        compose.revealSetting(text(R.string.dashboard_more_summary)).assertIsDisplayed()
     }
 
     @Test fun advancedControlsRemainAvailableWithoutCrowdingTheHomePage() {
@@ -33,7 +33,7 @@ class MiuixLayoutTest {
         compose.waitForIdle()
         compose.revealSetting(hasContentDescription(text(R.string.head_gestures_title))).assertIsEnabled()
         compose.revealSetting(hasContentDescription(text(R.string.sleep_detection_title))).assertIsEnabled()
-        compose.onNodeWithText(text(R.string.head_test_title)).assertExists()
+        compose.onNodeWithText(text(R.string.head_test_title)).assertDoesNotExist()
     }
 
     @Test fun theWholePreferenceRowIsOneAccessibleSwitch() {

@@ -1,0 +1,54 @@
+package moe.chenxy.hyperpods.ui
+
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import moe.chenxy.hyperpods.R
+import org.junit.Rule
+import org.junit.Test
+
+/** Exercises menu routing only; never starts a scope restart, capture or headset command. */
+class SettingsHierarchyTest {
+    @get:Rule val compose = createAndroidComposeRule<DashboardPreviewActivity>()
+    private fun text(id: Int) = compose.activity.getString(id)
+
+    private fun settingsTab() {
+        compose.onNode(hasText(text(R.string.settings_title)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
+    }
+
+    @Test fun rootOnlyShowsCategoriesAndToolsHaveTheirOwnMenu() {
+        settingsTab()
+        for (id in listOf(R.string.diagnostics_title, R.string.settings_modules, R.string.head_test_title))
+            compose.onNodeWithText(text(id)).assertDoesNotExist()
+        compose.revealSetting(text(R.string.settings_tools)).performClick()
+        for (id in listOf(R.string.diagnostics_title, R.string.settings_modules, R.string.head_test_title))
+            compose.revealSetting(text(id)).assertIsDisplayed()
+    }
+
+    @Test fun notificationsAreAppSettingsAndBackReturnsToSettings() {
+        settingsTab()
+        compose.revealSetting(text(R.string.battery_notifications_title)).performClick()
+        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle,
+            text(R.string.battery_notifications_title))).assertExists()
+        compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.revealSetting(text(R.string.settings_tools)).assertIsDisplayed()
+        compose.revealSetting(text(R.string.about_hyperpods)).assertIsDisplayed()
+    }
+
+    @Test fun projectAboutHasASeparateEntryAndSurvivesRecreation() {
+        settingsTab()
+        compose.revealSetting(text(R.string.about_hyperpods)).performClick()
+        compose.activityRule.scenario.recreate()
+        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle,
+            text(R.string.about_hyperpods))).assertExists()
+        compose.revealSetting(text(R.string.about_sources)).assertIsDisplayed()
+        compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.revealSetting(text(R.string.appearance_title)).assertIsDisplayed()
+    }
+}

@@ -1,19 +1,9 @@
 package moe.chenxy.hyperpods.ui
 
 import android.content.Intent
-import android.net.Uri
-import android.os.Bundle
+import androidx.core.net.toUri
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,143 +12,66 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.BuildConfig
-import moe.chenxy.hyperpods.ui.components.ConnectionDiagnostics
-import moe.chenxy.hyperpods.ui.components.LidObservationPanel
-import moe.chenxy.hyperpods.ui.components.BatteryNotificationSettingsPanel
-import top.yukonga.miuix.kmp.basic.BasicComponent
-import moe.chenxy.hyperpods.ui.components.DashboardGroup as Card
-import moe.chenxy.hyperpods.ui.components.DashboardSection
+import moe.chenxy.hyperpods.R
+import moe.chenxy.hyperpods.ui.components.DashboardGroup
 import moe.chenxy.hyperpods.ui.components.DashboardLink
+import moe.chenxy.hyperpods.ui.components.DashboardPageHeader
+import moe.chenxy.hyperpods.ui.components.DashboardSection
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun AboutPage(
-    padding: PaddingValues,
-    diagnostics: Bundle? = null,
-    isActive: Boolean = true,
-) {
+fun AboutPage(padding: PaddingValues, onBack: (() -> Unit)? = null) {
     val context = LocalContext.current
+    val title = stringResource(R.string.about_hyperpods)
+    fun open(url: String) { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        LazyColumn(
-            modifier = Modifier.widthIn(max = 680.dp).fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
-        ) {
-            item(key = "app_info") {
-                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Image(painterResource(R.drawable.ic_launcher_foreground), contentDescription = null,
-                        modifier = Modifier.size(72.dp), colorFilter = ColorFilter.tint(MiuixTheme.colorScheme.primary))
-                    Column(
-                        modifier = Modifier
-                            .weight(1f),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            modifier = Modifier,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp
-                        )
-                        Text(
-                            text = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}, ${BuildConfig.BUILD_REVISION})",
-                            modifier = Modifier,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 12.sp,
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
-                        )
+        LazyColumn(Modifier.widthIn(max = 680.dp).fillMaxSize()
+            .padding(top = padding.calculateTopPadding()).semantics { paneTitle = title },
+            contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 24.dp)) {
+            item { DashboardPageHeader(title, onBack) }
+            item {
+                DashboardGroup(Modifier.padding(horizontal = 16.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Image(painterResource(R.drawable.ic_launcher_foreground), null, Modifier.size(64.dp),
+                            colorFilter = ColorFilter.tint(MiuixTheme.colorScheme.primary))
+                        Text(stringResource(R.string.app_name), fontSize = 28.sp, fontWeight = FontWeight.Medium)
+                        Text("${BuildConfig.VERSION_NAME} · ${BuildConfig.BUILD_REVISION}", fontSize = 13.sp,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                        Text(stringResource(R.string.about_project_description), fontSize = 15.sp, lineHeight = 23.sp)
+                        Text(stringResource(R.string.about_project_maintainer), fontSize = 13.sp,
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                    }
+                    DashboardLink(stringResource(R.string.project_repository)) {
+                        open("https://github.com/HXLH50K/PodsOnDroid")
                     }
                 }
             }
-            item(key = "appearance") {
-                AppearanceSettings(isActive)
-            }
-            item(key = "battery_notifications") {
-                BatteryNotificationSettingsPanel()
-            }
-            item(key = "project") {
-                DashboardSection(stringResource(R.string.dashboard_project))
-                Card {
-                    BasicComponent(
-                        title = stringResource(R.string.project_maintainer),
-                        summary = "HXLH50K",
-                    )
-                    DashboardLink(
-                        title = stringResource(R.string.project_repository),
-                        summary = "https://github.com/HXLH50K/PodsOnDroid",
-                        onClick = {
-                            context.startActivity(Intent(Intent.ACTION_VIEW,
-                                Uri.parse("https://github.com/HXLH50K/PodsOnDroid")))
+            item {
+                Column(Modifier.padding(horizontal = 16.dp)) {
+                    DashboardSection(stringResource(R.string.about_sources))
+                    DashboardGroup {
+                        Text(stringResource(R.string.about_sources_description), fontSize = 14.sp,
+                            lineHeight = 22.sp, modifier = Modifier.padding(20.dp))
+                        DashboardLink(stringResource(R.string.about_upstream_source)) {
+                            open("https://github.com/Art-Chen/HyperPods")
                         }
-                    )
-                    BasicComponent(
-                        title = stringResource(R.string.dashboard_author),
-                        summary = "Art_Chen",
-                        enabled = true
-                    )
-                    DashboardLink(
-                        title = "GitHub",
-                        summary = "https://github.com/Art-Chen/HyperPods",
-                        onClick = {
-                            Intent(Intent.ACTION_VIEW).apply {
-                                this.data = Uri.parse("https://github.com/Art-Chen/HyperPods")
-                                context.startActivity(this)
-                            }
+                    }
+                    DashboardSection(stringResource(R.string.about_licenses))
+                    DashboardGroup {
+                        Text(stringResource(R.string.about_license_description), fontSize = 14.sp,
+                            lineHeight = 22.sp, modifier = Modifier.padding(20.dp))
+                        DashboardLink(stringResource(R.string.about_view_license)) {
+                            open("https://github.com/HXLH50K/PodsOnDroid/blob/main/LICENSE")
                         }
-                    )
-                    DashboardLink(
-                        title = stringResource(R.string.donate),
-                        summary = stringResource(R.string.donate_detail),
-                        onClick = {
-                            Intent(Intent.ACTION_VIEW).apply {
-                                this.data = Uri.parse("https://afdian.com/a/art_chen?tab=home")
-                                context.startActivity(this)
-                            }
-                        }
-                    )
-                    BasicComponent(
-                        title = stringResource(R.string.dashboard_fork_author),
-                        summary = "Mo-SeTian",
-                        enabled = true
-                    )
-                    DashboardLink(
-                        title = stringResource(R.string.dashboard_fork_repository),
-                        summary = "https://github.com/Mo-SeTian/HyperPods",
-                        onClick = {
-                            Intent(Intent.ACTION_VIEW).apply {
-                                this.data = Uri.parse("https://github.com/Mo-SeTian/HyperPods")
-                                context.startActivity(this)
-                            }
-                        }
-                    )
-                    DashboardLink(
-                        title = stringResource(R.string.dashboard_fork_donate),
-                        summary = "https://afdian.com/a/mosetian",
-                        onClick = {
-                            Intent(Intent.ACTION_VIEW).apply {
-                                this.data = Uri.parse("https://afdian.com/a/mosetian")
-                                context.startActivity(this)
-                            }
-                        }
-                    )
+                    }
                 }
-            }
-            if (BuildConfig.BUILD_TYPE == "debug") item(key = "lid_observation") {
-                Card { LidObservationPanel() }
-            }
-            item(key = "diagnostics") {
-                DashboardSection(stringResource(R.string.diagnostics_title))
-                Card {
-                    ConnectionDiagnostics(diagnostics)
-                }
-
             }
         }
     }

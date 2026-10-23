@@ -20,8 +20,6 @@
     <string name="batt_left_pod">"左: "</string>
     <string name="batt_right_pod">"右: "</string>
     <string name="waiting_for_pod">等待AirPods连接...</string>
-    <string name="donate">支持原作者</string>
-    <string name="donate_detail">跳转到 “爱发电”</string>
     <string name="press_and_hold_settings">按住AirPods</string>
     <string name="misc_title">杂项</string>
     <string name="conversational_awareness_title">会话感知</string>

@@ -20,8 +20,6 @@ import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey as Key
 import moe.chenxy.hyperpods.utils.data.BatteryParams
 import moe.chenxy.hyperpods.utils.data.EarDetectionParams
 import moe.chenxy.hyperpods.utils.data.PodBatteryParams
-import moe.chenxy.hyperpods.ui.components.DashboardTopBar
-import moe.chenxy.hyperpods.ui.components.DashboardNavigation
 import top.yukonga.miuix.kmp.basic.*
 
 /** Renders the production page with synthetic data, without Bluetooth or preference writes. */
@@ -40,6 +38,7 @@ class DashboardPreviewActivity : ComponentActivity() {
         val modelNumber = intent.getStringExtra("model_number") ?: "A3049"
         setContent {
             AppTheme(colorMode = intent.getIntExtra("theme", 1)) {
+                AppAppearanceProvider {
                 var anc by remember { mutableStateOf(NoiseControlMode.NOISE_CANCELLATION) }
                 var personalized by remember { mutableStateOf(intent.getBooleanExtra("personalized", false)) }
                 var conversation by remember { mutableStateOf(false) }
@@ -54,12 +53,9 @@ class DashboardPreviewActivity : ComponentActivity() {
                 var name by remember { mutableStateOf(if (modelNumber == "A3049") "AirPods Pro"
                     else AirPodsModels.getModelByModelNumber(modelNumber)?.name ?: "AirPods") }
                 val pager = rememberPagerState(pageCount = { 2 })
-                Scaffold(
-                    topBar = { DashboardTopBar { onBackPressedDispatcher.onBackPressed() } },
-                    bottomBar = { DashboardNavigation(pager) }
-                ) { padding ->
+                AppFrame(pager) { padding ->
                     HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
-                        if (page == 1) AboutPage(padding = padding) else PodDetailPage(
+                        if (page == 1) SettingsPage(padding = padding, isActive = pager.currentPage == 1) else PodDetailPage(
                             padding = padding,
                             batteryParams = BatteryParams(
                                 PodBatteryParams(leftBattery, isConnected = !unknown, isInCase = inCase),
@@ -112,5 +108,6 @@ class DashboardPreviewActivity : ComponentActivity() {
                 }
             }
         }
+    }
     }
 }

@@ -52,14 +52,15 @@ class MiuixScreenshotsTest {
     @Test fun captureSecondaryPages() {
         render()
         open(R.string.dashboard_more); capture("more")
-        open(R.string.head_test_title); capture("gesture")
-        compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
         open(R.string.dashboard_device_info); capture("device")
         compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText(text(R.string.settings_title)).performClick()
+        compose.waitForIdle(); capture("settings")
+        open(R.string.settings_tools); capture("tools")
         open(R.string.diagnostics_title); capture("diagnostics")
         compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.onNodeWithText(text(R.string.dashboard_about)).performClick()
-        compose.waitForIdle(); capture("about")
+        compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        open(R.string.about_hyperpods); capture("about")
     }
 }

@@ -12,6 +12,8 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.semantics.Role
 import moe.chenxy.hyperpods.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -61,7 +63,7 @@ class SettingsNavigationTest(private val durationScale: Float) {
 
     @Test
     fun returningFromEveryDetailRestoresHomeScroll() {
-        listOf(R.string.dashboard_more, R.string.dashboard_device_info, R.string.diagnostics_title).forEach { id ->
+        listOf(R.string.dashboard_more, R.string.dashboard_device_info).forEach { id ->
             reveal(id)
             val before = scrollPosition()
             compose.onNodeWithText(text(id)).performClick()
@@ -74,17 +76,13 @@ class SettingsNavigationTest(private val durationScale: Float) {
     }
 
     @Test
-    fun gestureTestReturnsToMoreControlsAndKeepsBothScrollPositions() {
+    fun appAndDebugSettingsAreAbsentFromHeadphoneControls() {
         reveal(R.string.dashboard_more)
         val homePosition = scrollPosition()
         compose.onNodeWithText(text(R.string.dashboard_more)).performClick()
-        reveal(R.string.head_test_title)
-        val morePosition = scrollPosition()
-        compose.onNodeWithText(text(R.string.head_test_title)).performClick()
-        compose.waitForIdle()
-        back()
-        compose.onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, text(R.string.dashboard_more))).assertExists()
-        assertEquals(morePosition, scrollPosition(), 0.000001f)
+        compose.onNodeWithText(text(R.string.head_test_title)).assertDoesNotExist()
+        compose.onNodeWithText(text(R.string.battery_notifications_title)).assertDoesNotExist()
+        compose.onNodeWithText(text(R.string.diagnostics_title)).assertDoesNotExist()
         back()
         assertEquals(homePosition, scrollPosition(), 0.000001f)
     }
@@ -140,14 +138,17 @@ class SettingsNavigationTest(private val durationScale: Float) {
         val before = scrollPosition()
         compose.mainClock.autoAdvance = false
         repeat(3) {
-            compose.onNodeWithText(text(R.string.dashboard_about)).performClick()
+            compose.onNode(hasText(text(R.string.settings_title)) and
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
             compose.mainClock.advanceTimeBy(64)
-            compose.onNodeWithText(text(R.string.dashboard_headphones)).performClick()
+            compose.onNode(hasText(text(R.string.dashboard_headphones)) and
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
             compose.mainClock.advanceTimeBy(64)
         }
         compose.mainClock.autoAdvance = true
         compose.waitForIdle()
-        compose.onNodeWithText(text(R.string.dashboard_headphones)).assertIsSelected()
+        compose.onNode(hasText(text(R.string.dashboard_headphones)) and
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).assertIsSelected()
         assertEquals(before, scrollPosition(), 0.000001f)
     }
 
