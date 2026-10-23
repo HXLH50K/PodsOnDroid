@@ -17,6 +17,7 @@ import dev.chrisbanes.haze.hazeSource
 import moe.chenxy.hyperpods.ui.components.DashboardNavigation
 import moe.chenxy.hyperpods.utils.FloatingDockLayout
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.MiuixPopupUtils.Companion.MiuixPopupHost
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -45,4 +46,7 @@ internal fun AppFrame(pager: PagerState, content: @Composable (PaddingValues) ->
             .navigationBarsPadding().padding(horizontal = 24.dp, vertical = FloatingDockLayout.MARGIN_DP.dp),
             state)
     }
+    // The custom frame replaces Scaffold, including its default popup host.
+    // Keep popups outside the page transitions, blur source and IME padding.
+    MiuixPopupHost()
 }

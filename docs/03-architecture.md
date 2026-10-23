@@ -1,5 +1,22 @@
 # 03 Architecture
 
+## App-shell popup requirement: alpha13
+
+Miuix 0.6.1 `Scaffold` supplies `MiuixPopupUtils.MiuixPopupHost` by default.
+Replacing the scaffold with a custom app frame must preserve this host, not
+just its visible top/bottom bars. `SuperDropdown` uses the shared `ListPopup`
+path; without the host, a row can become pressed/open internally while no
+option surface is rendered. Toggles and sliders do not exercise this path.
+
+`AppFrame` now composes exactly one popup host outside the page-transition,
+Haze-source and IME-padding subtrees. This retains normal library positioning,
+dismissal and lifecycle behavior rather than patching each selector. The debug
+preview/test activity uses the same production frame.
+
+Routine UI iterations do not start background log collectors. The user has
+authorized direct app UI validation for this fix; this does not authorize
+earbud operations, changing live headphone values, or restarting module scopes.
+
 ## Current app page framework: alpha12
 
 The user accepted ordinary blur as an interim material and prioritized overall
