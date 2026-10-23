@@ -472,3 +472,13 @@ Related presentation changes:
 Local validation: **46 focused JVM tests passed**, covering policy, root cancellation, full coordinator sequencing and failure/old-build handling. Debug assembly passed. No ADB command, installation, real root process signal, headset operation or computer power command was performed.
 
 Next agreed manual check: install alpha5 without first rebooting, open module diagnostics, and while no call is active explicitly confirm full debug reload. Report the individual outcomes for the three required hosts. A successful signal or an old module in a replacement PID is not success. Framework cache or Zygisk/framework updates can still require separate framework action; the app reports that limitation rather than automatically rebooting or pretending all updates are reboot-free.
+
+### Alpha5 local package receipt
+
+- Implementation commit: `6e60f3a`.
+- Focused result: **46 JVM tests, zero failures/errors** across core restart policy, cancellation, interface eligibility and the full reload coordinator.
+- The committed debug APK assembled successfully in 11 seconds. No full suite, Lint, instrumentation or device execution was performed in this iteration.
+- Handoff: `dist\PODS-0.1.0-alpha.5-debug.apk`, 31,800,951 bytes; development v2 signature, application ID `com.hxlh50k.pods.debug`, versionCode5, modern API102-only metadata.
+- SHA-256: `bdc737642f0d8cdea8d5bcb43edcea5b6fc7e29af67d4fdcbdcc5342386e806b`; a matching sidecar file is saved with the APK.
+- Not installed or executed on the phone. Real process restoration, framework cache refresh and native rendering remain user-led acceptance checks.
+- No remote push or power operation. The old shutdown request remains withdrawn.

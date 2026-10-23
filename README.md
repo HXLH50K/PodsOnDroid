@@ -8,6 +8,8 @@ The next presentation changes use separate model-appropriate left/right earbud i
 
 Alpha5 implements the priority debug reload path and passed **46 focused JVM tests** plus debug assembly. Alpha4's [build-only receipt](docs/04-delivery-plan.md#alpha4-package-receipt) remains historical; the [alpha5 record](docs/04-delivery-plan.md#14-alpha5-priority-full-debug-scope-reload) distinguishes local checks from live acceptance. No autonomous device restart, installation, headset operation or computer shutdown is part of this iteration.
 
+The locally saved preview is `dist\PODS-0.1.0-alpha.5-debug.apk`, built from `6e60f3a`; its signature, version and SHA-256 are recorded in the [package receipt](docs/04-delivery-plan.md#alpha5-local-package-receipt). It has not been installed by the assistant.
+
 The user's Xiaomi comparison found silent paired reconnect/wearing and a quick-connect card in discovery/first-pairing mode. P.O.D.S. intentionally keeps the user's preferred brief battery island for reconnect. First-pairing popup work is **provisionally deferred**, not permanently cancelled; ordinary Android Bluetooth pairing remains available. The dedicated Interconnectivity control panel and Liquid Glass remain planned. See the [latest UX evidence](docs/07-device-and-native-integration.md#manual-xiaomi-comparison-and-ios-distinction) and [decisions](docs/05-decisions.md).
 
 The last assistant-managed device deployment was alpha2 (`03f18a5`); alpha3 was built locally and handed to the user. Its **55 focused JVM tests**, assembly and Lint results do not override the subsequent failed manual presentation test. Physical acceptance remains a joint user-led step. Historical receipts remain in the [delivery plan](docs/04-delivery-plan.md).
