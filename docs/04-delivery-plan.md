@@ -1264,3 +1264,32 @@ or automatic scope reload was performed. The four issues remain open pending
 device acceptance. The next joint round should reload the module in the usual
 explicit way and verify pose delivery first, then cycle dismissal; speaker and
 swipe acceptance can follow in a separate bounded round.
+
+### Alpha14 package and physical-test pause
+
+- Source: `6cebde5c9fffd14d210768074b79c22cdcabc675`.
+- File: `dist/PODS-0.1.0-alpha.14-debug.apk`; **32,025,979 bytes**.
+- SHA-256: `c5f62efb1b7c0688660cd8bc18aa0e52391b282a199c07b995ce6151d291d3cb`.
+- Final committed-source build, all 210 affected tests, Android UI-test APK
+  compilation and Lint passed. The full-suite six unrelated baseline failures
+  above remain explicitly unclaimed.
+- Verified alpha14/code14 debug identity, existing development v2 certificate,
+  source revision, API102 and the original three module scopes.
+- Root package-manager in-place installation returned `Success`; installed
+  APK SHA-256 matches the artifact. Update time: `2026-10-23 22:43:30`; original
+  installation time and app data were retained. Device APK staging was removed.
+- The user is leaving the computer and asked to keep the earbuds open in their
+  case, pause when physical help is needed, and lock the phone. The phone was
+  put to sleep and keyguard was confirmed after the update (`showing=true`,
+  `inputRestricted=true`). No unlock/wake attempt, scope reload, pose capture,
+  call, mode/volume change or audio-route operation was performed.
+- All four issues have individual English implementation/validation updates
+  and remain open pending the next user-operated round. No code push was
+  requested in this batch; implementation and this receipt are committed locally.
+
+On return, the user should first perform the existing full DEBUG scope reload
+while no call is active, then wear the earbuds and run the independent pose test.
+If it still has no samples, report the displayed valid/rejected/filtered counts,
+last size, request variant and ownership report, rather than repeating blind
+reconnects. A second check can cover cycle selection and Back dismissal.
+The remaining swipe/speaker checks should be a separate agreed round.
