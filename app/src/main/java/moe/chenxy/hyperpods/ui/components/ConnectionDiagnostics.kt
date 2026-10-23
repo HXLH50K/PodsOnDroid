@@ -79,6 +79,10 @@ fun ConnectionDiagnostics(snapshot: Bundle?, includeModuleCheck: Boolean = true,
         }),
         stringResource(R.string.diagnostics_connection) to stringResource(connection),
         stringResource(R.string.head_gestures_title) to stringResource(headGestureStatus(snapshot?.getString("head_gestures"))),
+        stringResource(R.string.head_tracking_diagnostics) to stringResource(R.string.head_test_packet_details,
+            snapshot?.getInt("head_rejected_packets") ?: 0, snapshot?.getInt("head_filtered_samples") ?: 0,
+            snapshot?.getInt("head_last_packet_size") ?: 0),
+        stringResource(R.string.head_tracking_ownership) to headTrackingOwnershipLabel(snapshot?.getInt("head_ownership", -1) ?: -1),
         stringResource(R.string.diagnostics_stage) to stringResource(stage),
         stringResource(R.string.diagnostics_packets) to received.toString(),
         stringResource(R.string.diagnostics_retries) to (snapshot?.getInt("retries") ?: 0).toString(),
@@ -243,6 +247,9 @@ private fun settingTitle(key: String?): Int = when (key) {
 }
 
 internal fun headGestureStatus(state: String?): Int = when (state) {
+    "not_ready" -> R.string.head_tracking_not_ready
+    "invalid_data" -> R.string.head_tracking_invalid_data
+    "stop_failed" -> R.string.head_test_stop_failed
     "disabled" -> R.string.head_gestures_disabled
     "unsupported" -> R.string.head_gestures_unsupported
     "unavailable" -> R.string.head_gestures_unavailable

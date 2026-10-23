@@ -276,6 +276,7 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
     }
 
     interface PacketCallback {
+        fun onInitializationStageChanged(stage: InitializationStage) {}
         fun onBatteryInfoReceived(batteryInfo: ByteArray)
         fun onEarDetectionReceived(earDetection: ByteArray)
         fun onConversationAwarenessReceived(conversationAwareness: ByteArray)
@@ -329,7 +330,11 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
 
     enum class InitializationStage { HANDSHAKE, FEATURES, STATUS }
     var initializationStage = InitializationStage.HANDSHAKE
-        private set
+        private set(value) {
+            if (field == value) return
+            field = value
+            callback?.onInitializationStageChanged(value)
+        }
     private var featuresSent = false
     var receivedPacketCount = 0
         private set
@@ -554,7 +559,7 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
             }
 
             Opcodes.HEADTRACKING -> {
-                require(packet.size >= 70)
+                // Consumers distinguish sensor envelopes from short control replies.
                 callback?.onHeadTrackingReceived(packet)
             }
 

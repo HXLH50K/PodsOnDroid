@@ -1,5 +1,30 @@
 # 03 Architecture
 
+## Alpha14 motion, settings and route corrections
+
+The current head stream has one local owner (call recognition or explicit
+preview), matching start/stop packet variants and a bounded no-data retry.
+Incoming head-opcode packets reach consumers after header validation; consumers
+classify sensor envelopes and count rejected replies, rather than silently
+discarding short replies before diagnostics. Pose delivery and gesture-safety
+filtering are separate. This does not claim a live AirPods 5 sensor session.
+
+`AACPManager.initializationStage` notifies the controller on changes. STATUS is
+necessary but not sufficient: current socket/model/wear evidence is also needed.
+Raw headphone ownership reports stay distinct from local stream ownership and
+unknown is not false. No automatic ownership takeover was introduced.
+
+Speaker routing remains a phone-side policy for both non-worn earbuds, whether
+inside or outside the case. Route-list updates now re-evaluate the policy;
+canonical address suffixes are accepted only from system routes, protecting
+against display-name changes without global device impersonation. Delayed work
+is cancelled/revalidated across control resets and connection generations.
+
+Supported unread swipe intervals allow an explicit user write with an unknown
+selection until a real report. Long-press cycle auto-save is limited to valid
+changed drafts on normal dismissal; explicit Cancel, invalid combinations,
+unchanged values and stale dismissal callbacks do not issue hidden writes.
+
 ## App-shell popup requirement: alpha13
 
 Miuix 0.6.1 `Scaffold` supplies `MiuixPopupUtils.MiuixPopupHost` by default.

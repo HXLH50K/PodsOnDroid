@@ -141,13 +141,21 @@ object L2CAPController {
     private var batteryNotificationSettings = BatteryNotificationSettings()
     private var headGestures = false
     private var headGestureCalls: HeadGestureCalls? = null
-    private val headTrackingStream = HeadTrackingStream { start ->
+    private val headTrackingStream = HeadTrackingStream(
+        sendStandard = { start -> sendHeadTrackingCommand(start, standard = true) },
+    ) { start -> sendHeadTrackingCommand(start, standard = false) }
+
+    private fun sendHeadTrackingCommand(start: Boolean, standard: Boolean): Boolean {
         val manager = aacpManager
-        val sent = manager?.sendDataPacket(if (start) manager.createAlternateStartHeadTrackingPacket()
-            else manager.createAlternateStopHeadTrackingPacket()) == true
+        val packet = manager?.let {
+            if (standard) {
+                if (start) it.createStartHeadTrackingPacket() else it.createStopHeadTrackingPacket()
+            } else if (start) it.createAlternateStartHeadTrackingPacket() else it.createAlternateStopHeadTrackingPacket()
+        }
+        val sent = manager != null && packet != null && manager.sendDataPacket(packet)
         if (!sent) Log.w(TAG, "Head-tracking stream command was not sent")
         if (!sent && !start) recoverHeadTrackingStop()
-        sent
+        return sent
     }
     private var headStopRetryJob: Job? = null
     private var headPreviewWatchdog: Job? = null
@@ -157,6 +165,11 @@ object L2CAPController {
             putExtra("sequence", snapshot.sequence)
             putExtra("state", snapshot.state)
             putExtra("packets", snapshot.packets)
+            putExtra("rejected_packets", snapshot.rejectedPackets)
+            putExtra("filtered_samples", snapshot.filteredSamples)
+            putExtra("last_packet_size", snapshot.lastPacketSize)
+            putExtra("variant", snapshot.variant)
+            putExtra("ownership", headTrackingOwnership())
             putExtra("nods", snapshot.nods)
             putExtra("shakes", snapshot.shakes)
             putExtra("gesture", snapshot.gesture)
@@ -213,6 +226,14 @@ object L2CAPController {
     private fun headTrackingSupported() = currentPodsInfo?.modelNumber?.let(AirPodsModels::getModelByModelNumber)
         ?.capabilities?.contains(Capability.HEAD_GESTURES) == true
 
+    private fun headTrackingReady(): Boolean = aacpManager?.let {
+        it.socket.isConnected && it.initializationStage == AACPManager.InitializationStage.STATUS &&
+            currentPodsInfo != null && earDetectionStateValid
+    } == true
+
+    private fun headTrackingOwnership(): Int = aacpManager?.getControlCommandStatus(
+        AACPManager.Companion.ControlCommandIdentifiers.OWNS_CONNECTION)?.value?.firstOrNull()?.toInt()?.and(0xff) ?: -1
+
     private fun headTrackingWorn() = earDetectionStateValid && ::currentEarDetectionParams.isInitialized &&
         (currentEarDetectionParams.left == EarDetectionStatus.IN_EAR || currentEarDetectionParams.right == EarDetectionStatus.IN_EAR)
 
@@ -224,8 +245,12 @@ object L2CAPController {
         val context = mContext ?: return
         val calls = headGestureCalls ?: HeadGestureCalls(context, this, headTrackingStream) { sendDiagnostics() }
             .also { headGestureCalls = it }
-        calls.update(aacpManager, headGestures, headTrackingSupported(), headTrackingWorn())
-        if (!headTrackingWorn()) headPreview.stop("not_worn")
+        calls.update(aacpManager, headGestures, headTrackingSupported(), headTrackingWorn(), ready = headTrackingReady())
+        when {
+            !headTrackingSupported() -> headPreview.stop("unsupported")
+            !headTrackingReady() -> headPreview.stop("not_ready")
+            !headTrackingWorn() -> headPreview.stop("not_worn")
+        }
     }
 
     private val broadcastReceiver = object : BroadcastReceiver() {
@@ -299,7 +324,8 @@ object L2CAPController {
                 val at = SystemClock.elapsedRealtime()
                 if (command == "start") {
                     headPreviewWatchdog?.cancel()
-                    headPreview.start(id, at, aacpManager != null, headTrackingSupported(), headTrackingWorn(), phoneInCall())
+                    headPreview.start(id, at, aacpManager?.socket?.isConnected == true,
+                        headTrackingSupported(), headTrackingWorn(), phoneInCall(), ready = headTrackingReady())
                     if (headPreview.active) headPreviewWatchdog = CoroutineScope(Dispatchers.Default).launch {
                         while (true) {
                             delay(1000)
@@ -447,6 +473,12 @@ object L2CAPController {
     }
 
     private fun diagnosticsSnapshot(): Bundle = Bundle().apply {
+        putInt("head_packets", headGestureCalls?.packets ?: 0)
+        putInt("head_rejected_packets", headGestureCalls?.rejectedPackets ?: 0)
+        putInt("head_filtered_samples", headGestureCalls?.filteredSamples ?: 0)
+        putInt("head_last_packet_size", headGestureCalls?.lastPacketSize ?: 0)
+        putString("head_variant", headGestureCalls?.variant ?: "alternate")
+        putInt("head_ownership", headTrackingOwnership())
         putString("connection", connectionState)
         putString("stage", aacpManager?.initializationStage?.name ?: "NONE")
         putInt("received", aacpManager?.receivedPacketCount ?: 0)
@@ -980,9 +1012,10 @@ object L2CAPController {
     private val routeCallback = object : MediaRouter2.RouteCallback() {
         override fun onRoutesUpdated(routes: List<MediaRoute2Info>) {
             if (BuildConfig.DEBUG) Log.v(TAG, "routes updated (${routes.size})")
-            this@L2CAPController.routes = routes
             synchronized(this@L2CAPController) {
-                if (mContext != null && wantsHeadphoneRoute()) restoreHeadphoneRoute()
+                this@L2CAPController.routes = routes
+                // Discovery can finish after the wear event's delayed transfer.
+                handleAudioRouteChanged()
             }
         }
     }
@@ -1028,6 +1061,10 @@ object L2CAPController {
                 return
             }
             handleBatteryChanged(batteryInfo)
+        }
+
+        override fun onInitializationStageChanged(stage: AACPManager.InitializationStage) {
+            synchronized(this@L2CAPController) { updateHeadGestures() }
         }
 
         override fun onEarDetectionReceived(earDetection: ByteArray) {
@@ -1151,7 +1188,7 @@ object L2CAPController {
         }
 
         override fun onOwnershipChangeReceived(owns: Boolean) {
-//            TODO("Not yet implemented")
+            sendDiagnostics(force = true)
         }
 
         override fun onConnectedDevicesReceived(connectedDevices: List<AACPManager.Companion.ConnectedDevice>) {
@@ -1492,6 +1529,8 @@ object L2CAPController {
     }
 
     private fun resetControlState() {
+        speakerSwitchJob?.cancel()
+        speakerSwitchJob = null
         if (::mDevice.isInitialized && mContext != null) {
             MiuiStrongToastUtil.notifyBatteryControlGap(mContext, mDevice)
         }
@@ -1623,6 +1662,7 @@ object L2CAPController {
 
     private fun scheduleSpeakerRoute() {
         if (switchedToSpeaker || speakerSwitchJob?.isActive == true) return
+        val generation = sessionId
         speakerSwitchJob = CoroutineScope(Dispatchers.Default).launch {
             // Keep the existing pause delay, but never let it outlive a wear
             // change, a disabled setting, or the current Bluetooth session.
@@ -1630,12 +1670,21 @@ object L2CAPController {
             synchronized(this@L2CAPController) {
                 ensureActive()
                 speakerSwitchJob = null
-                if (mContext == null || !earDetection || !autoSwitchToSpeaker) return@synchronized
+                if (sessionId != generation || mContext == null || !earDetection ||
+                    !autoSwitchToSpeaker || !earDetectionStateValid) return@synchronized
                 if (currentEarDetectionParams.left == EarDetectionStatus.IN_EAR ||
                     currentEarDetectionParams.right == EarDetectionStatus.IN_EAR) return@synchronized
-                routes.firstOrNull { it.type == MediaRoute2Info.TYPE_BUILTIN_SPEAKER }?.let {
+                val speaker = routes.firstOrNull { it.type == MediaRoute2Info.TYPE_BUILTIN_SPEAKER }
+                if (speaker == null) {
+                    Log.w(TAG, "Speaker route not available yet; waiting for a route update")
+                    return@synchronized
+                }
+                speaker.let {
                     // A wear event must not take over a route selected by the user.
-                    if (findHeadphoneRoute(mediaRouter.systemController.selectedRoutes) == null) return@synchronized
+                    if (findHeadphoneRoute(mediaRouter.systemController.selectedRoutes) == null) {
+                        Log.i(TAG, "Speaker transfer skipped: this headset is not the selected media route")
+                        return@synchronized
+                    }
                     // Only change the media route. HFP/A2DP must stay connected.
                     switchedToSpeaker = true
                     requestAudioRoute(it)
@@ -1669,6 +1718,7 @@ object L2CAPController {
         fun address(route: MediaRoute2Info): String? = runCatching {
             MediaRoute2Info::class.java.getMethod("getAddress").invoke(route) as? String
         }.getOrNull()?.takeIf { it.isNotBlank() }
+            ?: moe.chenxy.hyperpods.utils.HeadphoneRouteIdentity.systemAddress(route.id, route.isSystemRoute)
         val byAddress = bluetooth.singleOrNull { address(it)?.equals(mDevice.address, ignoreCase = true) == true }
         val cached = bluetooth.find { it.id == headphoneRouteId &&
             (address(it) == null || address(it)?.equals(mDevice.address, ignoreCase = true) == true) }

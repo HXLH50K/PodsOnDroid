@@ -1,0 +1,5 @@
+<resources>
+    <string name="long_press_autosave">Valid changes are sent when you return or tap outside. Cancel discards changes.</string>
+    <string name="long_press_select_two">Select at least two supported modes, or cancel to discard changes.</string>
+    <string name="long_press_unavailable">The control is not ready. Your selection has not been sent.</string>
+</resources>

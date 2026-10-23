@@ -13,10 +13,6 @@ import android.telephony.TelephonyManager
 import android.telephony.SubscriptionManager
 import android.telephony.SubscriptionInfo
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlin.math.PI
 import kotlin.math.sin
 import org.junit.After
@@ -84,10 +80,9 @@ class HeadGestureCallsTest {
 
     private fun motion(horizontal: Boolean = false) = synchronized(lock) {
         repeat(100) { index ->
-            val value = (1200 * sin(2 * PI * index / 24)).toInt().toShort()
-            val packet = byteArrayOf(4, 0, 4, 0, 0x17, 0) + ByteArray(64)
-            ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN)
-                .putShort(if (horizontal) 51 else 53, value)
+            val value = (1200 * sin(2 * PI * index / 24)).toInt()
+            val packet = syntheticHeadTrackingPacket(horizontal = if (horizontal) value else 0,
+                vertical = if (horizontal) 0 else value)
             at += 20
             calls.onPacket(packet)
         }
@@ -241,14 +236,15 @@ class HeadGestureCallsTest {
     }
 
     @Test fun missingPoseDataStopsTrackingAndDoesNotKeepRetryingTheSameCall() {
-        val expired = CountDownLatch(1)
-        calls = HeadGestureCalls(context, lock) { if (calls.state == "no_data") expired.countDown() }
         update()
-        assertTrue("Missing-data window must expire", expired.await(10, TimeUnit.SECONDS))
         synchronized(lock) {
+            calls.tick(2000)
+            calls.tick(7000)
             assertEquals("no_data", calls.state)
             assertArrayEquals(manager.createDataPacket(manager.createAlternateStartHeadTrackingPacket()) +
-                manager.createDataPacket(manager.createAlternateStopHeadTrackingPacket()), output.toByteArray())
+                manager.createDataPacket(manager.createAlternateStopHeadTrackingPacket()) +
+                manager.createDataPacket(manager.createStartHeadTrackingPacket()) +
+                manager.createDataPacket(manager.createStopHeadTrackingPacket()), output.toByteArray())
             update()
             motion()
             verifyNoInteractions(telecom)
@@ -265,9 +261,7 @@ class HeadGestureCallsTest {
         val preview = HeadTrackingPreview(stream) { reports.add(it) }
         preview.start("test", 0, true, true, true, false)
         repeat(100) { index ->
-            val packet = byteArrayOf(4, 0, 4, 0, 0x17, 0) + ByteArray(64)
-            ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN)
-                .putShort(53, (1200 * sin(2 * PI * index / 24)).toInt().toShort())
+            val packet = syntheticHeadTrackingPacket(vertical = (1200 * sin(2 * PI * index / 24)).toInt())
             preview.onPacket(packet, (index + 1) * 20L)
             calls.onPacket(packet)
         }
@@ -287,5 +281,87 @@ class HeadGestureCallsTest {
         preview.command("test", "stop", 100)
         motion()
         verify(telecom).acceptRingingCall()
+    }
+
+    @Test fun incompleteInitializationNeverRegistersOrStartsTracking() {
+        synchronized(lock) { calls.update(manager, true, true, true, ready = false) }
+        assertEquals("not_ready", calls.state)
+        assertEquals(0, output.size())
+        verify(context, never()).registerReceiver(any(BroadcastReceiver::class.java), any(IntentFilter::class.java), anyInt())
+        update()
+        assertEquals("starting", calls.state)
+    }
+
+    @Test fun simultaneousCallsOrAnActiveOtherSimNeverDecideACall() {
+        for (second in listOf(TelephonyManager.CALL_STATE_RINGING, TelephonyManager.CALL_STATE_OFFHOOK)) {
+            `when`(secondSim.callStateForSubscription).thenReturn(second)
+            update()
+            motion(horizontal = true)
+            assertEquals("waiting", calls.state)
+        }
+        assertEquals(0, output.size())
+        verifyNoInteractions(telecom)
+    }
+
+    @Test fun missedPhoneBroadcastStopsOnTheFirstPacketRatherThanWaitingForAGesture() {
+        update()
+        `when`(phone.callState).thenReturn(TelephonyManager.CALL_STATE_OFFHOOK)
+        synchronized(lock) { calls.onPacket(syntheticHeadTrackingPacket()) }
+        assertEquals("waiting", calls.state)
+        assertArrayEquals(manager.createDataPacket(manager.createAlternateStartHeadTrackingPacket()) +
+            manager.createDataPacket(manager.createAlternateStopHeadTrackingPacket()), output.toByteArray())
+        verifyNoInteractions(telecom)
+    }
+
+    @Test fun stalledStreamAfterValidDataStopsAndCannotRestartInTheSameRingingWindow() {
+        update()
+        synchronized(lock) {
+            at = 100
+            calls.onPacket(syntheticHeadTrackingPacket())
+            calls.tick(5100)
+        }
+        assertEquals("no_data", calls.state)
+        val bytes = output.size()
+        update()
+        motion()
+        assertEquals(bytes, output.size())
+        verifyNoInteractions(telecom)
+    }
+
+    @Test fun unknownSensorPayloadIsReportedSeparatelyFromSilence() {
+        update()
+        synchronized(lock) {
+            at = 100
+            calls.onPacket(syntheticHeadTrackingPacket(report = 0x7f))
+            calls.tick(2000)
+            calls.tick(7000)
+        }
+        assertEquals("invalid_data", calls.state)
+        assertEquals(0, calls.packets)
+        assertEquals(1, calls.rejectedPackets)
+        verifyNoInteractions(telecom)
+    }
+
+    @Test fun filteredSamplesCountAsDataButNeverAsGestures() {
+        update()
+        synchronized(lock) {
+            at = 100
+            calls.onPacket(syntheticHeadTrackingPacket(horizontal = 7000))
+        }
+        assertEquals("tracking", calls.state)
+        assertEquals(1, calls.packets)
+        assertEquals(1, calls.filteredSamples)
+        assertEquals(0, calls.rejectedPackets)
+        verifyNoInteractions(telecom)
+    }
+
+    @Test fun failedStopAfterRecognitionDoesNotSendAnyCallAction() {
+        val stream = HeadTrackingStream { start -> start }
+        calls = HeadGestureCalls(context, lock, stream) {}
+        update()
+        motion()
+        assertEquals("stop_failed", calls.state)
+        assertTrue(stream.stopPending)
+        verifyNoInteractions(telecom)
     }
 }

@@ -9,6 +9,8 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.geometry.Offset
+import androidx.test.espresso.Espresso
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AACPManager
@@ -18,6 +20,7 @@ import moe.chenxy.hyperpods.utils.data.EarDetectionParams
 import moe.chenxy.hyperpods.utils.data.PodBatteryParams
 import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey as Key
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -91,6 +94,51 @@ class IssueSettingsUiTest {
         compose.onNodeWithContentDescription(text(android.R.string.ok)).assertIsEnabled().performClick()
         compose.waitForIdle()
         assertEquals(listOf(Key.LISTENING_MODE_BYTE to 6), writes)
+    }
+
+    @Test fun longPressCycleSavesOnBackWithoutASeparateConfirmation() {
+        render()
+        compose.revealSetting(text(R.string.set_noise_mode)).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.noise_cancellation_title)).performClick()
+        compose.onNodeWithText(text(R.string.transparency_title)).performClick()
+        Espresso.pressBack()
+        compose.waitForIdle()
+        assertEquals(listOf(Key.LISTENING_MODE_BYTE to 6), writes)
+        assertEquals("sent", feedback.value[Key.LISTENING_MODE_BYTE])
+    }
+
+    @Test fun longPressCycleSavesOnOutsideDismissalAndUnchangedReopenDoesNotWriteAgain() {
+        render()
+        compose.revealSetting(text(R.string.set_noise_mode)).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.noise_cancellation_title)).performClick()
+        compose.onNodeWithText(text(R.string.transparency_title)).performClick()
+        compose.onAllNodes(isRoot()).onLast().performTouchInput { click(Offset(20f, 20f)) }
+        compose.waitForIdle()
+        assertEquals(listOf(Key.LISTENING_MODE_BYTE to 6), writes)
+        compose.revealSetting(text(R.string.set_noise_mode)).performScrollTo().performClick()
+        Espresso.pressBack()
+        compose.waitForIdle()
+        assertEquals(listOf(Key.LISTENING_MODE_BYTE to 6), writes)
+    }
+
+    @Test fun longPressExplicitCancelStillDiscardsTheDraft() {
+        render()
+        compose.revealSetting(text(R.string.set_noise_mode)).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.noise_cancellation_title)).performClick()
+        compose.onNodeWithText(text(R.string.transparency_title)).performClick()
+        compose.onNodeWithContentDescription(text(android.R.string.cancel)).performClick()
+        compose.waitForIdle()
+        assertTrue(writes.isEmpty())
+    }
+
+    @Test fun unreadSwipeIntervalOffersAnExplicitUnselectedChoice() {
+        render()
+        compose.revealSetting(text(R.string.control_swipe_speed)).performScrollTo()
+            .assert(hasText(text(R.string.setting_select_to_apply))).performClick()
+        compose.onAllNodesWithText(text(R.string.control_default))
+            .filter(SemanticsMatcher("Placed popup row") { it.layoutInfo.isPlaced }).onFirst().performClick()
+        compose.waitForIdle()
+        assertEquals(listOf(Key.SWIPE_SPEED to 1), writes)
     }
 
     @Test fun disconnectedUnknownControlsRemainDisabled() {

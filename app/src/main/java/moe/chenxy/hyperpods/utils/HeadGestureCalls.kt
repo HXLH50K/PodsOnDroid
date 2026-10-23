@@ -28,17 +28,32 @@ class HeadGestureCalls(private val context: Context, private val lock: Any, shar
     private val onStateChanged: () -> Unit) {
     private val detector = HeadGestureDetector()
     private var manager: AACPManager? = null
-    private val stream = sharedStream ?: HeadTrackingStream { start ->
+    private val stream = sharedStream ?: HeadTrackingStream(sendStandard = { start ->
+        manager?.let { it.sendDataPacket(if (start) it.createStartHeadTrackingPacket()
+            else it.createStopHeadTrackingPacket()) } == true
+    }) { start ->
         manager?.let { it.sendDataPacket(if (start) it.createAlternateStartHeadTrackingPacket()
             else it.createAlternateStopHeadTrackingPacket()) } == true
     }
     private var enabled = false
     private var supported = false
     private var worn = false
+    private var ready = false
     private var registered = false
     private var tracking = false
     private var handled = false
-    private var receivedPose = false
+    private var started = 0L
+    private var lastPacket = 0L
+    var packets = 0
+        private set
+    var rejectedPackets = 0
+        private set
+    var filteredSamples = 0
+        private set
+    var lastPacketSize = 0
+        private set
+    var variant = "alternate"
+        private set
     private var timeout: Job? = null
     var state = "disabled"
         private set
@@ -63,18 +78,23 @@ class HeadGestureCalls(private val context: Context, private val lock: Any, shar
         // Aggregate state alone also includes some VoIP calls. Require an actual
         // ringing cellular subscription, checking both SIMs rather than the default.
         // Read only transient subscription IDs, never numbers, names or identifiers.
-        context.getSystemService(SubscriptionManager::class.java)?.activeSubscriptionInfoList.orEmpty().any {
-            phone.createForSubscriptionId(it.subscriptionId).callStateForSubscription == TelephonyManager.CALL_STATE_RINGING
+        val states = context.getSystemService(SubscriptionManager::class.java)?.activeSubscriptionInfoList.orEmpty().map {
+            phone.createForSubscriptionId(it.subscriptionId).callStateForSubscription
         }
+        // Telecom's APIs cannot target a subscription. Do not risk ending an
+        // active call or choosing between concurrent incoming cellular calls.
+        states.count { it == TelephonyManager.CALL_STATE_RINGING } == 1 &&
+            states.none { it == TelephonyManager.CALL_STATE_OFFHOOK }
     }.getOrDefault(false)
 
     private fun state(value: String) {
-        if (state == value) return
-        state = value
+        val next = if (stream.stopPending) "stop_failed" else value
+        if (state == next) return
+        state = next
         onStateChanged()
     }
 
-    fun update(manager: AACPManager?, enabled: Boolean, supported: Boolean, worn: Boolean) {
+    fun update(manager: AACPManager?, enabled: Boolean, supported: Boolean, worn: Boolean, ready: Boolean = true) {
         if (this.manager !== manager) {
             stop()
             handled = false
@@ -83,10 +103,12 @@ class HeadGestureCalls(private val context: Context, private val lock: Any, shar
         this.enabled = enabled
         this.supported = supported
         this.worn = worn
+        this.ready = ready
         val unavailable = when {
             !enabled -> "disabled"
             !supported -> "unsupported"
             manager == null -> "disconnected"
+            !ready -> "not_ready"
             !available() -> "unavailable"
             else -> null
         }
@@ -120,7 +142,6 @@ class HeadGestureCalls(private val context: Context, private val lock: Any, shar
             return
         }
         if (tracking || handled) return
-        // LibrePods defaults to the alternate head-tracking packet pair.
         if (manager == null) return
         if (!stream.acquire(HeadTrackingStream.Owner.CALL)) {
             handled = true // Do not retry on every battery/wear packet.
@@ -129,25 +150,20 @@ class HeadGestureCalls(private val context: Context, private val lock: Any, shar
         }
         detector.reset()
         tracking = true
-        receivedPose = false
+        variant = stream.variant.name.lowercase()
+        packets = 0
+        rejectedPackets = 0
+        filteredSamples = 0
+        lastPacketSize = 0
+        started = SystemClock.elapsedRealtime()
+        lastPacket = started
         timeout = CoroutineScope(Dispatchers.Default).launch {
-            delay(5000)
-            val noData = synchronized(lock) {
-                ensureActive()
-                if (!receivedPose) {
-                    handled = true
-                    stop()
-                    state("no_data")
-                    true
-                } else false
-            }
-            if (noData) return@launch
-            delay(55000)
-            synchronized(lock) {
-                ensureActive()
-                handled = true
-                stop()
-                state("timeout")
+            while (true) {
+                delay(1000)
+                synchronized(lock) {
+                    ensureActive()
+                    tick(SystemClock.elapsedRealtime())
+                }
             }
         }
         state("starting")
@@ -155,18 +171,30 @@ class HeadGestureCalls(private val context: Context, private val lock: Any, shar
 
     fun onPacket(packet: ByteArray) {
         if (!tracking) return
-        if (!enabled || !supported || !worn) {
+        if (!enabled || !supported || !worn || !ready || !ringing()) {
             refresh()
             return
         }
-        val orientation = HeadGestureDetector.orientation(packet) ?: return
-        if (!receivedPose) {
-            receivedPose = true
-            state("tracking")
+        val at = SystemClock.elapsedRealtime()
+        tick(at)
+        if (!tracking) return
+        lastPacketSize = packet.size
+        val orientation = HeadGestureDetector.motion(packet)
+        if (orientation == null) {
+            rejectedPackets++
+            detector.reset()
+            return
         }
-        val gesture = detector.process(orientation, SystemClock.elapsedRealtime()) ?: return
+        packets++
+        lastPacket = at
+        if (!HeadGestureDetector.validForGesture(orientation)) filteredSamples++
+        state("tracking")
+        val gesture = detector.process(orientation, at) ?: return
         handled = true // One decision at most for this ringing window.
-        stop()
+        if (!stop()) {
+            state("stop_failed")
+            return
+        }
         if (!ringing()) {
             state("waiting") // Discard late gestures; do not act on an answered call.
             return
@@ -181,12 +209,42 @@ class HeadGestureCalls(private val context: Context, private val lock: Any, shar
         state(if (!result) "call_failed" else if (gesture == HeadGestureDetector.Gesture.NOD) "answer_sent" else "reject_sent")
     }
 
-    private fun stop() {
+    fun tick(at: Long) {
+        if (!tracking) return
+        if (!ringing()) {
+            refresh()
+            return
+        }
+        when {
+            at - started >= 60000 -> finish("timeout")
+            packets == 0 && at - started >= 2000 &&
+                stream.canRetryWithStandard(HeadTrackingStream.Owner.CALL) -> {
+                detector.reset()
+                val retried = stream.retryWithStandard(HeadTrackingStream.Owner.CALL)
+                variant = stream.variant.name.lowercase()
+                if (!retried) finish("write_failed")
+                else {
+                    lastPacket = at
+                    onStateChanged()
+                }
+            }
+            at - lastPacket >= 5000 -> finish(if (packets == 0 && rejectedPackets > 0) "invalid_data" else "no_data")
+        }
+    }
+
+    private fun finish(reason: String) {
+        handled = true
+        stop()
+        state(reason)
+    }
+
+    private fun stop(): Boolean {
         timeout?.cancel()
         timeout = null
-        if (tracking) stream.release(HeadTrackingStream.Owner.CALL)
+        val stopped = !tracking || stream.release(HeadTrackingStream.Owner.CALL)
         tracking = false
         detector.reset()
+        return stopped
     }
 
     fun close() {

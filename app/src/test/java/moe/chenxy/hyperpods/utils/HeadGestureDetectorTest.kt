@@ -68,13 +68,29 @@ class HeadGestureDetectorTest {
     }
 
     @Test fun packetUsesSignedLittleEndianOrientationAtLibrePodsOffsets() {
-        val packet = byteArrayOf(4, 0, 4, 0, 0x17, 0) + ByteArray(64)
+        val packet = syntheticHeadTrackingPacket()
         ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN).putShort(51, -1234).putShort(53, 2345)
         assertEquals(HeadGestureDetector.Orientation(-1234, 2345), HeadGestureDetector.orientation(packet))
-        for (length in 0..69) assertNull(HeadGestureDetector.orientation(packet.copyOf(length)))
+        for (length in 0..60) assertNull(HeadGestureDetector.orientation(packet.copyOf(length)))
+        for (length in 61..70)
+            assertEquals(HeadGestureDetector.Orientation(-1234, 2345), HeadGestureDetector.orientation(packet.copyOf(length)))
         assertNull(HeadGestureDetector.orientation(packet.copyOf().apply { this[4] = 4 }))
         assertNull(HeadGestureDetector.orientation(packet.copyOf().apply { this[5] = 1 }))
         ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN).putShort(51, 6001)
+        assertNull(HeadGestureDetector.orientation(packet))
+    }
+
+    @Test fun sensorEnvelopeRejectsControlPacketsAndUnknownReportLayouts() {
+        for (report in listOf(0x44, 0x45))
+            assertNotNull(HeadGestureDetector.motion(syntheticHeadTrackingPacket(report = report)))
+        for (offset in listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11))
+            assertNull("offset=$offset", HeadGestureDetector.motion(syntheticHeadTrackingPacket().apply { this[offset] = 0x7f }))
+        assertNull(HeadGestureDetector.motion(byteArrayOf(4, 0, 4, 0, 0x17, 0) + ByteArray(64)))
+    }
+
+    @Test fun gestureSafetyFilterDoesNotDiscardDecodableMotion() {
+        val packet = syntheticHeadTrackingPacket(horizontal = Short.MIN_VALUE.toInt(), vertical = 7000)
+        assertEquals(HeadGestureDetector.Orientation(-32768, 7000), HeadGestureDetector.motion(packet))
         assertNull(HeadGestureDetector.orientation(packet))
     }
 }

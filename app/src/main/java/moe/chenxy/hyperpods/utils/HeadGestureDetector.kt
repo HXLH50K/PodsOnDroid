@@ -24,13 +24,25 @@ class HeadGestureDetector {
     data class Orientation(val horizontal: Int, val vertical: Int)
 
     companion object {
-        fun orientation(packet: ByteArray): Orientation? {
-            if (packet.size < 70 || !packet.take(6).toByteArray()
-                    .contentEquals(byteArrayOf(4, 0, 4, 0, 0x17, 0))) return null
+        private val sensorPrefix = byteArrayOf(4, 0, 4, 0, 0x17, 0, 0, 0, 0x10, 0)
+
+        /** LibrePods 89356c0 data/Packets.kt isHeadTrackingData envelope.
+         * Opcode 0x17 alone also covers requests and acknowledgements, not just sensors.
+         * The source recognizes reports over 60 bytes; 70 was an unrelated dispatch cutoff. */
+        fun isSensorPacket(packet: ByteArray): Boolean =
+            packet.size > 60 && sensorPrefix.indices.all { packet[it] == sensorPrefix[it] } &&
+                packet[10] in byteArrayOf(0x44, 0x45) && packet[11] == 0.toByte()
+
+        fun motion(packet: ByteArray): Orientation? {
+            if (!isSensorPacket(packet)) return null
             val data = ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN)
             return Orientation(data.getShort(51).toInt(), data.getShort(53).toInt())
-                .takeIf { abs(it.horizontal) <= 6000 && abs(it.vertical) <= 6000 }
         }
+
+        fun validForGesture(value: Orientation): Boolean =
+            abs(value.horizontal.toLong()) <= 6000 && abs(value.vertical.toLong()) <= 6000
+
+        fun orientation(packet: ByteArray): Orientation? = motion(packet)?.takeIf(::validForGesture)
     }
 
     private data class Extreme(val value: Double, val at: Long)
@@ -98,7 +110,7 @@ class HeadGestureDetector {
     }
 
     fun process(orientation: Orientation, at: Long): Gesture? {
-        if (abs(orientation.horizontal.toLong()) > 6000 || abs(orientation.vertical.toLong()) > 6000) {
+        if (!validForGesture(orientation)) {
             reset()
             return null
         }

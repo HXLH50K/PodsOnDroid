@@ -21,6 +21,7 @@ class HeadPose {
     private var neutral2 = 0f
     private var neutral3 = 0f
     private var previous: Pair<Int, Int>? = null
+    private var lastAt: Long? = null
 
     fun reset() {
         calibration.clear()
@@ -28,10 +29,15 @@ class HeadPose {
         neutral2 = 0f
         neutral3 = 0f
         previous = null
+        lastAt = null
     }
 
-    fun process(packet: ByteArray): Sample? {
-        val motion = HeadGestureDetector.orientation(packet) ?: return null
+    fun process(packet: ByteArray, at: Long? = null): Sample? {
+        val motion = HeadGestureDetector.motion(packet) ?: run {
+            reset()
+            return null
+        }
+        if (at != null && lastAt?.let { at <= it || at - it > 500 } == true) reset()
         val data = ByteBuffer.wrap(packet).order(ByteOrder.LITTLE_ENDIAN)
         val o2 = data.getShort(45).toInt()
         val o3 = data.getShort(47).toInt()
@@ -40,6 +46,7 @@ class HeadPose {
             // Recalibrate on a signed-boundary discontinuity, rather than inventing a wrap formula.
             reset()
         }
+        lastAt = at
         previous = o2 to o3
         if (!calibrated) {
             calibration.addLast(o2 to o3)

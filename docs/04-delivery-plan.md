@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-23 evening:** alpha13's shared dropdown-host repair has direct phone UI evidence. The user requested pushing completed work and auditing remaining TODOs; miscellaneous UI work is explicitly excluded from the rest of this session. Section 25 separates completed implementation from outstanding functional/acceptance/release work. This audit is not authorization to start another physical test round or resume UI polish.
+**Current status, 2026-10-23 evening:** the user requested four English issues and fixes for head motion, swipe-interval readiness, outside-case speaker routing and cycle auto-save. Section 26 records the alpha14 implementation and test evidence, with hardware acceptance still pending. Miscellaneous UI work remains excluded. No automated earbud/call/audio-route operation or scope restart is authorized by these local checks.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -1173,3 +1173,94 @@ to have started by this audit.
 The packaged alpha13 APK is unchanged by this documentation checkpoint. No
 phone operation, test rerun, dependency change or functional modification was
 performed for the backlog audit.
+
+## 26. Alpha14 functional issue batch
+
+The five reported symptoms were filed in order as four English issues:
+
+| Issue | Report | Implemented correction |
+| --- | --- | --- |
+| [#2](https://github.com/HXLH50K/PodsOnDroid/issues/2) | Head gestures ineffective; pose test receives no data | Source-backed sensor classification, separate pose/gesture filters, bounded existing-packet variant retry, initialization/readiness propagation and detailed diagnostics |
+| [#3](https://github.com/HXLH50K/PodsOnDroid/issues/3) | Swipe-volume interval remains grey | Capability-checked explicit editing before the first report, without inventing a selected value; retain protocol values 1/2/3 and report-confirmation behavior |
+| [#4](https://github.com/HXLH50K/PodsOnDroid/issues/4) | Speaker switch only appears to work after case placement | Re-evaluate both-out state after late route discovery, use verified system-route identity when display names differ, cancel stale delayed transfers and recheck session/valid wear |
+| [#5](https://github.com/HXLH50K/PodsOnDroid/issues/5) | Cycle changes lost on Back/outside dismissal | One shared valid-change submission path for Back/outside/drag/OK, idempotent dismissal, explicit invalid/unready errors and retained Cancel semantics |
+
+### Head tracking: source and behavior
+
+The helpers were inherited unchanged into independent P.O.D.S. root `781b4b6`
+from the pinned HyperPods tree `a44bc10e387f527062b9ba2b8f90b154b2e61248`.
+In the reference HyperPods history, call recognition appeared in
+`8583e77e5412262ec0e97c2f6997c2932cb73f8c`; pose/preview/stream helpers appeared in
+`6af0caa4b119ef486e016c2b9caa74a7fd2aa6d3` and were hardened in
+`af30ede0e1dc905c59eb407690c3da39af1b1d43`.
+
+Protocol envelopes, offsets, relative orientation and detection reference
+LibrePods v1.0.4 / `89356c08cea3db0b6b54792d9329d09a87cc85fa`, particularly
+`data/Packets.kt`, `utils/HeadOrientation.kt`, `utils/GestureDetector.kt` and
+its AACP/service integration. Existing GPL attribution and the inherited
+AACP manager's AGPL notice are preserved; no upstream commit ancestry is imported.
+
+The app preference enables Android-side incoming-call recognition. It is not
+a stored iPhone feature toggle, so enabling it on an iPhone alone does not
+establish an Android sensor stream or call-control permission.
+
+Alpha14 accepts only supported sensor envelopes as samples, counts other
+head-opcode replies separately, and keeps signed-16-bit pose signals visible
+even when outside the +/-6000 gesture-safety range. Only graph drawing is
+clipped; out-of-range samples do not trigger call gestures. Malformed/stale/
+reordered input resets recognition instead of bridging unrelated samples.
+One bounded alternate-stop/standard-start retry uses the existing documented
+packet pairs and shared writer, with matching stop/recovery ownership.
+
+Initialization-stage changes now notify the controller. Stream readiness needs
+the connected current socket, STATUS phase and actual current-session model/wear
+state, not unrelated optional battery/settings reports. The UI distinguishes
+not-ready, write failure, rejected data, no data and failed shutdown, and exposes
+valid/rejected/filtered counts, last reply size and selected request variant.
+Headphone ownership is unknown until an actual report exists; no default-false
+inference or automatic takeover is used. Ownership remains a possible
+hardware startup blocker, not a proven cause of the user's report.
+
+### Speaker and settings semantics
+
+Existing redacted wear history contains both-outside `1,1` reports before the
+later in-case `2,2` report. The old wear condition already recognized both
+outside; do not describe this as merely replacing an in-case-only condition.
+Two code gaps could skip the route transfer: an unmatched route display name
+when private address metadata is unavailable, and route discovery arriving
+after the wear event's delayed job. New tests cover both without touching real
+audio. Foreign routes, disabled policy, rewear and invalidated control sessions
+still cannot trigger a transfer. Actual route acceptance needs a user check.
+
+Unread swipe settings now show an unselected, explicitly unread choice rather
+than remaining permanently unavailable. A request does not synthesize an echo.
+The long-press editor closes before submitting a valid changed mask, so repeated
+dismissal cannot double-write. An explicit Cancel still discards changes;
+invalid selections stay editable with a visible error. Sent-only feedback is
+not described as a confirmed headphone report.
+
+### Local verification and known baseline failures
+
+- **210 affected JVM tests pass**, covering the motion stream/call safety,
+  initialization/parser/writer, controller wear/routes/settings, unread controls
+  and cycle-commit decision. App and Android UI-test APKs compile; Lint has
+  **0 errors, 130 warnings, 2 hints**.
+- Synthetic UI tests were added for cycle Back/outside/cancel and unread swipe
+  selection. They are compiled, not executed against real headphones.
+- Shared-controller fixtures now have synthetic Bluetooth addresses, scoped
+  fluent Intent mocks and teardown isolation. These changes fix the previously
+  documented controller test failures and prevent cross-class mock leakage;
+  they do not relax production validation.
+- A full JVM run has **535 tests: 529 pass, 6 fail**, all in AppPreferencesTest.
+  The exact six failures reproduce on a clean temporary checkout of `e00dd87`.
+  They are stale schema expectations/AtomicFile mocks unrelated to this batch;
+  preference production/test sources remain unchanged. CI is not claimed green.
+- The temporary baseline worktree was removed, using Windows long-path cleanup
+  for its generated files. No worktree/history rewrite or source rollback occurred.
+
+Only existing redacted diagnostics and route metadata were read from the phone.
+No stream capture, call, mode/volume change, audio-route command, earbud action
+or automatic scope reload was performed. The four issues remain open pending
+device acceptance. The next joint round should reload the module in the usual
+explicit way and verify pose delivery first, then cycle dismissal; speaker and
+swipe acceptance can follow in a separate bounded round.

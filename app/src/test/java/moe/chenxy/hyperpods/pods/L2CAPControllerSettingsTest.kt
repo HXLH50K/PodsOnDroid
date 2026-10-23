@@ -47,6 +47,7 @@ class L2CAPControllerSettingsTest {
     private fun pending() = field("pendingSettings").get(controller) as Map<*, *>
 
     @Before fun setUp() {
+        `when`(device.address).thenReturn("02:00:00:00:00:01")
         field("headGestures").setBoolean(controller, false)
         field("earDetection").setBoolean(controller, true)
         field("autoSwitchToSpeaker").setBoolean(controller, true)
@@ -465,6 +466,18 @@ class L2CAPControllerSettingsTest {
         assertEquals("confirmed", field("lastSettingStatus").get(controller))
     }
 
+    @Test fun unreadSwipeSelectionDoesNotFabricateAReportedDefault() {
+        val id = AACPManager.Companion.ControlCommandIdentifiers.VOLUME_SWIPE_INTERVAL
+        assertNull(manager.getControlCommandStatus(id))
+        request(Key.SWIPE_SPEED, 1)
+        assertArrayEquals(byteArrayOf(4, 0, 4, 0, 9, 0, 0x23, 1, 0, 0, 0), output.toByteArray())
+        assertTrue(pending().containsKey(Key.SWIPE_SPEED))
+        assertNull(manager.getControlCommandStatus(id))
+        receive(0x23, 1)
+        assertEquals(1, manager.reportedControlValue(id))
+        assertFalse(pending().containsKey(Key.SWIPE_SPEED))
+    }
+
     @Test fun chimeVolumeRetainsZeroConfigurationWithoutReplacingItWithADefault() {
         manager.receivePacket(byteArrayOf(4, 0, 4, 0, 9, 0, 0x1f, 80, 0, 0, 0))
         request(Key.CHIME_VOLUME, 35)
@@ -692,6 +705,7 @@ class L2CAPControllerSettingsTest {
     }
 
     @Test fun manualRecoveryDiscardsASilentControlSocketButKeepsTheAudioDeviceSession() {
+        mockConstruction(Intent::class.java, withSettings().defaultAnswer(RETURNS_SELF)).use {
         field("socket").set(controller, socket)
         val generation = field("sessionId").getLong(controller)
         val context = field("mContext").get(controller)
@@ -706,6 +720,7 @@ class L2CAPControllerSettingsTest {
         verify(socket, timeout(1000)).close()
         verify(socket, never()).connect()
         (field("connectionJob").get(controller) as Job?)?.cancel()
+        }
     }
 
     @Test fun malformedDeviceInformationCannotEraseTheCurrentModelOrAdvanceItsTimestamp() {

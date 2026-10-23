@@ -62,6 +62,7 @@ class L2CAPControllerWearTest {
         val options = mock(BroadcastOptions::class.java, RETURNS_SELF)
         broadcasts.`when`<BroadcastOptions> { BroadcastOptions.makeBasic() }.thenReturn(options)
         device = mock(BluetoothDevice::class.java)
+        `when`(device.address).thenReturn("02:00:00:00:00:01")
         field("mDevice").set(controller, device)
         field("mContext").set(controller, ContextWrapper(null))
         field("earDetectionStateValid").setBoolean(controller, false)
@@ -373,6 +374,7 @@ class L2CAPControllerWearTest {
     }
 
     @Test fun automaticRecoveryIsBoundedAndRetainsManualRecoveryAfterExhaustion() = runBlocking {
+        mockConstruction(Intent::class.java, withSettings().defaultAnswer(RETURNS_SELF)).use {
         val context = field("mContext").get(controller) as ContextWrapper
         val sockets = mutableListOf<BluetoothSocket>()
         with(controller) {
@@ -384,6 +386,7 @@ class L2CAPControllerWearTest {
         sockets.forEach { verify(it).close() }
         assertSame(context, field("mContext").get(controller))
         assertEquals("failed", field("connectionState").get(controller))
+        }
     }
 
     @Test fun physicalDisconnectDuringRetryDelayStopsRecovery() = runBlocking {
@@ -426,6 +429,54 @@ class L2CAPControllerWearTest {
         `when`(this.id).thenReturn(id)
         `when`(this.type).thenReturn(routeType)
         `when`(this.name).thenReturn("Test headset")
+    }
+
+    @Test fun systemRouteAddressMatchesDespiteDifferentDisplayName() = synchronized(controller) {
+        `when`(device.name).thenReturn("User alias")
+        val headset = route("com.android.server.media/.SystemMediaRoute2Provider:02:00:00:00:00:01",
+            MediaRoute2Info.TYPE_BLUETOOTH_A2DP).apply {
+            `when`(name).thenReturn("Different firmware route name")
+            `when`(isSystemRoute).thenReturn(true)
+        }
+        val finder = type.getDeclaredMethod("findHeadphoneRoute", List::class.java).apply { isAccessible = true }
+        assertSame(headset, finder.invoke(controller, listOf(headset)))
+        val other = route("com.android.server.media/.SystemMediaRoute2Provider:02:00:00:00:00:02",
+            MediaRoute2Info.TYPE_BLUETOOTH_A2DP).apply {
+            `when`(name).thenReturn("User alias")
+            `when`(isSystemRoute).thenReturn(true)
+        }
+        assertNull(finder.invoke(controller, listOf(other)))
+    }
+
+    @Test fun lateRouteDiscoveryRechecksBothOutOfEarAndTransfersWithoutCasePlacement() {
+        `when`(device.name).thenReturn("Test headset")
+        val router = mock(MediaRouter2::class.java)
+        val routing = mock(MediaRouter2.RoutingController::class.java)
+        val headset = route("headset", MediaRoute2Info.TYPE_BLUETOOTH_A2DP)
+        val speaker = route("speaker", MediaRoute2Info.TYPE_BUILTIN_SPEAKER)
+        `when`(router.systemController).thenReturn(routing)
+        `when`(routing.selectedRoutes).thenReturn(listOf(headset))
+        field("mediaRouter").set(controller, router)
+        controller.routes = emptyList()
+        synchronized(controller) { wear(EarDetectionStatus.OUT_OF_EAR, EarDetectionStatus.OUT_OF_EAR) }
+        runBlocking { requireNotNull(pendingSwitch()).join() }
+        verify(router, never()).transferTo(any())
+        val callback = field("routeCallback").get(controller) as MediaRouter2.RouteCallback
+        callback.onRoutesUpdated(listOf(speaker, headset))
+        runBlocking { requireNotNull(pendingSwitch()).join() }
+        verify(router).transferTo(speaker)
+        assertTrue(field("switchedToSpeaker").getBoolean(controller))
+        assertEquals(EarDetectionStatus.OUT_OF_EAR, controller.currentEarDetectionParams.left)
+        assertEquals(EarDetectionStatus.OUT_OF_EAR, controller.currentEarDetectionParams.right)
+    }
+
+    @Test fun controlResetCancelsAnOldOutsideCaseTransfer() = synchronized(controller) {
+        wear(EarDetectionStatus.OUT_OF_EAR, EarDetectionStatus.OUT_OF_EAR)
+        val pending = requireNotNull(pendingSwitch())
+        field("mContext").set(controller, null)
+        type.getDeclaredMethod("resetControlState").apply { isAccessible = true }.invoke(controller)
+        assertTrue(pending.isCancelled)
+        assertNull(pendingSwitch())
     }
 
     @Test fun automaticPauseOnlyAppliesWhenThisHeadsetIsTheSelectedMediaOutput() = synchronized(controller) {

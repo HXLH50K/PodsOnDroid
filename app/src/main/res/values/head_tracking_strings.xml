@@ -23,7 +23,7 @@
     <string name="head_test_estimated">Relative estimates based on LibrePods, not precise physical angles. Face forward and recenter if the illustration drifts. A successful test does not verify real call-control permissions.</string>
     <string name="head_test_center">Recenter</string>
     <string name="head_test_motion">Motion signals</string>
-    <string name="head_test_legend">Thick blue: horizontal · thin gray: vertical\nRaw range −6000…6000, not degrees. Last 100 received UI samples.</string>
+    <string name="head_test_legend">Thick blue: horizontal · thin gray: vertical\nChart range −6000…6000, not degrees; larger values are clipped visually and excluded from gesture recognition. Last 100 received UI samples.</string>
     <string name="head_test_graph">Horizontal and vertical motion signal chart</string>
     <string name="head_test_instruction">Gently nod or shake your head several times. Do not move both axes at once.</string>
     <string name="head_test_nod">Nod detected</string>
@@ -32,4 +32,13 @@
     <string name="head_test_counts">This session: %1$d nods · %2$d head shakes</string>
     <string name="head_test_start">Start test</string>
     <string name="head_test_stop">Stop test</string>
+    <string name="head_tracking_not_ready">Control initialization or current wear/model data is not ready. Retry after synchronization.</string>
+    <string name="head_tracking_invalid_data">Motion replies arrived, but no supported sensor samples were decoded.</string>
+    <string name="head_test_packet_details">Rejected replies: %1$d · filtered motion samples: %2$d · last reply: %3$d bytes</string>
+    <string name="head_test_standard">Stream request: standard variant</string>
+    <string name="head_test_alternate">Stream request: alternate variant</string>
+    <string name="head_tracking_diagnostics">Motion stream diagnostics</string>
+    <string name="head_tracking_ownership">Headphone connection ownership</string>
+    <string name="head_tracking_owner_unknown">Headphone ownership has not been reported. No takeover is attempted.</string>
+    <string name="head_tracking_owner_report">Headphone ownership report: %1$d (1 means owned). No automatic takeover.</string>
 </resources>

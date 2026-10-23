@@ -56,6 +56,7 @@ fun HeadTrackingPage(isActive: Boolean) {
     var requested by remember { mutableStateOf(false) }
     var lastReceived by remember { mutableLongStateOf(0L) }
     var stale by remember { mutableStateOf(false) }
+    var ownership by remember { mutableIntStateOf(-1) }
     val history = remember { mutableStateListOf<HeadPose.Sample>() }
 
     fun command(id: String, action: String) {
@@ -84,9 +85,15 @@ fun HeadTrackingPage(isActive: Boolean) {
                     intent.getBooleanExtra("calibrated", false),
                     intent.getIntExtra("horizontal", 0), intent.getIntExtra("vertical", 0)) else null
                 if (sample != null && (!sample.pitch.isFinite() || !sample.yaw.isFinite() ||
-                        sample.horizontal !in -6000..6000 || sample.vertical !in -6000..6000)) return
+                        sample.horizontal !in Short.MIN_VALUE..Short.MAX_VALUE ||
+                        sample.vertical !in Short.MIN_VALUE..Short.MAX_VALUE)) return
                 snapshot = Snapshot(snapshot.session, sequence, state, intent.getIntExtra("packets", 0), sample,
-                    intent.getIntExtra("nods", 0), intent.getIntExtra("shakes", 0), intent.getStringExtra("gesture") ?: "")
+                    intent.getIntExtra("nods", 0), intent.getIntExtra("shakes", 0), intent.getStringExtra("gesture") ?: "",
+                    rejectedPackets = intent.getIntExtra("rejected_packets", 0),
+                    filteredSamples = intent.getIntExtra("filtered_samples", 0),
+                    lastPacketSize = intent.getIntExtra("last_packet_size", 0),
+                    variant = intent.getStringExtra("variant") ?: "alternate")
+                ownership = intent.getIntExtra("ownership", -1)
                 lastReceived = SystemClock.elapsedRealtime()
                 stale = false
                 if (sample != null && running(state)) {
@@ -137,6 +144,7 @@ fun HeadTrackingPage(isActive: Boolean) {
     HeadTrackingContent(snapshot, history, stale, isActive && foreground,
         onStart = {
             history.clear()
+            ownership = -1
             snapshot = Snapshot(UUID.randomUUID().toString(), 0, "starting")
             lastReceived = SystemClock.elapsedRealtime()
             stale = false
@@ -147,14 +155,14 @@ fun HeadTrackingPage(isActive: Boolean) {
             snapshot = snapshot.copy(state = "stopping", sample = null)
             history.clear()
         },
-        onCenter = { command(snapshot.session, "center"); history.clear() })
+        onCenter = { command(snapshot.session, "center"); history.clear() }, ownership = ownership)
 }
 
 /** Separate rendering also lets instrumentation exercise results without fake
  * Bluetooth broadcasts or permissions, and without touching a real phone call. */
 @Composable
 fun HeadTrackingContent(snapshot: Snapshot, history: List<HeadPose.Sample>, stale: Boolean,
-    enabled: Boolean, onStart: () -> Unit, onStop: () -> Unit, onCenter: () -> Unit) {
+    enabled: Boolean, onStart: () -> Unit, onStop: () -> Unit, onCenter: () -> Unit, ownership: Int = -1) {
     val active = running(snapshot.state)
     val live = active && !stale
     val sample = snapshot.sample.takeIf { live && it?.calibrated == true }
@@ -167,6 +175,11 @@ fun HeadTrackingContent(snapshot: Snapshot, history: List<HeadPose.Sample>, stal
                 Text(stringResource(if (stale && active) R.string.head_test_stale else headTestStatus(snapshot.state)),
                     modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 Text(stringResource(R.string.head_test_packets, snapshot.packets), fontSize = 13.sp, color = secondary)
+                Text(stringResource(R.string.head_test_packet_details, snapshot.rejectedPackets,
+                    snapshot.filteredSamples, snapshot.lastPacketSize), fontSize = 12.sp, color = secondary)
+                Text(stringResource(if (snapshot.variant == "standard") R.string.head_test_standard else
+                    R.string.head_test_alternate), fontSize = 12.sp, color = secondary)
+                Text(headTrackingOwnershipLabel(ownership), fontSize = 12.sp, color = secondary)
                 Button(onClick = if (active) onStop else onStart,
                     enabled = enabled && snapshot.state != "stopping", modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(if (active) R.string.head_test_stop else R.string.head_test_start),
@@ -212,7 +225,7 @@ fun HeadTrackingContent(snapshot: Snapshot, history: List<HeadPose.Sample>, stal
                         for (vertical in listOf(false, true)) {
                             val path = Path()
                             history.forEachIndexed { index, point ->
-                                val value = if (vertical) point.vertical else point.horizontal
+                                val value = (if (vertical) point.vertical else point.horizontal).coerceIn(-6000, 6000)
                                 val x = size.width * index / 99f
                                 val y = size.height * (.5f - value / 12000f)
                                 if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
@@ -243,6 +256,9 @@ fun HeadTrackingContent(snapshot: Snapshot, history: List<HeadPose.Sample>, stal
 }
 
 private fun headTestStatus(state: String) = when (state) {
+    "not_ready" -> R.string.head_tracking_not_ready
+    "write_failed" -> R.string.setting_write_failed
+    "invalid_data" -> R.string.head_tracking_invalid_data
     "starting" -> R.string.head_test_starting
     "calibrating" -> R.string.head_test_calibrating
     "tracking" -> R.string.head_test_tracking
@@ -260,3 +276,8 @@ private fun headTestStatus(state: String) = when (state) {
     "unavailable" -> R.string.head_test_unavailable
     else -> R.string.head_test_idle
 }
+
+@Composable
+internal fun headTrackingOwnershipLabel(value: Int): String = if (value < 0)
+    stringResource(R.string.head_tracking_owner_unknown)
+else stringResource(R.string.head_tracking_owner_report, value)

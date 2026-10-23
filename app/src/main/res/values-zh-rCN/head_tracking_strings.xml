@@ -23,7 +23,7 @@
     <string name="head_test_estimated">基于 LibrePods 的相对估算，不代表精确物理角度。示意偏移时请面向正前方重新居中。测试成功不代表真实通话控制权限正常。</string>
     <string name="head_test_center">重新居中</string>
     <string name="head_test_motion">运动信号</string>
-    <string name="head_test_legend">蓝色粗线：水平 · 灰色细线：垂直\n原始值范围 −6000…6000，非角度。展示最近 100 次界面采样。</string>
+    <string name="head_test_legend">蓝色粗线：水平 · 灰色细线：垂直\n图表范围 −6000…6000，非角度；超出部分仅在图表中截断，不参与手势识别。展示最近 100 次界面采样。</string>
     <string name="head_test_graph">水平与垂直运动信号曲线</string>
     <string name="head_test_instruction">请轻轻连续点头或摇头几次，避免同时大幅转动两个方向。</string>
     <string name="head_test_nod">已识别：点头</string>
@@ -32,4 +32,13 @@
     <string name="head_test_counts">本次累计：点头 %1$d 次 · 摇头 %2$d 次</string>
     <string name="head_test_start">开始测试</string>
     <string name="head_test_stop">停止测试</string>
+    <string name="head_tracking_not_ready">控制初始化或本次佩戴／型号数据尚未就绪，请同步完成后重试。</string>
+    <string name="head_tracking_invalid_data">已收到姿态回复，但未解析出受支持的传感器采样。</string>
+    <string name="head_test_packet_details">拒绝的回复：%1$d · 过滤的运动采样：%2$d · 最近回复：%3$d 字节</string>
+    <string name="head_test_standard">采集请求：标准协议变体</string>
+    <string name="head_test_alternate">采集请求：备用协议变体</string>
+    <string name="head_tracking_diagnostics">姿态采集诊断</string>
+    <string name="head_tracking_ownership">耳机控制连接所有权</string>
+    <string name="head_tracking_owner_unknown">耳机尚未回报连接所有权，不会自动抢占。</string>
+    <string name="head_tracking_owner_report">耳机所有权回报：%1$d（1 表示已持有），不会自动抢占。</string>
 </resources>

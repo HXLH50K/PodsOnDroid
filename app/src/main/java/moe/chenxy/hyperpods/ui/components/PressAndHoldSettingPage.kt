@@ -1,5 +1,6 @@
 package moe.chenxy.hyperpods.ui.components
 
+import android.widget.Toast
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +39,7 @@ import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.LongPressEnableMode
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AACPManager
+import moe.chenxy.hyperpods.utils.ListeningCycleCommit
 import moe.chenxy.hyperpods.utils.AACPManager.Companion.ListeningMode
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import moe.chenxy.hyperpods.ui.components.DashboardGroup as Card
@@ -105,7 +108,9 @@ fun PressAndHoldSettingPage(
     confirmedMask: Int?,
     allowedModes: Set<Int>,
     enabled: Boolean,
+    statusSummary: String? = null,
 ) {
+    val context = LocalContext.current
     val settingMode = listOf(
         stringResource(R.string.set_noise_mode),
         stringResource(R.string.set_voice_assist)
@@ -113,18 +118,41 @@ fun PressAndHoldSettingPage(
     var settingModeIndex by remember { mutableIntStateOf(0) }
     val allowedMask = allowedModes.fold(0) { mask, mode -> mask or (1 shl (mode - 1)) }
     val listeningModeConfigByte = rememberSaveable { mutableStateOf(0.toByte()) }
+    var initialMask by rememberSaveable { mutableIntStateOf(0) }
+    var invalidSelection by rememberSaveable { mutableStateOf(false) }
 
     val showBottomSheet = rememberSaveable { mutableStateOf(false) }
+    fun saveAndDismiss() {
+        val selected = listeningModeConfigByte.value.toInt() and 0xff
+        when (ListeningCycleCommit.evaluate(initialMask, selected, allowedMask, enabled, showBottomSheet.value)) {
+            ListeningCycleCommit.Action.CLOSE -> showBottomSheet.value = false
+            ListeningCycleCommit.Action.SUBMIT -> {
+                // Close first: a second dismissal callback must not submit again.
+                showBottomSheet.value = false
+                initialMask = selected
+                onListeningModeChange(selected.toByte())
+            }
+            ListeningCycleCommit.Action.INVALID -> {
+                invalidSelection = true
+                Toast.makeText(context, R.string.long_press_select_two, Toast.LENGTH_SHORT).show()
+            }
+            ListeningCycleCommit.Action.UNAVAILABLE ->
+                Toast.makeText(context, R.string.long_press_unavailable, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     SmallTitle(stringResource(R.string.long_press_shared), modifier = titleModifier.padding(top = 12.dp))
     Card(
         modifier = cardModifier
     ) {
         SuperArrow(stringResource(R.string.set_noise_mode),
+            summary = statusSummary,
             rightText = if (!enabled) stringResource(R.string.settings_reading)
                 else if (confirmedMask == null) stringResource(R.string.setting_select_to_apply) else settingMode[0],
             enabled = enabled, onClick = {
                 listeningModeConfigByte.value = ((confirmedMask ?: 0) and allowedMask).toByte()
+                initialMask = listeningModeConfigByte.value.toInt() and 0xff
+                invalidSelection = false
                 showBottomSheet.value = true
             }
         )
@@ -134,9 +162,7 @@ fun PressAndHoldSettingPage(
     CustomSuperBottomSheet(
         show = showBottomSheet,
         backgroundColor = MiuixTheme.colorScheme.background,
-        onDismissRequest = {
-            showBottomSheet.value = false
-        },
+        onDismissRequest = ::saveAndDismiss,
         leftAction = {
             IconButton(
                 onClick = { showBottomSheet.value = false },
@@ -149,14 +175,14 @@ fun PressAndHoldSettingPage(
         },
         rightAction = {
             IconButton(
-                enabled = enabled && Integer.bitCount(listeningModeConfigByte.value.toInt() and allowedMask) >= 2,
-                onClick = {
-                    if (Integer.bitCount(listeningModeConfigByte.value.toInt() and allowedMask) >= 2) {
-                        onListeningModeChange(listeningModeConfigByte.value)
-                    }
-                    showBottomSheet.value = false
-                },
+                enabled = enabled && ListeningCycleCommit.valid(listeningModeConfigByte.value.toInt() and 0xff, allowedMask),
+                onClick = ::saveAndDismiss,
             ) {
+                Text(stringResource(R.string.long_press_autosave), modifier = Modifier.padding(16.dp),
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary, fontSize = 13.sp)
+                if (invalidSelection && !ListeningCycleCommit.valid(listeningModeConfigByte.value.toInt() and 0xff, allowedMask))
+                    Text(stringResource(R.string.long_press_select_two), modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MiuixTheme.colorScheme.onSurface, fontSize = 13.sp)
                 Icon(
                     imageVector = MiuixIcons.Useful.Confirm,
                     contentDescription = stringResource(android.R.string.ok)

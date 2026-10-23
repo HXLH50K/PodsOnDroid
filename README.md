@@ -2,7 +2,35 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha13 dropdown repair
+## Current checkpoint: alpha14 functional corrections
+
+Four English issues track the latest reports: [#2](https://github.com/HXLH50K/PodsOnDroid/issues/2)
+combines missing head gestures/pose data, [#3](https://github.com/HXLH50K/PodsOnDroid/issues/3)
+covers the disabled swipe interval, [#4](https://github.com/HXLH50K/PodsOnDroid/issues/4)
+covers outside-case speaker switching, and [#5](https://github.com/HXLH50K/PodsOnDroid/issues/5)
+covers long-press cycle auto-save. Implementations and local regressions are
+complete; actual AirPods acceptance is still required and the issues remain open.
+
+- Head tracking now distinguishes valid sensor data from control replies and
+  gesture-filtered motion, has a bounded alternate-to-standard stream retry,
+  and exposes readiness, packet and ownership diagnostics. No connection takeover
+  or simulated sensor data is introduced.
+- Supported swipe intervals can be explicitly selected before a report, with
+  no invented selected/default value. A real echo is still required for confirmation.
+- Speaker routing re-evaluates late route discovery, matches verified system
+  route identity independently of display names, and cancels stale pending work.
+- Valid changed long-press cycles submit once on normal dismissal. Explicit
+  Cancel discards; unchanged/invalid/unready selections never silently write.
+
+The head implementation was inherited from HyperPods, whose protocol/math work
+references LibrePods; it is not an iPhone preference synchronized to Android.
+See [provenance and validation](docs/04-delivery-plan.md#26-alpha14-functional-issue-batch).
+All **210 affected JVM regressions pass**. A wider run has **529/535 passing**;
+the remaining six preference tests reproduce on pristine `e00dd87` and are not
+caused or changed by this batch. App/UI-test APK builds and Lint pass. No
+physical earbud, mode, volume, call or scope-restart action was performed.
+
+## Previous checkpoint: alpha13 dropdown repair
 
 **Session scope:** the user requested pushing the completed work and auditing
 remaining TODOs. Miscellaneous UI polish is explicitly deferred to another

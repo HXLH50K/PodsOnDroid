@@ -1,7 +1,5 @@
 package moe.chenxy.hyperpods.utils
 
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import kotlin.math.PI
 import kotlin.math.sin
 import org.junit.Assert.*
@@ -19,12 +17,7 @@ class HeadTrackingPreviewTest {
         worn: Boolean = true, inCall: Boolean = false) = preview.start(id, at, connected, supported, worn, inCall)
 
     private fun packet(horizontal: Int = 0, vertical: Int = 0, o2: Int = 0, o3: Int = 0): ByteArray {
-        val bytes = byteArrayOf(4, 0, 4, 0, 0x17, 0) + ByteArray(64)
-        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).apply {
-            putShort(45, o2.toShort()); putShort(47, o3.toShort())
-            putShort(51, horizontal.toShort()); putShort(53, vertical.toShort())
-        }
-        return bytes
+        return syntheticHeadTrackingPacket(horizontal, vertical, o2, o3)
     }
 
     private fun motion(horizontal: Boolean) {
@@ -53,14 +46,15 @@ class HeadTrackingPreviewTest {
         repeat(20) {
             at += 100
             preview.onPacket(packet().apply { this[4] = 1 }, at)
-            preview.onPacket(packet(horizontal = 6001), at)
+            preview.onPacket(packet().apply { this[10] = 0 }, at)
             preview.onPacket(ByteArray(54), at)
         }
         at = 5000
         preview.command("test", "heartbeat", at)
         preview.tick(at)
-        assertEquals("no_data", latest.state)
+        assertEquals("invalid_data", latest.state)
         assertEquals(0, latest.packets)
+        assertEquals(60, latest.rejectedPackets)
         assertEquals(listOf(true, false), commands)
     }
 
@@ -158,7 +152,7 @@ class HeadTrackingPreviewTest {
         preview.stop("disconnected")
         assertEquals(listOf(true, false, true), commands)
         start("new")
-        assertEquals("unavailable", latest.state)
+        assertEquals("interrupted", latest.state)
         stream.release(HeadTrackingStream.Owner.CALL)
         assertEquals(listOf(true, false, true, false), commands)
     }
@@ -175,7 +169,7 @@ class HeadTrackingPreviewTest {
         assertTrue(commands.isEmpty())
         writesAccepted = false
         start("five")
-        assertEquals("unavailable", latest.state)
+        assertEquals("write_failed", latest.state)
         assertFalse(preview.active)
         writesAccepted = true
         assertTrue(stream.acquire(HeadTrackingStream.Owner.CALL))
@@ -224,5 +218,122 @@ class HeadTrackingPreviewTest {
         assertFalse(sample.calibrated)
         assertEquals(0f, sample.pitch, 0f)
         assertEquals(0f, sample.yaw, 0f)
+    }
+
+    @Test fun readyConnectionIsRequiredBeforeAnySensorCommand() {
+        preview.start("initializing", 0, true, true, true, false, ready = false)
+        assertEquals("not_ready", latest.state)
+        assertFalse(preview.active)
+        assertTrue(commands.isEmpty())
+    }
+
+    @Test fun largeAccelerationStillDeliversPoseButCannotRecognizeAGesture() {
+        start()
+        repeat(10) {
+            at += 100
+            preview.onPacket(packet(horizontal = 7000, vertical = -8000), at)
+        }
+        assertEquals("tracking", latest.state)
+        assertEquals(10, latest.packets)
+        assertEquals(10, latest.filteredSamples)
+        assertEquals(0, latest.rejectedPackets)
+        assertEquals(7000, latest.sample!!.horizontal)
+        assertEquals(0, latest.nods)
+        assertEquals(0, latest.shakes)
+    }
+
+    @Test fun poseRecalibratesAfterStallsOutOfOrderOrRejectedPackets() {
+        val pose = HeadPose()
+        repeat(10) { pose.process(packet(), it * 20L) }
+        assertFalse(pose.process(packet(), 1000)!!.calibrated)
+        repeat(10) { pose.process(packet(), 1020 + it * 20L) }
+        assertFalse(pose.process(packet(), 500)!!.calibrated)
+        repeat(10) { pose.process(packet(), 520 + it * 20L) }
+        assertNull(pose.process(ByteArray(70), 720))
+        assertFalse(pose.process(packet(), 740)!!.calibrated)
+    }
+
+    @Test fun startupRetriesOnlyOnceWithTheOtherExistingPairAndStillRequiresRealData() {
+        val writes = mutableListOf<String>()
+        val fallbackStream = HeadTrackingStream(sendStandard = { writes.add("standard:$it"); true }) {
+            writes.add("alternate:$it"); true
+        }
+        val snapshots = mutableListOf<HeadTrackingPreview.Snapshot>()
+        val fallback = HeadTrackingPreview(fallbackStream, snapshots::add)
+        fallback.start("fallback", 0, true, true, true, false)
+        fallback.tick(1999)
+        assertEquals(listOf("alternate:true"), writes)
+        fallback.tick(2000)
+        assertEquals(listOf("alternate:true", "alternate:false", "standard:true"), writes)
+        assertEquals("starting", snapshots.last().state)
+        assertEquals("standard", snapshots.last().variant)
+        fallback.command("fallback", "heartbeat", 6000)
+        fallback.tick(6999)
+        assertTrue(fallback.active)
+        fallback.tick(7000)
+        assertEquals("no_data", snapshots.last().state)
+        assertEquals(0, snapshots.last().packets)
+        assertEquals(listOf("alternate:true", "alternate:false", "standard:true", "standard:false"), writes)
+    }
+
+    @Test fun validAlternateDataNeverTriggersAProtocolRetry() {
+        val fallbackStream = HeadTrackingStream(sendStandard = { fail("Unexpected protocol fallback"); false }) {
+            commands.add(it); true
+        }
+        val fallback = HeadTrackingPreview(fallbackStream) {}
+        fallback.start("valid", 0, true, true, true, false)
+        fallback.onPacket(packet(), 100)
+        fallback.tick(2100)
+        assertEquals(listOf(true), commands)
+        fallback.stop("stopped")
+    }
+
+    @Test fun failedStopDuringFallbackCannotStartAnotherStreamOrRetryTwice() {
+        val writes = mutableListOf<String>()
+        var stoppingAllowed = false
+        val fallbackStream = HeadTrackingStream(sendStandard = { writes.add("standard:$it"); true }) {
+            writes.add("alternate:$it"); it || stoppingAllowed
+        }
+        val snapshots = mutableListOf<HeadTrackingPreview.Snapshot>()
+        val fallback = HeadTrackingPreview(fallbackStream, snapshots::add)
+        fallback.start("failed", 0, true, true, true, false)
+        fallback.tick(2000)
+        assertFalse(fallback.active)
+        assertEquals("stop_failed", snapshots.last().state)
+        assertEquals(listOf("alternate:true", "alternate:false"), writes)
+        assertTrue(fallbackStream.stopPending)
+        stoppingAllowed = true
+        assertTrue(fallbackStream.retryStop())
+        fallback.tick(3000)
+        assertEquals("write_failed", snapshots.last().state)
+        assertEquals(listOf("alternate:true", "alternate:false", "alternate:false"), writes)
+    }
+
+    @Test fun callPreemptsStandardPreviewWithItsMatchingStopAndFreshAlternateStart() {
+        val writes = mutableListOf<String>()
+        val fallbackStream = HeadTrackingStream(sendStandard = { writes.add("standard:$it"); true }) {
+            writes.add("alternate:$it"); true
+        }
+        val fallback = HeadTrackingPreview(fallbackStream) {}
+        fallback.start("preview", 0, true, true, true, false)
+        fallback.tick(2000)
+        assertTrue(fallbackStream.acquire(HeadTrackingStream.Owner.CALL))
+        fallback.stop("stopped")
+        assertEquals(listOf("alternate:true", "alternate:false", "standard:true", "standard:false", "alternate:true"), writes)
+        assertTrue(fallbackStream.release(HeadTrackingStream.Owner.CALL))
+        assertEquals("alternate:false", writes.last())
+    }
+
+    @Test fun aFailedEarlierStopDoesNotFinalizeANewPreviewSession() {
+        start("first")
+        writesAccepted = false
+        preview.stop("stopped")
+        writesAccepted = true
+        assertTrue(stream.retryStop())
+        start("second")
+        preview.tick(100)
+        assertTrue(preview.active)
+        assertEquals("starting", latest.state)
+        assertEquals("second", latest.session)
     }
 }

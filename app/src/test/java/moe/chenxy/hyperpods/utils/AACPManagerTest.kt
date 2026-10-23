@@ -100,6 +100,7 @@ class AACPManagerTest {
             manager.receivePacket(report)
             verify(callback).onBatteryInfoReceived(report)
         }
+        verify(callback).onInitializationStageChanged(AACPManager.InitializationStage.STATUS)
         verifyNoMoreInteractions(callback)
     }
 

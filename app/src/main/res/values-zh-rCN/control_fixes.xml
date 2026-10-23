@@ -1,0 +1,5 @@
+<resources>
+    <string name="long_press_autosave">有效修改会在返回或点击外部时发送；取消会放弃修改。</string>
+    <string name="long_press_select_two">请至少选择两种受支持的模式，或取消以放弃修改。</string>
+    <string name="long_press_unavailable">控制尚未就绪，当前选择未发送。</string>
+</resources>

@@ -115,9 +115,8 @@ fun PodDetailPage(
     diagnostics: Bundle? = null,
 ) {
     val model = podsInfo?.let { getModelByModelNumber(it.modelNumber) }
-    fun ready(key: String) = PodsSettings.supports(key, model) && key !in pendingSettings &&
-        (key in settings || (key == Key.MICROPHONE_MODE || key == Key.LISTENING_MODE_BYTE) &&
-            diagnostics?.getString("connection") == "connected")
+    fun ready(key: String) = PodsSettings.editable(key, model, settings, pendingSettings,
+        diagnostics?.getString("connection") == "connected")
     @Composable
     fun statusText(key: String): String? {
         val status = when (settingFeedback[key]) {
@@ -284,6 +283,8 @@ fun PodDetailPage(
                         onListeningModeChange = onListeningModeChange, titleModifier = titleModifier, cardModifier = cardModifier,
                         confirmedMask = settings[Key.LISTENING_MODE_BYTE], allowedModes = allowedModes,
                         enabled = ready(Key.LISTENING_MODE_BYTE),
+                        statusSummary = if (settingFeedback[Key.LISTENING_MODE_BYTE] == "sent")
+                            stringResource(R.string.setting_sent) else statusText(Key.LISTENING_MODE_BYTE),
                     )
                 }
 
@@ -300,7 +301,10 @@ fun PodDetailPage(
                                     items = listOf(stringResource(R.string.control_default),
                                         stringResource(if (key == Key.PRESS_SPEED) R.string.control_slower else R.string.control_longer),
                                         stringResource(if (key == Key.PRESS_SPEED) R.string.control_slowest else R.string.control_longest)),
-                                    selectedIndex = settings.getValue(key) - offset,
+                                    selectedIndex = settings[key]?.minus(offset) ?: -1,
+                                    showValue = key in settings,
+                                    summary = statusText(key) ?: if (key !in settings)
+                                        stringResource(R.string.setting_select_to_apply) else null,
                                     onSelectedIndexChange = { onSettingChange(key, it + offset) },
                                 ) else top.yukonga.miuix.kmp.basic.BasicComponent(
                                     title = stringResource(title),

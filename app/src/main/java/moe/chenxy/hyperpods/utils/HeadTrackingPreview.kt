@@ -5,7 +5,9 @@ package moe.chenxy.hyperpods.utils
 class HeadTrackingPreview(private val stream: HeadTrackingStream, private val emit: (Snapshot) -> Unit) {
     data class Snapshot(val session: String, val sequence: Long, val state: String,
         val packets: Int = 0, val sample: HeadPose.Sample? = null,
-        val nods: Int = 0, val shakes: Int = 0, val gesture: String = "")
+        val nods: Int = 0, val shakes: Int = 0, val gesture: String = "",
+        val rejectedPackets: Int = 0, val filteredSamples: Int = 0, val lastPacketSize: Int = 0,
+        val variant: String = "alternate")
     private val pose = HeadPose()
     private val detector = HeadGestureDetector()
     private var snapshot = Snapshot("", 0, "idle")
@@ -23,7 +25,8 @@ class HeadTrackingPreview(private val stream: HeadTrackingStream, private val em
         emit(snapshot)
     }
 
-    fun start(session: String, at: Long, connected: Boolean, supported: Boolean, worn: Boolean, inCall: Boolean) {
+    fun start(session: String, at: Long, connected: Boolean, supported: Boolean, worn: Boolean, inCall: Boolean,
+        ready: Boolean = true) {
         if (session.length !in 1..64) return
         if (session == snapshot.session) return // A delayed duplicate must not resurrect a stopped session.
         if (active) stop("stopped")
@@ -34,8 +37,10 @@ class HeadTrackingPreview(private val stream: HeadTrackingStream, private val em
             publish()
             return
         }
+        stoppingReason = null
         val failure = when {
             !connected -> "disconnected"
+            !ready -> "not_ready"
             !supported -> "unsupported"
             !worn -> "not_worn"
             inCall -> "interrupted"
@@ -47,7 +52,11 @@ class HeadTrackingPreview(private val stream: HeadTrackingStream, private val em
             return
         }
         if (!stream.acquire(HeadTrackingStream.Owner.PREVIEW) { stop("interrupted") }) {
-            snapshot = snapshot.copy(state = "unavailable")
+            snapshot = snapshot.copy(state = when {
+                stream.stopPending -> "stop_failed"
+                stream.isOwnedBy(HeadTrackingStream.Owner.CALL) -> "interrupted"
+                else -> "write_failed"
+            })
             publish()
             return
         }
@@ -90,21 +99,45 @@ class HeadTrackingPreview(private val stream: HeadTrackingStream, private val em
         when {
             at - heartbeat >= 7000 -> stop("expired") // App death cannot leave tracking on.
             at - started >= 120000 -> stop("timeout")
-            at - lastPacket >= 5000 -> stop("no_data")
+            snapshot.packets == 0 && at - started >= 2000 &&
+                stream.canRetryWithStandard(HeadTrackingStream.Owner.PREVIEW) -> {
+                val retried = stream.retryWithStandard(HeadTrackingStream.Owner.PREVIEW)
+                snapshot = snapshot.copy(variant = stream.variant.name.lowercase())
+                if (!retried) stop("write_failed")
+                else {
+                    lastPacket = at
+                    publish()
+                }
+            }
+            at - lastPacket >= 5000 ->
+                stop(if (snapshot.packets == 0 && snapshot.rejectedPackets > 0) "invalid_data" else "no_data")
         }
     }
 
     fun onPacket(packet: ByteArray, at: Long) {
         tick(at)
         if (!active) return
-        val sample = pose.process(packet) ?: return
+        val sample = pose.process(packet, at)
+        snapshot = snapshot.copy(lastPacketSize = packet.size)
+        if (sample == null) {
+            detector.reset()
+            snapshot = snapshot.copy(rejectedPackets = snapshot.rejectedPackets + 1, sample = null, gesture = "",
+                state = if (snapshot.packets == 0) "starting" else "calibrating")
+            if (at - lastEmit >= 100) {
+                lastEmit = at
+                publish()
+            }
+            return
+        }
         lastPacket = at
+        val motion = HeadGestureDetector.Orientation(sample.horizontal, sample.vertical)
         // Recognition uses every valid sample; UI telemetry is limited to 10 Hz.
         val gesture = if (lastGesture?.let { at - it < 1000 } == true) null else
-            detector.process(HeadGestureDetector.Orientation(sample.horizontal, sample.vertical), at)
+            detector.process(motion, at)
         if (gesture != null) lastGesture = at
         snapshot = snapshot.copy(state = if (sample.calibrated) "tracking" else "calibrating",
             packets = snapshot.packets + 1, sample = sample,
+            filteredSamples = snapshot.filteredSamples + if (HeadGestureDetector.validForGesture(motion)) 0 else 1,
             nods = snapshot.nods + if (gesture == HeadGestureDetector.Gesture.NOD) 1 else 0,
             shakes = snapshot.shakes + if (gesture == HeadGestureDetector.Gesture.SHAKE) 1 else 0,
             gesture = gesture?.name ?: snapshot.gesture)

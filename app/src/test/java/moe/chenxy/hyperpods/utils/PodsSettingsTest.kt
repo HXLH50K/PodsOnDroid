@@ -5,6 +5,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PodsSettingsTest {
+    @Test fun unreadSwipeIntervalCanBeExplicitlySetWithoutInventingAValue() {
+        val values = emptyMap<String, Int>()
+        assertTrue(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, emptySet(), true))
+        assertTrue(values.isEmpty())
+        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, emptySet(), false))
+        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, setOf(Key.SWIPE_SPEED), true))
+        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPodsPro1(), values, emptySet(), true))
+        assertFalse(PodsSettings.editable(Key.CHIME_VOLUME, AirPods5WCC(), values, emptySet(), true))
+    }
+
     @Test fun sleepDetectionUsesBooleanWireValuesOnlyOnCapableModels() {
         assertEquals(0x35.toByte(), PodsSettings.identifiers[Key.SLEEP_DETECTION]?.value)
         for (model in listOf(AirPodsPro2USBC(), AirPodsPro2Lightning(), AirPods4(), AirPods4ANC(), AirPods5(), AirPods5WCC(), AirPodsPro3())) {
