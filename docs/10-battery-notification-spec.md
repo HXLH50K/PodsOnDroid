@@ -20,6 +20,16 @@ Earbud artwork must retain its **original pictorial material, shading and colors
 
 Alpha6 implements this path through SystemUI's native device-island controller with no notification carrier. It uses the original images plus native colored percentage spans, owned pre-draw acknowledgment and fixed update/cancellation leases. This supersedes alpha4/alpha5's notification-backed implementation notes; actual no-banner presentation and five visible seconds are not accepted until the user verifies them.
 
+### Alpha7 native bootstrap correction
+
+The alpha6 user test failed: neither card nor island appeared. Captured startup logs identify the immediate failure as treating the OEM's lazy content proxy as a concrete controller. Alpha7 resolves that exact proxy on demand and preserves the native add/width handshake. Zero initial width is not a reason to suppress the request. Only one owned native pending entry may exist, bounded by the original startup deadline, with identity-based cancellation and no notification fallback.
+
+Additional acceptance cases (hardware execution still pending):
+
+- **BAT-37:** after a scope reload with no earlier charging/device island, the first valid battery presentation can create the native window and complete the width handshake.
+- **BAT-38:** cancellation, disconnect or startup expiry while awaiting width removes only the owned pending entry; a late width reply cannot display that stale battery presentation.
+- **BAT-39:** a later native window replacement resolves its new controller rather than reusing a stale controller from plugin load.
+
 ## 1. Problem and evidence
 
 The user reports that the current connection notification **flashes briefly rather than remaining as a useful five-second island**. This is a failed presentation result, not an accepted implementation.

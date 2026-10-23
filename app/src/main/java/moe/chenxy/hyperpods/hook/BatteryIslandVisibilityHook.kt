@@ -65,8 +65,8 @@ internal object BatteryIslandVisibilityHook {
                 watchers[view] = it
                 it.start()
             }
-        } catch (_: Exception) {
-            NativeBatteryIslandBridge.viewFailed(payload.token, payload.audioEvent)
+        } catch (error: Exception) {
+            NativeBatteryIslandBridge.viewFailed(payload.token, payload.audioEvent, error)
         }
     }
 
@@ -181,9 +181,9 @@ internal object BatteryIslandVisibilityHook {
                     acknowledged = true
                     NativeBatteryIslandBridge.observed(token, event, SystemClock.elapsedRealtime())
                 }
-            } catch (_: Exception) {
+            } catch (error: Exception) {
                 stop()
-                NativeBatteryIslandBridge.viewFailed(token, event)
+                NativeBatteryIslandBridge.viewFailed(token, event, error)
             }
             return true
         }

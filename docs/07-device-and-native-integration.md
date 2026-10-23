@@ -1,12 +1,26 @@
 # 07 Test device and Xiaomi native integration
 
+## Alpha7 correction: actual content endpoint and cold-start width
+
+The user's alpha6 reload/reconnect produced `native_schema_unsupported` at the concrete-controller name check in `NativeBatteryIslandSchema`, followed by a real audio connection, battery IPC submission and `native_failed`. This is runtime evidence, not an inferred battery readiness issue.
+
+Targeted inspection of the same installed APKs then established the missing contract:
+
+- `DynamicIslandWindowViewCreator.getDynamicIslandContent()` returns `DynamicIslandWindowViewCreator$dynamicIslandContentProxy$2$1`, implementing `DynamicIslandContent`, rather than returning the controller directly.
+- The proxy's private `real()` returns the current window controller or null. Its `this$0` creator provides `createView()`. Native add itself uses that creator only when no window exists.
+- Alpha7 validates this exact proxy shape, does not create a window at plugin load, and resolves/reuses the bound controller at presentation time. Creation must bind the same object it returns. Unknown wrappers and mismatched delegates remain unsupported.
+- Native `requestMaxWidth` can enqueue data and emit `notifyAddIsland` to obtain geometry. Rejecting zero width before native add prevents that handshake on a cold start; simply polling width would not repair it.
+- Alpha7 submits one owned data object under the existing startup deadline, allowing the native handshake. Cancellation removes pending data by identity and calls the matching native remove event only when no conflicting current/pending key exists. The native width handler copies/clears pending data and replays it synchronously; removing an expired pending entry prevents a later reply from resurrecting it.
+
+The tests use independently authored interface/proxy fixtures, not copied OEM implementation. The main log buffer on this phone is only 64 KiB, so future user-operated rounds require a collector started and verified before handoff. The assistant performed no process restart or earbud operation.
+
 ## Alpha6 direct native island evidence
 
 A later read-only copy of the installed system APKs confirmed:
 
 - SystemUI SHA-256: `f64985403bc3154768de001dc14c9aac680466b3b20558cd1f3e6ed83c234da4`.
 - SystemUI plugin SHA-256: `de51bd76933922fbd3c3baeb2b5bfeaee7013b43d5816759f2dcda35cb37a068`.
-- Process: `com.android.systemui`; the actual native controller is obtained from its dynamic-island plugin content after the erased `onPluginLoaded(Plugin, Context, PluginLifecycleManager)` callback returns.
+- Process: `com.android.systemui`; plugin content is obtained after the erased `onPluginLoaded(Plugin, Context, PluginLifecycleManager)` callback returns. The alpha6 assumption that this was already the concrete controller was incorrect; see the alpha7 lazy-proxy correction above.
 - Owner class: `com.android.systemui.statusbar.notification.DynamicIslandPluginController`; its public `context` field and content getter expose the instantiated plugin holder after normal startup loading.
 - Native contract: `DynamicIslandData()` with property0 and priority1, native dual-region ticker JSON and image extras, then `DynamicIslandContent.addDynamicIslandView(data, false)` / `removeDynamicIslandView(String)`.
 - Controller: `miui.systemui.dynamicisland.window.DynamicIslandWindowViewController`. Its normal update operation can re-add missing content and renew native timeouts, so alpha6 instead updates only the currently owned rendered regions.

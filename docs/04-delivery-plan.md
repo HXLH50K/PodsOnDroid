@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current alpha6 task:** the user confirms scope restart works and asks to fix the remaining display issues. A direct native device-island bridge now replaces notification publication; untinted pictorial earbud resources and text-only threshold coloring are used. Static analysis of read-only system APK copies supports the specific contract. Packaging/local checks and the next user-led render check are recorded separately below; no automatic UI, process restart, radio capture or computer power operation is authorized by this iteration.
+**Current alpha7 task:** user-operated alpha6 testing showed neither card nor island. Captured logs identified a rejected lazy native content proxy; alpha7 corrects endpoint resolution and the coupled cold-start width handshake. No notification fallback is reintroduced. Packaging/local checks and the next user-led render check are recorded separately below; no automatic UI, process restart, radio capture or computer power operation is authorized by this iteration.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -512,3 +512,17 @@ Next joint check: install alpha6, use the now user-verified full debug reload, t
 - Final debug assembly from committed source passed. The 11 focused local regressions above are not substitutes for native rendering acceptance.
 - Temporary system APK/decompiler analysis directory removed after recording contract evidence. No APK, decompiler output, private key or device log was added to Git.
 - Not installed or exercised on the phone; no remote push and no power operation.
+
+## 16. Alpha7: repair lazy native island initialization
+
+The user performed the agreed DEBUG scope reload and lid-open sequence. A persistent module-only collector captured:
+
+1. Xiaomi Bluetooth's battery owner registering normally.
+2. SystemUI rejecting content in `NativeBatteryIslandSchema`'s concrete-controller class check.
+3. A genuine audio connection and battery IPC, followed by `native_failed`.
+
+The supplied OEM content is a lazy proxy, not the actual controller. Alpha7 accepts only the verified OEM proxy/direct-controller shapes, resolves the current controller when needed and creates the native window only on a real presentation. It also removes the pre-add positive-width requirement: native add must first request geometry. The existing startup lease bounds a single owned pending entry, and cancellation balances that entry without affecting foreign content.
+
+Local validation: **23 focused JVM tests passed** (7 endpoint, 9 payload/lease/trust, 3 pending-identity cleanup, 4 artwork) and debug assembly succeeded. These tests validate the production resolver against independent reflection fixtures, deadlines and ownership; they do not prove actual native animation/visibility on the phone.
+
+For subsequent physical rounds, start and verify the log collector before handoff, state the exact one-round operation and return control. Do not use an interactive questionnaire for this physical-operation handoff. The user then reports completion in chat. Keep captured raw logs and APK analysis inputs out of Git.

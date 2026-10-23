@@ -70,6 +70,24 @@ class NativeBatteryIslandPayloadTest {
         assertEquals(6200L, lease.deadline)
     }
 
+    @Test fun lazyWindowPreparationUsesTheOriginalStartupDeadline() {
+        val lease = NativeBatteryIslandLease(payload())
+        assertFalse(lease.preparing(999))
+        assertTrue(lease.preparing(1000))
+        assertTrue(lease.update(payload().copy(revision = 1, left = 16), 10_000))
+        assertEquals(16, lease.payload.left)
+        assertTrue(lease.preparing(10_999))
+        assertFalse(lease.preparing(11_000))
+        assertEquals(11_000L, lease.deadline)
+    }
+
+    @Test fun visibilityEndsPreparationInsteadOfReaddingTheIsland() {
+        val lease = NativeBatteryIslandLease(payload())
+        assertTrue(lease.visible(1200))
+        assertFalse(lease.preparing(1201))
+        assertEquals(6200L, lease.deadline)
+    }
+
     @Test fun senderRequiresUidAndDeclaredContextPackageTogether() {
         val allowed = setOf(HyperPodsBroadcasts.SYSTEM_UI, BatteryIslandContract.SYSTEM_UI_PLUGIN)
         assertTrue(BatteryIslandContract.trustedIdentity(1000, HyperPodsBroadcasts.SYSTEM_UI, 1000, allowed))

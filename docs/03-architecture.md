@@ -1,12 +1,13 @@
 # 03 Architecture
 
-## Current alpha6 transport
+## Current alpha7 transport
 
-The user has reported the complete debug scope reload as working. Battery presentation now uses `NativeBatteryIslandBridge` in SystemUI and `NativeBatteryIslandSchema` against the locally inspected plugin controller. The Xiaomi host sends only bounded primitive payloads; native objects and views remain in SystemUI. No Android notification is created or injected as a fake carrier.
+The user has reported the complete debug scope reload as working. Battery presentation uses `NativeBatteryIslandBridge` in SystemUI and `NativeBatteryIslandSchema` against the locally inspected plugin controller. `NativeBatteryIslandEndpoint` resolves the OEM's lazy content proxy: plugin loading validates the endpoint without creating a window; the first real presentation reuses its controller or calls the verified creator once. The Xiaomi host sends only bounded primitive payloads; native objects and views remain in SystemUI. No Android notification is created or injected as a fake carrier.
 
 - The native device-data path uses `DynamicIslandData` with property0/priority1, then `DynamicIslandContent.addDynamicIslandView(data, false)`.
 - Refresh paints only the owned existing two regions; it does not call the OEM update method that can re-add content or restart timeouts.
 - Actual owned pre-draw starts the five-second lease. Startup, detach, dismiss, expiry, plugin unload and cancellation all terminate the same owned generation.
+- Zero initial width is not failure: native add initiates the SystemUI width handshake. At most one owned pending data object is allowed under the original startup lease. Pending-only cancellation removes that exact object and balances its native add event; late width replies cannot replay a removed pending entry.
 - Exact object identity and key checks protect unrelated charging/device animations; busy native device content is not overwritten.
 - Original model earbud resources are loaded without icon tint or image color filters. Each `TimerTextEffectView` percentage uses its own threshold color, with original appearance/accessibility/image state restored on release.
 - The old notification manager is used only for proved-owned upgrade cleanup. It is not a display transport or fallback.

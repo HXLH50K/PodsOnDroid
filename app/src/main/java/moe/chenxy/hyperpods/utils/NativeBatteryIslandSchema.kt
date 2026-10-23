@@ -10,7 +10,7 @@ import java.lang.reflect.Method
  */
 internal class NativeBatteryIslandSchema(val controller: Any) {
     private val controllerType = controller.javaClass.also {
-        check(it.name == CONTROLLER) { "native_schema_unsupported" }
+        check(it.name == CONTROLLER) { "native_controller_unsupported: ${it.name}" }
     }
     private val loader = controllerType.classLoader
     private val dataType = Class.forName(DATA, false, loader)
@@ -20,15 +20,18 @@ internal class NativeBatteryIslandSchema(val controller: Any) {
     private val setProperties = dataType.getMethod("setProperties", Int::class.javaObjectType)
     private val setPriority = dataType.getMethod("setPriority", Int::class.javaObjectType)
     private val setExtras = dataType.getMethod("setExtras", Bundle::class.java)
+    private val getExtras = dataType.getMethod("getExtras")
+    private val getKey = dataType.getMethod("getKey")
     private val getProperties = dataType.getMethod("getProperties")
     private val add = controllerType.getMethod("addDynamicIslandView", dataType, Boolean::class.javaPrimitiveType)
     private val remove = controllerType.getMethod("removeDynamicIslandView", String::class.java)
     val removal: Method = controllerType.getMethod("removeDynamicIslandView",
         String::class.java, Boolean::class.javaPrimitiveType)
-    private val maxWidth = controllerType.getMethod("getIslandMaxWidth")
     private val parse = controllerType.getMethod("getIslandTemplate", dataType)
     private val window = requireNotNull(HostReflection.method(controllerType, "getView").invoke(controller))
     private val currentUser = window.javaClass.getMethod("getCurrentUserId")
+    private val notifyRemove = window.javaClass.getMethod("notifyRemoveIsland",
+        String::class.java, Int::class.javaObjectType, String::class.java, Int::class.javaObjectType)
     private val islandData = controllerType.getDeclaredField("islandData").apply { isAccessible = true }
     private val pendingData = controllerType.getDeclaredField("pendingData").apply { isAccessible = true }
     private val safeguards = controllerType.getMethod("getDynamicIslandSafeguardsController").invoke(controller)
@@ -38,27 +41,27 @@ internal class NativeBatteryIslandSchema(val controller: Any) {
     init {
         val content = Class.forName(CONTENT, false, loader)
         check(content.isInstance(controller) && islandData.type == HashMap::class.java &&
-            pendingData.type == HashMap::class.java && maxWidth.returnType == Float::class.javaPrimitiveType)
+            pendingData.type == HashMap::class.java)
         check(parse.returnType.name == "miui.systemui.dynamicisland.model.IslandTemplate" &&
             window.javaClass.name == "miui.systemui.dynamicisland.window.DynamicIslandWindowView" &&
             currentUser.returnType == Int::class.javaPrimitiveType &&
-            listOf(setKey, setTicker, setProperties, setPriority, setExtras, add, remove, removal)
+            listOf(setKey, setTicker, setProperties, setPriority, setExtras, add, remove, removal, notifyRemove)
                 .all { it.returnType == Void.TYPE })
         // Verify the real update interface too, but do not invoke it for refresh: this firmware's
         // implementation can re-add a missing view and renew its native timeout.
         controllerType.getMethod("updateDynamicIslandView", dataType, Boolean::class.javaPrimitiveType)
-        dataType.getMethod("getExtras").also { check(it.returnType == Bundle::class.java) }
-        dataType.getMethod("getKey").also { check(it.returnType == String::class.java) }
+        check(getExtras.returnType == Bundle::class.java && getKey.returnType == String::class.java)
         check(getProperties.returnType == Int::class.javaObjectType)
     }
 
     fun create(payload: NativeBatteryIslandPayload): Any {
-        check((maxWidth.invoke(controller) as Float) > 0f) { "native_island_not_ready" }
         val current = islandData.get(controller) as Map<*, *>
-        check(!current.containsKey(BatteryIslandContract.NATIVE_KEY)) {
+        val pending = pendingData.get(controller) as Map<*, *>
+        check(!current.containsKey(BatteryIslandContract.NATIVE_KEY) &&
+            pending.keys.none { dataType.isInstance(it) && getKey.invoke(it) == BatteryIslandContract.NATIVE_KEY }) {
             "native_key_busy"
         }
-        check(current.values.none { dataType.isInstance(it) && getProperties.invoke(it) == 0 }) {
+        check((current.values + pending.keys).none { dataType.isInstance(it) && getProperties.invoke(it) == 0 }) {
             "native_device_island_busy"
         }
         val data = constructor.newInstance()
@@ -109,19 +112,23 @@ internal class NativeBatteryIslandSchema(val controller: Any) {
     }
 
     fun submit(data: Any) {
-        // Do not enter the controller's unbounded pending-width queue.
-        check((maxWidth.invoke(controller) as Float) > 0f) { "native_island_not_ready" }
+        // Native add initiates the width handshake. Our lease bounds this single owned entry,
+        // including pending-only cancellation before the native view has been materialized.
         add.invoke(controller, data, false)
     }
 
     fun removeOwned(data: Any) {
-        @Suppress("UNCHECKED_CAST")
-        val pending = pendingData.get(controller) as MutableMap<Any, Any>
-        pending.remove(data)
+        val pending = pendingData.get(controller) as MutableMap<*, *>
+        val queued = removePendingIdentity(pending, data)
         val current = (islandData.get(controller) as Map<*, *>)[BatteryIslandContract.NATIVE_KEY]
         if (current === data) {
             remove.invoke(controller, BatteryIslandContract.NATIVE_KEY)
             cancelNativeTimeout.invoke(safeguards, BatteryIslandContract.NATIVE_KEY)
+        } else if (queued && current == null &&
+            pending.keys.none { dataType.isInstance(it) && getKey.invoke(it) == BatteryIslandContract.NATIVE_KEY }) {
+            val extras = requireNotNull(getExtras.invoke(data) as? Bundle)
+            notifyRemove.invoke(window, extras.getString("miui.pkg.name"), extras.getInt("miui.user.id"),
+                BatteryIslandContract.NATIVE_KEY, getProperties.invoke(data))
         }
     }
 
@@ -133,6 +140,17 @@ internal class NativeBatteryIslandSchema(val controller: Any) {
     }
 
     companion object {
+        internal fun removePendingIdentity(pending: MutableMap<*, *>, data: Any): Boolean {
+            val entries = pending.keys.iterator()
+            while (entries.hasNext()) {
+                if (entries.next() === data) {
+                    entries.remove()
+                    return true
+                }
+            }
+            return false
+        }
+
         const val CONTROLLER = "miui.systemui.dynamicisland.window.DynamicIslandWindowViewController"
         const val DATA = "com.android.systemui.plugins.miui.dynamicisland.DynamicIslandData"
         const val CONTENT = "com.android.systemui.plugins.miui.dynamicisland.DynamicIslandContent"

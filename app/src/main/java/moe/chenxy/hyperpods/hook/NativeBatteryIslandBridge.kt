@@ -11,6 +11,7 @@ import android.util.Log
 import io.github.libxposed.api.XposedInterface
 import moe.chenxy.hyperpods.utils.BatteryIslandContract
 import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
+import moe.chenxy.hyperpods.utils.NativeBatteryIslandEndpoint
 import moe.chenxy.hyperpods.utils.NativeBatteryIslandLease
 import moe.chenxy.hyperpods.utils.NativeBatteryIslandPayload
 import moe.chenxy.hyperpods.utils.NativeBatteryIslandSchema
@@ -29,6 +30,8 @@ internal object NativeBatteryIslandBridge {
     private val retired = LinkedHashSet<String>()
     private var sender: Context? = null
     private var plugin: Any? = null
+    private var endpoint: NativeBatteryIslandEndpoint? = null
+    private var framework: XposedInterface? = null
     private var schema: NativeBatteryIslandSchema? = null
     private var failure = "native_plugin_unavailable"
     private var lastSubmittedAt = -1L
@@ -62,6 +65,7 @@ internal object NativeBatteryIslandBridge {
                 if (plugin === unloadedPlugin) {
                     finish("native_plugin_unloaded", failed = true)
                     plugin = null
+                    endpoint = null
                     schema = null
                     failure = "native_plugin_unavailable"
                 }
@@ -74,7 +78,9 @@ internal object NativeBatteryIslandBridge {
         if (plugin === loadedPlugin) return
         finish("native_plugin_replaced", failed = true)
         plugin = loadedPlugin
+        endpoint = null
         schema = null
+        this.framework = framework
         failure = "native_schema_unsupported"
         try {
             val application = requireNotNull(context.applicationContext)
@@ -83,32 +89,40 @@ internal object NativeBatteryIslandBridge {
                 sender = application
                 register(application)
             }
-            val native = NativeBatteryIslandSchema(requireNotNull(content))
-            val loader = requireNotNull(content.javaClass.classLoader)
-            check(loader !in failedLoaders) { "native_schema_unsupported" }
-            if (loader !in hookedLoaders) {
-                try {
-                    BatteryIslandVisibilityHook.install(framework, loader)
-                    framework.intercept(native.removal) { chain ->
-                        if (chain.thisObject === schema?.controller &&
-                            chain.args[0] == BatteryIslandContract.NATIVE_KEY &&
-                            schema?.owns(nativeData) == true) {
-                            onMain { finish("native_removed", remove = false) }
-                        }
-                        chain.proceed()
-                    }
-                    hookedLoaders.add(loader)
-                } catch (error: Exception) {
-                    failedLoaders.add(loader)
-                    throw error
-                }
-            }
-            schema = native
+            endpoint = NativeBatteryIslandEndpoint(requireNotNull(content))
             failure = ""
-            Log.i(TAG, "Notification-free native device-island bridge ready; visibility still requires pre-draw")
+            Log.i(TAG, "Native content endpoint ready (${content.javaClass.name}); window remains lazy")
         } catch (error: Exception) {
             Log.e(TAG, "native_schema_unsupported: no notification fallback", error)
         }
+    }
+
+    private fun bindController(controller: Any): NativeBatteryIslandSchema {
+        schema?.takeIf { it.controller === controller }?.let { return it }
+        val native = NativeBatteryIslandSchema(controller)
+        val loader = requireNotNull(controller.javaClass.classLoader)
+        check(loader !in failedLoaders) { "native_schema_unsupported" }
+        if (loader !in hookedLoaders) {
+            try {
+                val framework = requireNotNull(framework)
+                BatteryIslandVisibilityHook.install(framework, loader)
+                framework.intercept(native.removal) { chain ->
+                    if (chain.thisObject === schema?.controller &&
+                        chain.args[0] == BatteryIslandContract.NATIVE_KEY &&
+                        schema?.owns(nativeData) == true) {
+                        onMain { finish("native_removed", remove = false) }
+                    }
+                    chain.proceed()
+                }
+                hookedLoaders.add(loader)
+            } catch (error: Exception) {
+                failedLoaders.add(loader)
+                throw error
+            }
+        }
+        schema = native
+        Log.i(TAG, "Native controller bound; native add will request width if needed")
+        return native
     }
 
     private fun register(context: Context) {
@@ -155,17 +169,20 @@ internal object NativeBatteryIslandBridge {
             payload.left < 0 && payload.right < 0) return
         lastSubmittedAt = payload.submittedAt
         finish("superseded")
-        val native = schema
-        if (native == null) {
+        val source = endpoint
+        if (source == null) {
             retire(payload.token)
             send(BatteryIslandContract.ACTION_FAILED, payload, failure)
             return
         }
-        lease = NativeBatteryIslandLease(payload)
+        val pending = NativeBatteryIslandLease(payload)
+        lease = pending
+        if (!scheduleExpiry()) return
         try {
-            val data = native.create(payload)
+            val native = bindController(source.resolve())
+            check(pending.preparing(SystemClock.elapsedRealtime())) { "native_startup_expired" }
+            val data = native.create(pending.payload)
             nativeData = data
-            if (!scheduleExpiry()) return
             native.submit(data)
             Log.i(TAG, "Native device island submitted, not yet observed")
         } catch (error: Exception) {
@@ -205,8 +222,11 @@ internal object NativeBatteryIslandBridge {
         if (lease?.owns(token, event) == true) finish("native_view_detached")
     }
 
-    fun viewFailed(token: String, event: Long) = onMain {
-        if (lease?.owns(token, event) == true) finish("native_view_schema_unsupported", failed = true)
+    fun viewFailed(token: String, event: Long, error: Exception) = onMain {
+        if (lease?.owns(token, event) == true) {
+            Log.e(TAG, "native_view_schema_unsupported: no notification fallback", error)
+            finish("native_view_schema_unsupported", failed = true)
+        }
     }
 
     private fun scheduleExpiry(): Boolean {
@@ -226,6 +246,7 @@ internal object NativeBatteryIslandBridge {
         expiry?.let(handler::removeCallbacks)
         expiry = null
         val old = lease ?: return
+        Log.i(TAG, "Native island ended: $reason")
         val data = nativeData
         lease = null
         nativeData = null

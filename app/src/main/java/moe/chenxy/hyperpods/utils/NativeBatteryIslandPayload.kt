@@ -83,6 +83,8 @@ internal class NativeBatteryIslandLease(initial: NativeBatteryIslandPayload) {
 
     fun owns(token: String?, event: Long) = payload.token == token && payload.audioEvent == event
 
+    fun preparing(now: Long) = visibleAt == null && now >= payload.submittedAt && now < deadline
+
     fun update(next: NativeBatteryIslandPayload, now: Long): Boolean {
         if (!next.valid(now) || !owns(next.token, next.audioEvent) ||
             next.submittedAt != payload.submittedAt || next.revision <= payload.revision || now >= deadline) return false

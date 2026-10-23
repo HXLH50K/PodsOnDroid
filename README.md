@@ -2,7 +2,7 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-**Alpha6, 2026-10-23:** the user reports full debug scope reload works. The remaining normal-notification-to-island transition is now addressed with a new **direct native device-island transport**, not another focus-notification flag change. Model-specific left/right artwork remains untinted and pictorial; threshold color applies to battery text only. Native rendering still requires the next user-led acceptance check.
+**Alpha7, 2026-10-23:** the user's alpha6 test produced no island. A user-operated reload/reconnect captured the failure: the OEM returns a **lazy content proxy**, which alpha6 incorrectly treated as the concrete window controller. Alpha7 resolves the verified proxy on demand and preserves the native width-request handshake instead of rejecting an initially zero width. Model-specific artwork remains untinted; colors apply only to percentage text. Rendering acceptance remains a separate user-led check.
 
 The battery path no longer creates a `Notification`, notification channel, or `StatusBarNotification`, and has no notification publication fallback. It sends bounded authenticated data to SystemUI, which creates owned native island content using the contract inspected in this phone's system APKs. Ordinary notification access is retained only to remove proved-owned older-version remnants.
 
@@ -35,7 +35,7 @@ The debug app uses the same three declared scopes. Live restart behavior remains
 
 ## Next joint check: direct native battery island
 
-1. Install alpha6, then use the now user-verified full DEBUG scope reload while no call is active and Bluetooth interruption is acceptable. Verify that the required three hosts report the new build.
+1. Install alpha7, then use the now user-verified full DEBUG scope reload while no call is active and Bluetooth interruption is acceptable. Verify that the required three hosts report the new build.
 2. In one agreed round, reconnect the earbuds once. Expect direct native island animation with no preceding ordinary notification/card and no notification remaining after it closes.
 3. Confirm both earbud pictures retain their original shading/material. Only the respective percentage text should use the Low/Medium color rules.
 4. If nothing appears or the lifecycle is wrong, report that result before retrying. Native schema mismatch fails closed instead of falling back to a notification. No repeated automated phone tests or power actions are performed.
