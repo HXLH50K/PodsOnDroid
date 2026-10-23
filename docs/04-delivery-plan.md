@@ -526,3 +526,15 @@ The supplied OEM content is a lazy proxy, not the actual controller. Alpha7 acce
 Local validation: **23 focused JVM tests passed** (7 endpoint, 9 payload/lease/trust, 3 pending-identity cleanup, 4 artwork) and debug assembly succeeded. These tests validate the production resolver against independent reflection fixtures, deadlines and ownership; they do not prove actual native animation/visibility on the phone.
 
 For subsequent physical rounds, start and verify the log collector before handoff, state the exact one-round operation and return control. Do not use an interactive questionnaire for this physical-operation handoff. The user then reports completion in chat. Keep captured raw logs and APK analysis inputs out of Git.
+
+### Alpha7 package receipt
+
+- Committed source: `d3227eec1b8ad78365086d69701db823eae8a1db`.
+- File: `dist/PODS-0.1.0-alpha.7-debug.apk`; **31,850,103 bytes**.
+- SHA-256: `32afa88fde3922839829ff8d54eb402785a7e4a670e1c1c1d194c3284b9224bc`.
+- Verified APK identity: `com.hxlh50k.pods.debug`, `P.O.D.S.`, `0.1.0-alpha.7`, version code `7`.
+- Verified development v2 signature, modern API102 metadata, packaged endpoint implementation and committed revision. Independent reflection test fixtures are not packaged.
+- Final debug assembly from committed source succeeded. The preceding 23 focused tests all passed.
+- Both extracted OEM APK hashes still match the evidence recorded in document 07. Named temporary APK/disassembly files were removed; the real diagnostic capture remains local and uncommitted.
+- Alpha7 has not been installed or accepted on the phone. The captured failure belongs to alpha6; a separate user-led installation/reload/reconnect round is needed to validate this fix.
+- No remote push, autonomous process restart, earbud operation or power action.
