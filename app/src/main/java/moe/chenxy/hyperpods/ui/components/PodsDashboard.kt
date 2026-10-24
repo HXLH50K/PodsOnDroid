@@ -4,10 +4,15 @@ import android.os.Bundle
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -27,6 +32,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -42,8 +48,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.ui.NavigationSurface
+import moe.chenxy.hyperpods.ui.GlassBackdrop
+import moe.chenxy.hyperpods.ui.LocalNavigationEffects
 import moe.chenxy.hyperpods.utils.FloatingDockLayout
-import dev.chrisbanes.haze.HazeState
 import moe.chenxy.hyperpods.pods.EarDetectionStatus
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AirPodsBase
@@ -176,7 +183,7 @@ private fun IconBattery(available: Boolean, charging: Boolean) {
 }
 
 @Composable
-fun DashboardNavigation(pagerState: PagerState, modifier: Modifier = Modifier, hazeState: HazeState? = null) {
+internal fun DashboardNavigation(pagerState: PagerState, modifier: Modifier = Modifier, backdrop: GlassBackdrop? = null) {
     val scope = rememberCoroutineScope()
     var animation by remember { mutableStateOf<Job?>(null) }
     DashboardNavigation(pagerState.targetPage, { index ->
@@ -186,23 +193,41 @@ fun DashboardNavigation(pagerState: PagerState, modifier: Modifier = Modifier, h
         animation = scope.launch {
             pagerState.animateScrollToPage(index, animationSpec = tween(240, easing = FastOutSlowInEasing))
         }
-    }, modifier, hazeState)
+    }, modifier, backdrop, pagerState.currentPage + pagerState.currentPageOffsetFraction)
 }
 
 @Composable
-fun DashboardNavigation(selected: Int, onSelect: (Int) -> Unit,
-                        modifier: Modifier = Modifier, hazeState: HazeState? = null) {
-    NavigationSurface(hazeState, modifier.widthIn(max = 340.dp).fillMaxWidth()
-        .shadow(12.dp, RoundedCornerShape(40.dp))) {
-        Row(Modifier.fillMaxWidth().height(FloatingDockLayout.HEIGHT_DP.dp).padding(6.dp).selectableGroup(),
+internal fun DashboardNavigation(selected: Int, onSelect: (Int) -> Unit,
+                        modifier: Modifier = Modifier, backdrop: GlassBackdrop? = null,
+                        pagePosition: Float = selected.toFloat()) {
+    val effects = backdrop != null && LocalNavigationEffects.current
+    val firstInteraction = remember { MutableInteractionSource() }
+    val secondInteraction = remember { MutableInteractionSource() }
+    val firstPressed by firstInteraction.collectIsPressedAsState()
+    val secondPressed by secondInteraction.collectIsPressedAsState()
+    val pressure by animateFloatAsState(if (effects && (firstPressed || secondPressed)) 1f else 0f,
+        spring(dampingRatio = .8f, stiffness = Spring.StiffnessMedium), label = "GlassPressure")
+    val position by animateFloatAsState(pagePosition.coerceIn(0f, 1f),
+        spring(dampingRatio = .85f, stiffness = Spring.StiffnessMediumLow), label = "GlassSelection")
+    val shownPosition = if (effects) position else pagePosition.coerceIn(0f, 1f)
+    val lightPosition = if (firstPressed) 0f else if (secondPressed) 1f else shownPosition
+    NavigationSurface(backdrop, shownPosition, pressure.coerceIn(0f, 1f), lightPosition,
+        modifier.widthIn(max = 340.dp).fillMaxWidth()
+            .graphicsLayer { scaleX = 1f + pressure * .006f; scaleY = 1f - pressure * .012f }
+            .shadow(12.dp, RoundedCornerShape(40.dp))) { glass ->
+        BoxWithConstraints(Modifier.fillMaxWidth().height(FloatingDockLayout.HEIGHT_DP.dp).padding(6.dp)) {
+        if (!glass) Box(Modifier.offset(x = (maxWidth / 2) * shownPosition)
+            .width(maxWidth / 2).fillMaxHeight().clip(RoundedCornerShape(32.dp))
+            .background(MiuixTheme.colorScheme.onSurface.copy(alpha = .10f)))
+        Row(Modifier.fillMaxSize().selectableGroup(),
             verticalAlignment = Alignment.CenterVertically) {
             listOf(R.string.dashboard_headphones, R.string.settings_title).forEachIndexed { index, label ->
                 val tint by animateColorAsState(
-                    if (selected == index) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurfaceVariantSummary,
+                    if (selected == index) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface,
                     animationSpec = tween(180), label = "DashboardTabTint")
                 Column(Modifier.weight(1f).clip(RoundedCornerShape(32.dp))
-                    .background(if (selected == index) MiuixTheme.colorScheme.onSurface.copy(alpha = .10f) else Color.Transparent)
-                    .selectable(selected == index, role = Role.Tab,
+                    .selectable(selected == index, role = Role.Tab, indication = null,
+                    interactionSource = if (index == 0) firstInteraction else secondInteraction,
                     onClick = { onSelect(index) }).padding(vertical = 7.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
                     if (index == 0) Icon(painterResource(R.drawable.dashboard_headphones), null,
@@ -210,6 +235,7 @@ fun DashboardNavigation(selected: Int, onSelect: (Int) -> Unit,
                     else Icon(painterResource(R.drawable.dashboard_settings), null, tint = tint, modifier = Modifier.size(24.dp))
                     Text(stringResource(label), color = tint, fontSize = 12.sp, lineHeight = 16.sp,
                         modifier = Modifier.padding(top = 4.dp))
+                }
                 }
             }
         }

@@ -2,7 +2,10 @@
     <string name="appearance_title">外观</string>
     <string name="appearance_reduced">降低透明度</string>
     <string name="appearance_reduced_summary">改用纯色背景，让导航按钮更清晰。</string>
-    <string name="appearance_navigation_summary">底部导航栏默认使用模糊背景。开启“降低透明度”后改为纯色背景。</string>
+    <string name="appearance_navigation_summary">底部导航栏使用带背景折射和高光的液态玻璃。开启“降低透明度”后改为纯色背景。</string>
+    <string name="appearance_glass_unavailable">当前无法渲染玻璃效果，导航栏将使用纯色背景。</string>
+    <string name="appearance_glass_active">液态玻璃导航栏</string>
+    <string name="appearance_glass_solid">纯色导航栏</string>
     <string name="appearance_opaque_active">导航栏当前因可读性、省电模式或所选偏好而使用不透明背景。</string>
     <string name="appearance_read_failed">无法读取外观偏好，已保留当前可读样式。</string>
     <string name="appearance_save_failed">无法保存外观偏好，请重试。</string>

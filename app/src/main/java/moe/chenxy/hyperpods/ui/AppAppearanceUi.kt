@@ -12,16 +12,9 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -29,10 +22,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeEffect
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.ui.components.DashboardGroup
 import moe.chenxy.hyperpods.ui.components.DashboardSection
@@ -107,22 +96,6 @@ internal fun AppAppearanceProvider(content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalAppAppearance provides appearance, LocalSaveAppearance provides save,
         LocalNavigationEffects provides appearance.effectsAllowed(true, resumed, powerSave, highContrast),
         content = content)
-}
-
-@Composable
-internal fun NavigationSurface(state: HazeState?, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    val effects = state != null && LocalNavigationEffects.current
-    val colors = MiuixTheme.colorScheme
-    val dark = colors.background.luminance() < .5f
-    val style = HazeStyle(backgroundColor = colors.background,
-        tint = HazeTint(colors.surface.copy(alpha = if (dark) .65f else .72f)),
-        blurRadius = 24.dp, noiseFactor = .02f,
-        fallbackTint = HazeTint(colors.surface))
-    val shape = RoundedCornerShape(40.dp)
-    val material = if (effects) Modifier.hazeEffect(requireNotNull(state), style = style)
-        else Modifier.background(colors.surface)
-    Box(modifier.clip(shape).then(material).border(1.dp,
-        if (dark) Color.White.copy(alpha = .22f) else Color.Black.copy(alpha = .10f), shape)) { content() }
 }
 
 @Composable

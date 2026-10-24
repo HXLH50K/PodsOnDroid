@@ -4,6 +4,24 @@ A private HyperPods-derived project aiming to support AirPods across Android pho
 Current physical acceptance is limited to the user's AirPods 5 and Xiaomi HyperOS 4.
 Other phone/headphone combinations are extension targets, not verified support.
 
+## Liquid glass navigation
+
+The bottom tab dock now uses a local Android AGSL implementation rather than
+blur-only frosting: live page-content refraction, capsule-edge highlights,
+subtle chromatic separation and a moving selected lens with press response.
+Icons and labels render above the effect, not through the shader. Settings
+cards and headphone sliders remain ordinary controls.
+
+Reduce transparency, high-contrast mode, power saving, backgrounding or an
+unavailable hardware renderer keep navigation opaque and usable. Animations
+respect Android's motion-duration scale. No new dependency, system-host hook,
+bitmap screenshot loop or continuous animation timer is introduced.
+See [references and rendering contract](docs/03-architecture.md#liquid-glass-navigation-2026-10-24).
+Validation includes 18 focused JVM checks per build variant and 19 passing
+API 35 emulator UI cases, with actual AGSL output, 4.5:1 selected-label contrast,
+normal/zero motion, RTL, opaque fallback and popup-host regression coverage.
+Physical HyperOS GPU/performance acceptance remains separate.
+
 ## Compatibility structure
 
 Phone-system integrations and headphone features are independent runtime

@@ -11,6 +11,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color as ComposeColor
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import moe.chenxy.hyperpods.ui.components.DashboardNavigation
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.*
@@ -50,6 +58,10 @@ class DashboardPreviewActivity : ComponentActivity() {
         setContent {
             AppTheme(colorMode = intent.getIntExtra("theme", 1)) {
                 AppAppearanceProvider {
+                if (intent.getBooleanExtra("glass_navigation_preview", false)) {
+                    GlassNavigationPreview()
+                    return@AppAppearanceProvider
+                }
                 if (intent.getBooleanExtra("scope_restart_preview", false)) {
                     ScopeRestartPreview()
                     return@AppAppearanceProvider
@@ -159,6 +171,26 @@ class DashboardPreviewActivity : ComponentActivity() {
                     value = it
                     feedback = "sent"
                 })
+            }
+
+        }
+    }
+
+    @Composable
+    private fun GlassNavigationPreview() {
+        val layer = rememberGraphicsLayer()
+        val backdrop = remember(layer) { GlassBackdrop(layer) }
+        var selected by remember { mutableIntStateOf(0) }
+        CompositionLocalProvider(LocalNavigationEffects provides !intent.getBooleanExtra("glass_opaque", false)) {
+            Box(Modifier.fillMaxSize()) {
+                Canvas(Modifier.fillMaxSize().glassSource(backdrop)) {
+                    drawRect(if (intent.getIntExtra("theme", 1) == 2) ComposeColor(0xFF142438) else ComposeColor(0xFFDBEDFF))
+                    val step = 24.dp.toPx()
+                    for (x in 0..(size.width / step).toInt()) for (y in 0..(size.height / step).toInt())
+                        if ((x + y) % 2 == 0)
+                            drawRect(ComposeColor(0xFF7799B4), Offset(x * step, y * step), Size(step, step))
+                }
+                DashboardNavigation(selected, { selected = it }, Modifier.align(Alignment.Center), backdrop)
             }
         }
     }

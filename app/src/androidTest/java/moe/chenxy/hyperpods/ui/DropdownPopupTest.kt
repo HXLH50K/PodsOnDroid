@@ -3,6 +3,10 @@ package moe.chenxy.hyperpods.ui
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.Espresso
 import moe.chenxy.hyperpods.R
@@ -21,7 +25,9 @@ class DropdownPopupTest {
 
     private fun openAndDismiss(control: Int, option: Int) {
         compose.revealSetting(text(control)).performClick()
-        compose.onNodeWithText(text(option)).assertIsDisplayed()
+        compose.onAllNodesWithText(text(option))
+            .filter(SemanticsMatcher("Placed popup row") { it.layoutInfo.isPlaced })
+            .onFirst().assertIsDisplayed()
         Espresso.pressBack()
         compose.waitForIdle()
         compose.onNodeWithText(text(option)).assertDoesNotExist()

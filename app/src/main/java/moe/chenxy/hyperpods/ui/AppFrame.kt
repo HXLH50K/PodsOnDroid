@@ -12,8 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
+import androidx.compose.ui.graphics.rememberGraphicsLayer
 import moe.chenxy.hyperpods.ui.components.DashboardNavigation
 import moe.chenxy.hyperpods.utils.FloatingDockLayout
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -22,7 +21,8 @@ import top.yukonga.miuix.kmp.utils.MiuixPopupUtils.Companion.MiuixPopupHost
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun AppFrame(pager: PagerState, content: @Composable (PaddingValues) -> Unit) {
-    val state = remember { HazeState() }
+    val layer = rememberGraphicsLayer()
+    val backdrop = remember(layer) { GlassBackdrop(layer) }
     val focus = LocalFocusManager.current
     LaunchedEffect(pager.targetPage) { focus.clearFocus() }
     val navigation = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -37,14 +37,14 @@ internal fun AppFrame(pager: PagerState, content: @Composable (PaddingValues) ->
     }
     val effects = LocalNavigationEffects.current
     Box(Modifier.fillMaxSize().background(MiuixTheme.colorScheme.background).imePadding()) {
-        Box(Modifier.fillMaxSize().then(if (effects) Modifier.hazeSource(state) else Modifier)) {
+        Box(Modifier.fillMaxSize().then(if (effects) Modifier.glassSource(backdrop) else Modifier)) {
             CompositionLocalProvider(LocalBringIntoViewSpec provides bringIntoView) {
                 content(PaddingValues(top = top, bottom = bottom))
             }
         }
         DashboardNavigation(pager, Modifier.align(Alignment.BottomCenter)
             .navigationBarsPadding().padding(horizontal = 24.dp, vertical = FloatingDockLayout.MARGIN_DP.dp),
-            state)
+            backdrop)
     }
     // The custom frame replaces Scaffold, including its default popup host.
     // Keep popups outside the page transitions, blur source and IME padding.

@@ -2,7 +2,10 @@
     <string name="appearance_title">Appearance</string>
     <string name="appearance_reduced">Reduce transparency</string>
     <string name="appearance_reduced_summary">Use a solid background for clearer navigation buttons.</string>
-    <string name="appearance_navigation_summary">The bottom navigation bar normally has a blurred background. Turn on Reduce transparency for a solid background.</string>
+    <string name="appearance_navigation_summary">The bottom navigation bar uses liquid glass with background refraction and highlights. Turn on Reduce transparency for a solid background.</string>
+    <string name="appearance_glass_unavailable">Glass rendering is unavailable. Navigation will use a solid background.</string>
+    <string name="appearance_glass_active">Liquid glass navigation</string>
+    <string name="appearance_glass_solid">Solid navigation</string>
     <string name="appearance_opaque_active">The navigation dock is opaque for readability, power saving, or the selected preference.</string>
     <string name="appearance_read_failed">Unable to read appearance preferences. The current readable style was retained.</string>
     <string name="appearance_save_failed">Unable to save appearance preferences. Please try again.</string>

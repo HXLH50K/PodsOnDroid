@@ -1,5 +1,88 @@
 # 03 Architecture
 
+## Liquid glass navigation (2026-10-24)
+
+### Verified references and intended scope
+
+- Apple's [Materials HIG](https://developer.apple.com/design/human-interface-guidelines/materials)
+  and [Meet Liquid Glass, WWDC25 session 219](https://developer.apple.com/videos/play/wwdc2025/219/)
+  describe a floating functional navigation/control layer, with lensing,
+  refraction, geometry-aware specular highlights and responsive motion.
+  Ordinary content cards are not a reason to spread glass throughout the app.
+- Apple's [custom-view API](https://developer.apple.com/documentation/swiftui/applying-liquid-glass-to-custom-views)
+  is an Apple-platform API, not an Android material.
+- Android's [AGSL documentation](https://developer.android.com/develop/ui/views/graphics/agsl/using-agsl)
+  and [RuntimeShader RenderEffect](https://developer.android.com/reference/android/graphics/RenderEffect#createRuntimeShaderEffect(android.graphics.RuntimeShader,%20java.lang.String))
+  provide programmable component rendering, not a turnkey Liquid Glass control.
+- The [Compose graphics guide](https://developer.android.com/develop/ui/compose/graphics/draw/modifiers#write-contents-of-a-composable-to-a-bitmap)
+  documents recording real content with `rememberGraphicsLayer`, `record` and
+  `drawLayer`. P.O.D.S. uses the recording/drawing part only, never bitmap export
+  as a frame-by-frame backdrop.
+
+The Android implementation is an original local approximation of those optical
+and interaction requirements, not Apple's renderer or a claim of exact visual
+equivalence. No external shader/assets were copied. Only the floating tab dock
+and its selected lens receive this material; other cards, toggles, dialogs and
+headphone sliders stay unchanged.
+
+### Rendering and interaction
+
+`AppFrame` records the actual page layer once per content draw, excluding the
+dock and the popup host. `GlassBackdrop` retains that managed graphics layer
+and its root-coordinate origin. The dock draws it in dock-local coordinates;
+AGSL samples that real image with capsule-distance-derived inward refraction.
+There is no artificial background image, CPU pixel readback, recursive
+self-capture or permanent animation loop.
+
+`GlassOptics` holds the original shader and density-aware selected-lens geometry.
+The material uses a 14 dp edge region, at most 7 dp outer refraction, restrained
+chromatic offsets and 2 dp scattering. These are project tuning values, not
+official Apple specifications. Light/dark tint responds to sampled luminance;
+a more substantial selected-label plate protects contrast. Directional rim
+highlights and shadow communicate thickness without distorting foreground text.
+
+The same shader contains the selected capsule, so tab changes translate one
+lens instead of fading independent solid backgrounds. It follows pager position,
+supports interrupted/retargeted movement and mirrors in RTL. Press interaction
+slightly deforms the dock/lens and changes highlight direction; spring animations
+settle without an idle timer. Both labels retain their existing `Role.Tab`,
+selected state, click behavior and at least 48 dp touch height.
+
+### Fallback and lifetime
+
+Existing reduce-transparency, lifecycle, power-save and high-contrast gates
+disable the capture/effect and use the solid surface/selected background.
+Compose animations respect the system motion-duration scale, including zero.
+Software rendering uses the solid surface. Shader compilation errors are
+logged and surfaced once via a localized notice, then use the same fallback.
+All graphics-layer ownership follows composition lifetime; the content layer
+is not retained in system-host processes.
+
+The old dock-specific Haze path is replaced, not stacked beneath the lens.
+No dependency/toolchain change or OEM rendering API is required by this work.
+The app's API 35 minimum already exceeds AGSL's API 33 requirement.
+
+### Verification
+
+- 18 focused JVM checks pass in each of Debug and Release, covering selected
+  lens geometry/density/RTL, dock layout, page motion and appearance gates.
+- 19 Android instrumentation cases pass on a temporary API 35 emulator:
+  14 material/interaction cases across normal and zero motion scale, 3 dropdown
+  regressions and 2 theme checks. Shader compilation, live backdrop contribution,
+  opaque independence, effect toggling, RTL, two-tab semantics/touch height and
+  sampled selected-text contrast of at least 4.5:1 are measured.
+- The dropdown fixture selects placed popup rows, not Miuix's duplicate
+  subcompositions used only for measurement.
+- Light/dark checkerboard captures visibly confirm real edge bending and
+  highlights; the solid fallback and a scrolled production dashboard were also
+  inspected. These are original native captures, not redrawn mockups.
+- Debug/Release builds, the minified Release and both Lint variants pass.
+  No new runtime dependency is added.
+
+Emulator rendering is not a physical HyperOS GPU/performance acceptance claim.
+No headphone setting, radio capture, module activation or scope restart is part
+of this UI validation. The temporary emulator does not modify the user's phone.
+
 ## Compatibility policies and extension points (2026-10-24)
 
 The long-term product goal covers Android phones and AirPods families. The
@@ -169,7 +252,7 @@ path; without the host, a row can become pressed/open internally while no
 option surface is rendered. Toggles and sliders do not exercise this path.
 
 `AppFrame` now composes exactly one popup host outside the page-transition,
-Haze-source and IME-padding subtrees. This retains normal library positioning,
+backdrop-source and IME-padding subtrees. This retains normal library positioning,
 dismissal and lifecycle behavior rather than patching each selector. The debug
 preview/test activity uses the same production frame.
 
@@ -179,7 +262,7 @@ earbud operations, changing live headphone values, or restarting module scopes.
 
 ## Current app page framework: alpha12
 
-The user accepted ordinary blur as an interim material and prioritized overall
+At alpha12 the user accepted ordinary blur as an interim material and prioritized overall
 UI structure. `PageScaffold` uses the compact Miuix 0.6.1 `SmallTopAppBar` for root
 and child pages; the child navigation icon is outside the scrolling viewport,
 not a list item. The frame-provided top padding is consumed before the toolbar:
@@ -199,7 +282,8 @@ The selected 260 ms motion and 140 ms exit fade are project tuning values, not
 claims of a system design standard. Compose motion-duration handling remains
 in use. This does not implement finger-progress-driven predictive back or
 claim measured visual acceptance. The previous research below motivated this
-framework; special glass/refraction work stays deferred.
+framework. The later liquid-glass section above supersedes the interim
+blur-only material, without changing the page hierarchy.
 
 ### User-facing scope restart
 
