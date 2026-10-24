@@ -5,7 +5,7 @@
     <string name="module_description">适用于小米 HyperOS 4 的 AirPods 控制与原生耳机集成。需要 Xposed API 102。</string>
     <string name="module_hook_failed">P.O.D.S.：蓝牙兼容 Hook 未能加载，请查看模块诊断。</string>
     <string name="project_maintainer">P.O.D.S. 维护者</string>
-    <string name="project_repository">P.O.D.S. 项目仓库（私有）</string>
+    <string name="project_repository">P.O.D.S. 项目仓库</string>
     <string name="diagnostics_subject">P.O.D.S. 诊断报告</string>
     <string name="about">关于</string>
     <string name="ear_detection_title">自动人耳检测</string>
@@ -19,7 +19,7 @@
     <string name="pod_case">"充电盒: "</string>
     <string name="batt_left_pod">"左: "</string>
     <string name="batt_right_pod">"右: "</string>
-    <string name="waiting_for_pod">等待AirPods连接...</string>
+    <string name="waiting_for_pod">等待 AirPods 连接…</string>
     <string name="press_and_hold_settings">按住AirPods</string>
     <string name="misc_title">杂项</string>
     <string name="conversational_awareness_title">会话感知</string>
@@ -37,7 +37,7 @@
     <string name="left_pod">"左"</string>
     <string name="right_pod">"右"</string>
     <string name="set_noise_mode">噪声控制</string>
-    <string name="set_voice_assist">呼出小爱同学</string>
+    <string name="set_voice_assist">语音助手</string>
     <string name="voice_assist_unsupported">语音助手（暂不支持）</string>
     <string name="case_charging_sound_title">启用充电盒声音</string>
     <string name="product_name">型号名称</string>

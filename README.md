@@ -4,6 +4,15 @@ A private HyperPods-derived Android project for improving the AirPods 5 experien
 
 ## Current checkpoint: alpha17 accepted AirPods 5 head tracking
 
+UI follow-up: both main tabs now use compact headers. App copy uses direct
+instructions rather than implementation language; detailed protocol identifiers
+remain in diagnostics. About lists the original and forked HyperPods repositories,
+LibrePods and OpenPods with visible, clickable addresses. Attribution, the pinned
+source revision and license notices are retained; the repository remains private.
+App and UI-test APK compilation passed. The bounded phone instrumentation
+attempt exited during its first About test without a usable crash report;
+runtime UI acceptance is not claimed.
+
 The online audit found a concrete AirPods 5 path in LibrePods'
 `android/rewrite` revision `80aa7461df414470f379ebdfe540b2e8889fcbe2`.
 After the user chose to try it, P.O.D.S. now selects CMA_COMMAND (79) for

@@ -60,8 +60,13 @@ fun AboutPage(padding: PaddingValues, onBack: (() -> Unit)? = null,
                     DashboardGroup {
                         Text(stringResource(R.string.about_sources_description), fontSize = 14.sp,
                             lineHeight = 22.sp, modifier = Modifier.padding(20.dp))
-                        DashboardLink(stringResource(R.string.about_upstream_source)) {
-                            open("https://github.com/Art-Chen/HyperPods")
+                        listOf(
+                            R.string.about_upstream_source to "https://github.com/Art-Chen/HyperPods",
+                            R.string.about_hyperpods_fork to "https://github.com/Mo-SeTian/HyperPods",
+                            R.string.about_librepods to "https://github.com/librepods-org/librepods",
+                            R.string.about_openpods to "https://github.com/adolfintel/OpenPods",
+                        ).forEach { (label, url) ->
+                            DashboardLink(stringResource(label), url) { open(url) }
                         }
                     }
                     DashboardSection(stringResource(R.string.about_licenses))

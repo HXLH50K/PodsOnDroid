@@ -56,12 +56,23 @@ class AboutPageTest(private val theme: Int) {
 
     @Test fun eachRepositoryLinkOpensItsOwnRepository() {
         val repositories = listOf("https://github.com/HXLH50K/PodsOnDroid",
-            "https://github.com/Art-Chen/HyperPods", "https://github.com/HXLH50K/PodsOnDroid/blob/main/LICENSE")
-        listOf(R.string.project_repository, R.string.about_upstream_source, R.string.about_view_license)
+            "https://github.com/Art-Chen/HyperPods", "https://github.com/Mo-SeTian/HyperPods",
+            "https://github.com/librepods-org/librepods", "https://github.com/adolfintel/OpenPods",
+            "https://github.com/HXLH50K/PodsOnDroid/blob/main/LICENSE")
+        listOf(R.string.project_repository, R.string.about_upstream_source, R.string.about_hyperpods_fork,
+            R.string.about_librepods, R.string.about_openpods, R.string.about_view_license)
             .forEach { compose.revealSetting(compose.activity.getString(it)).assertIsDisplayed().performClick() }
         compose.runOnIdle {
             assertEquals(repositories, launched.map { it.dataString })
             assertEquals(List(repositories.size) { Intent.ACTION_VIEW }, launched.map { it.action })
+        }
+    }
+
+    @Test fun referenceAddressesAreVisible() {
+        for (url in listOf("https://github.com/Art-Chen/HyperPods",
+            "https://github.com/Mo-SeTian/HyperPods", "https://github.com/librepods-org/librepods",
+            "https://github.com/adolfintel/OpenPods")) {
+            compose.revealSetting(url).assertIsDisplayed()
         }
     }
 

@@ -1,8 +1,8 @@
 <resources>
     <string name="appearance_title">Appearance</string>
     <string name="appearance_reduced">Reduce transparency</string>
-    <string name="appearance_reduced_summary">Use an opaque navigation dock for clearer text and lower rendering cost.</string>
-    <string name="appearance_navigation_summary">Cards use solid layers. The floating navigation dock blurs actual page content behind it, not an artificial gradient. There is no legacy-layout switch.</string>
+    <string name="appearance_reduced_summary">Use a solid background for clearer navigation buttons.</string>
+    <string name="appearance_navigation_summary">The bottom navigation bar normally has a blurred background. Turn on Reduce transparency for a solid background.</string>
     <string name="appearance_opaque_active">The navigation dock is opaque for readability, power saving, or the selected preference.</string>
     <string name="appearance_read_failed">Unable to read appearance preferences. The current readable style was retained.</string>
     <string name="appearance_save_failed">Unable to save appearance preferences. Please try again.</string>

@@ -31,7 +31,6 @@ import moe.chenxy.hyperpods.utils.PageMotion
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.SmallTopAppBar
-import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.icons.useful.Back
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -49,7 +48,7 @@ internal fun PageScaffold(
         Column(Modifier.widthIn(max = 680.dp).fillMaxSize().padding(top = padding.calculateTopPadding())
             .semantics { paneTitle = title }) {
             val toolbar = Modifier.fillMaxWidth().testTag("page_toolbar")
-            if (onBack == null) TopAppBar(title = title, modifier = toolbar, defaultWindowInsetsPadding = false)
+            if (onBack == null) SmallTopAppBar(title = title, modifier = toolbar, defaultWindowInsetsPadding = false)
             else SmallTopAppBar(title = title, modifier = toolbar, defaultWindowInsetsPadding = false,
                 navigationIcon = {
                     IconButton(onClick = onBack, enabled = active, modifier = Modifier.size(48.dp).testTag("page_up")) {

@@ -1,8 +1,8 @@
 <resources>
-    <string name="lid_observation_title">盖事件观察（实验）</string>
-    <string name="lid_observation_summary">主动采集 30 秒 BLE 样本，用于确认 AirPods 5 的开合盖事件；此功能不会启用弹窗。</string>
+    <string name="lid_observation_title">开盖检测（实验）</string>
+    <string name="lid_observation_summary">扫描 30 秒附近的蓝牙广播，测试能否识别 AirPods 5 开合盖。此测试不会开启连接弹窗。</string>
     <string name="lid_observation_instructions">先合上耳机盒。开始后标记“已合盖”，开盖并标记“已开盖”，再合盖并标记。每次操作间隔几秒。不需要重置、取消配对或更改固件。</string>
-    <string name="lid_observation_privacy">仅此开发版工具需要附近设备权限。候选设备不代表已确认是你的耳机。报告不包含地址、名称、密钥或不透明的报文尾部。数据只保存在内存中，请离开前复制。关闭面板或切到后台会停止扫描。系统可能过滤广播，未观察到数据不代表设备不兼容。</string>
+    <string name="lid_observation_privacy">此测试需要附近设备权限。扫描结果不一定是你的耳机。报告不包含设备地址、名称、密钥或原始广播内容。数据不会保存到文件，请离开前复制。关闭面板或切到后台会停止扫描。系统可能隐藏部分广播，未扫到数据不代表耳机不兼容。</string>
     <string name="lid_observation_counts">%1$d 秒 · %2$d 个样本 · %3$d 个候选 · %4$d 个格式错误 · %5$d 个丢弃</string>
     <string name="lid_observation_phase">最近手动标记</string>
     <string name="lid_observation_unmarked">尚未标记</string>

@@ -83,7 +83,7 @@
     <string name="diagnostics_wear">佩戴状态</string>
     <string name="diagnostics_information">设备信息</string>
     <string name="diagnostics_received">已收到</string>
-    <string name="diagnostics_no_report">尚未收到模块诊断信息，请检查 LSPosed 是否启用 HyperPods，并重新连接耳机。</string>
+    <string name="diagnostics_no_report">尚未收到模块诊断信息。请在支持 API 102 的框架中启用 P.O.D.S.，然后重新连接耳机。</string>
     <string name="diagnostics_ready">耳机状态已同步。</string>
     <string name="diagnostics_no_packets">尚未收到耳机回包，正在重试状态同步。</string>
     <string name="diagnostics_incomplete">已收到部分数据，仍在等待剩余耳机状态。</string>

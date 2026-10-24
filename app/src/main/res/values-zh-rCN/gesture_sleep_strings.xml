@@ -9,7 +9,7 @@
     <string name="head_gestures_tracking">正在识别点头或摇头</string>
     <string name="head_gestures_starting">等待耳机姿态数据</string>
     <string name="head_gestures_no_data">未收到姿态数据，请确认固件及耳机连接是否被其他设备占用</string>
-    <string name="head_gestures_timeout">本次手势识别窗口已结束，请使用通话界面操作</string>
+    <string name="head_gestures_timeout">本次手势识别已结束，请在通话界面接听或拒接</string>
     <string name="head_gestures_call_failed">通话控制失败，请使用通话界面操作</string>
     <string name="head_gestures_answer_sent">已发送接听请求</string>
     <string name="head_gestures_reject_sent">已发送拒接请求</string>

@@ -83,7 +83,7 @@ earbud operations, changing live headphone values, or restarting module scopes.
 ## Current app page framework: alpha12
 
 The user accepted ordinary blur as an interim material and prioritized overall
-UI structure. `PageScaffold` reuses the installed Miuix 0.6.1 `TopAppBar` and
+UI structure. `PageScaffold` uses the compact Miuix 0.6.1 `SmallTopAppBar` for root and
 `SmallTopAppBar`; the child navigation icon is outside the scrolling viewport,
 not a list item. Status-bar insets are applied once. Content retains the
 floating-dock clearance and bring-into-view policy.

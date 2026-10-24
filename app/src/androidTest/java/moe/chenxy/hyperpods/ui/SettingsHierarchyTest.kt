@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import moe.chenxy.hyperpods.R
 import org.junit.Rule
 import org.junit.Test
@@ -22,6 +23,18 @@ class SettingsHierarchyTest {
     private fun settingsTab() {
         compose.onNode(hasText(text(R.string.settings_title)) and
             SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
+    }
+
+    @Test fun bothRootTabsUseCompactHeaders() {
+        fun checkHeader() {
+            val height = compose.onNodeWithTag("page_toolbar").fetchSemanticsNode().boundsInRoot.height
+            val density = compose.activity.resources.displayMetrics.density
+            assertTrue("Root toolbar should not reserve expanded-title space", height / density <= 72f)
+        }
+        checkHeader()
+        settingsTab()
+        compose.waitForIdle()
+        checkHeader()
     }
 
     @Test fun rootOnlyShowsCategoriesAndToolsHaveTheirOwnMenu() {

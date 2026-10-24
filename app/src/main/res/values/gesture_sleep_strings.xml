@@ -9,7 +9,7 @@
     <string name="head_gestures_tracking">Listening for a nod or head shake</string>
     <string name="head_gestures_starting">Waiting for headset motion data</string>
     <string name="head_gestures_no_data">No motion data received. Check firmware and whether another device owns the headset connection.</string>
-    <string name="head_gestures_timeout">Gesture window ended; use the call screen for this call</string>
+    <string name="head_gestures_timeout">Gesture detection ended; answer or decline on the call screen</string>
     <string name="head_gestures_call_failed">Call control failed; use the call screen</string>
     <string name="head_gestures_answer_sent">Answer request sent</string>
     <string name="head_gestures_reject_sent">Decline request sent</string>
