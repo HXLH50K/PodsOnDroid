@@ -28,8 +28,15 @@ instead of broadening the sensor parser or remembering a request as a device val
 
 All **218 affected JVM regressions pass**; app/UI-test builds and Lint pass.
 No ownership takeover, background log collector, automatic headset test,
-sensor override or minor UI fix is included. A user-operated round is needed
-to obtain the missing real protocol evidence.
+sensor override or minor UI fix is included. Results from the subsequent
+user-operated round are below.
+
+The completed alpha15 user round produced a 20-byte head reply but no valid
+samples, and a real swipe reply of 3 while the last request was 1. Their ordering
+is not captured by the snapshot. Ownership remains unknown. LibrePods attempts
+a conditional takeover before head tracking; P.O.D.S. does not, but this is not
+yet proof of the cause or permission to add automatic takeover. See delivery-plan
+section 27 for the evidence and the comparison requiring explicit authorization.
 
 ## Previous checkpoint: alpha14 functional corrections
 

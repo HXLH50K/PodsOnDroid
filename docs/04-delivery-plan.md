@@ -1385,3 +1385,54 @@ reload because Bluetooth-side code changed. With the earbuds worn and connected:
 
 Issues #2 and #3 stay open pending these observations; #4 remains closed and #5's
 minor UI follow-up remains deferred.
+
+### Alpha15 completed user round and ownership hypothesis
+
+The user completed the round and suggested that missing connection ownership
+could explain both failures. A bounded read-only script retrieved the saved
+P.O.D.S. pose screenshot and the current Connection diagnostics screen:
+
+- The pose result has **zero valid samples, three rejected replies**, standard
+  request variant, and unknown ownership. The last reply is **20 bytes** with
+  the expected head-message envelope; the word at offsets 10..11 is **8**. This is
+  too short for the existing sensor layout. The screenshot exposes only the
+  first 12 bytes, so the remaining eight bytes and their meaning are not known.
+  Do not label it a permission-denied acknowledgement without decoding evidence.
+- Swipe diagnostics show the last request as **1**, but an actual four-byte
+  reply whose value is **3**. Readback therefore exists in this connection.
+  The snapshot does not timestamp that reply relative to the write, so it cannot
+  prove whether this is a pre-write value, post-write unchanged value, or reply
+  produced by the status refresh. It is not a matching confirmation of request 1.
+- Connection diagnostics' head counters belong to the incoming-call detector,
+  not the independent pose preview. Its zero counters after leaving the preview
+  do not invalidate the saved preview result.
+
+The UI hierarchy dump could not reach idle; a single screenshot fallback worked.
+A bounded query of existing allowlisted application logs yielded no matching
+entries. This is a logging/evidence limitation, not proof that packets were absent.
+The control-command debug logs are guarded by `BuildConfig.DEBUG`, which is false
+for this project's debug package. No logging flag or runtime behavior was changed.
+Screenshots and local capture output remain outside Git.
+
+Source comparison strengthens, but does not prove, the ownership hypothesis for
+head tracking. In the local LibrePods reference, `startHeadTracking()`
+checks ownership and invokes its conditional `takeOver()` path before starting
+the stream. That path can send ownership, media-information and smart-routing/
+hijack commands and affect audio routing; it also has vendor-ID and other guards.
+HyperPods/P.O.D.S. has packet helpers but no equivalent takeover call in this
+flow. P.O.D.S. still sends the preview/swipe commands when ownership is unknown;
+the diagnostic warning is not an application-side block.
+
+Do not copy LibrePods' entire takeover sequence or assume it fixes swipe writes.
+Its control-command documentation lists swipe values 0..2 while its Android UI
+uses 1..3; the observed value 3 is also a reason not to change the mapping solely
+from that contradictory documentation.
+
+Authorization was requested for a one-shot manual ownership experiment. The user
+was unavailable, so no authorization was inferred: no ownership request, new pose
+test, setting write, scope reload, audio transfer or radio capture was performed.
+The next experimental milestone requires explicit agreement before changing
+ownership. Capture should retain bounded short-reply details and timestamped
+ownership/swipe TX/RX events so that a granted ownership report, not a local write,
+can be compared with the two behaviors. Until then, both issues remain open and
+alpha15 remains installed unchanged.
