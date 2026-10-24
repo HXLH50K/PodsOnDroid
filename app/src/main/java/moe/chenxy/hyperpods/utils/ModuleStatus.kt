@@ -8,6 +8,7 @@ import moe.chenxy.hyperpods.utils.data.HyperPodsAction
 
 /** Version comes from the code running in the host, not the newly installed APK. */
 object ModuleStatus {
+    // The trusted vocabulary includes every implemented host; queries use the active system profile.
     val packages = listOf(HyperPodsBroadcasts.BLUETOOTH, HyperPodsBroadcasts.XIAOMI_BLUETOOTH,
         HyperPodsBroadcasts.SYSTEM_UI)
     data class Report(

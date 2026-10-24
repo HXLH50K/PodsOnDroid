@@ -10,6 +10,8 @@ import moe.chenxy.hyperpods.ui.components.ScopeRestartControls
 import moe.chenxy.hyperpods.utils.InterfaceScopeRestart
 import moe.chenxy.hyperpods.utils.ScopeRestart
 import moe.chenxy.hyperpods.utils.ScopeRestartSelection
+import moe.chenxy.hyperpods.utils.SystemProfile
+import moe.chenxy.hyperpods.utils.PhoneSystem
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -25,7 +27,7 @@ class ScopeRestartUiTest(private val theme: Int) {
     }
     @get:Rule val compose = createAndroidComposeRule<DashboardPreviewActivity>()
     private val state = mutableStateOf(InterfaceScopeRestart.State())
-    private val hosts = ScopeRestartSelection.available()
+    private val hosts = ScopeRestartSelection.available(SystemProfile.forSystem(PhoneSystem.HYPER_OS))
     private val stored = mutableMapOf<String, Boolean>()
     private val starts = mutableListOf<Set<String>>()
     private var canSave = true

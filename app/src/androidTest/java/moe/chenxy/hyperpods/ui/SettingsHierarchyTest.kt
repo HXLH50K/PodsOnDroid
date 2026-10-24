@@ -1,5 +1,7 @@
 package moe.chenxy.hyperpods.ui
 
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -16,6 +18,8 @@ import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import moe.chenxy.hyperpods.R
+import moe.chenxy.hyperpods.utils.PhoneSystem
+import moe.chenxy.hyperpods.utils.SystemProfile
 import org.junit.Rule
 import org.junit.Test
 
@@ -56,6 +60,24 @@ class SettingsHierarchyTest {
         compose.revealSetting(text(R.string.settings_tools)).performClick()
         for (id in listOf(R.string.diagnostics_title, R.string.settings_modules, R.string.head_test_title))
             compose.revealSetting(text(id)).assertIsDisplayed()
+    }
+
+    @Test fun reservedSystemDoesNotShowHyperOSNotificationSettings() {
+        compose.runOnUiThread {
+            compose.activity.setContent {
+                AppTheme(1) {
+                    SettingsPage(PaddingValues(), profile = SystemProfile.forSystem(PhoneSystem.VIVO))
+                }
+            }
+        }
+        compose.onNodeWithText(text(R.string.battery_notifications_title)).assertDoesNotExist()
+        compose.revealSetting(text(R.string.appearance_title)).assertIsDisplayed()
+        compose.revealSetting(text(R.string.settings_tools)).performClick()
+        compose.revealSetting(text(R.string.settings_modules)).performClick()
+        compose.revealSetting(text(R.string.scope_restart_title)).performClick()
+        compose.onNodeWithTag("scope_choice_BLUETOOTH", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("scope_choice_XIAOMI_BLUETOOTH", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("scope_choice_SYSTEM_UI", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test fun restartAndModuleStatusHaveSeparateCards() {

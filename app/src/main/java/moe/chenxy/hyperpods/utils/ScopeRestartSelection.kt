@@ -6,7 +6,8 @@ import android.content.Context
 internal object ScopeRestartSelection {
     private const val PREFERENCES = "scope_restart_selection"
 
-    fun available(): List<ScopeRestart.Host> = ScopeRestart.reloadOrder
+    fun available(profile: SystemProfile = SystemEnvironment.current): List<ScopeRestart.Host> =
+        ScopeRestart.reloadOrder.filter { it.processName in profile.restartProcesses }
 
     fun selected(hosts: List<ScopeRestart.Host>, saved: Map<String, *>): Set<String> =
         hosts.filter { host ->

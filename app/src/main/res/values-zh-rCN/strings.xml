@@ -2,7 +2,7 @@
 <resources>
     <string name="pod_info">耳机信息</string>
     <string name="about_hyperpods">关于 P.O.D.S.</string>
-    <string name="module_description">适用于小米 HyperOS 4 的 AirPods 控制与原生耳机集成。需要 Xposed API 102。</string>
+    <string name="module_description">Android 上的 AirPods 控制与系统适配。需要 root 与 Xposed API 102。当前测试设备为 AirPods 5 + HyperOS 4。</string>
     <string name="module_hook_failed">P.O.D.S.：蓝牙兼容 Hook 未能加载，请查看模块诊断。</string>
     <string name="project_maintainer">P.O.D.S. 维护者</string>
     <string name="project_repository">P.O.D.S. 项目仓库</string>

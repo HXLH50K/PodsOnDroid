@@ -1,7 +1,6 @@
 package moe.chenxy.hyperpods.hook
 
 import android.annotation.SuppressLint
-import android.app.StatusBarManager
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothProfile
@@ -18,12 +17,11 @@ import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.L2CAPController
 import moe.chenxy.hyperpods.utils.HostReflection
 import moe.chenxy.hyperpods.utils.AudioConnectionEvent
-import moe.chenxy.hyperpods.utils.SystemApisUtils.setIconVisibility
-import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPodsNotificationByMiuiBt
-import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.showPodConnectingByMiuiBt
-import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.audioSessions
+import moe.chenxy.hyperpods.utils.AudioConnectionSessions
+import moe.chenxy.hyperpods.utils.SystemIntegrations
 
 object HeadsetStateDispatcher {
+    private val audioSessions = AudioConnectionSessions.shared
     private val airPodsUUIDs = hashSetOf(
         ParcelUuid.fromString("74ec2172-0bad-4d01-8f77-997b2be0722a"),
         ParcelUuid.fromString("2a72e02b-7b99-778f-014d-ad0b7221ec74")
@@ -35,7 +33,7 @@ object HeadsetStateDispatcher {
         },
         { service, device ->
             audioSessions.claim(device.address)?.let { event ->
-                runCatching { showPodConnectingByMiuiBt(service, device, event) }
+                runCatching { SystemIntegrations.current.audioConnected(service, device, event) }
                     .onFailure { Log.e("Art_Chen", "Unable to announce audio connection", it) }
                 L2CAPController.connectPod(service, device)
             }
@@ -77,7 +75,7 @@ object HeadsetStateDispatcher {
                         Log.d("Art_Chen", "A2DP Connection State: $currState, isAirPod ${isPods(device)}")
                         if (currState == BluetoothProfile.STATE_DISCONNECTED) {
                             uuidDiscovery.disconnected(context, device)
-                            runCatching { cancelPodsNotificationByMiuiBt(context, device, eventId) }
+                            runCatching { SystemIntegrations.current.cancelBattery(context, device, eventId) }
                                 .onFailure { Log.e("Art_Chen", "Unable to cancel audio notification", it) }
                             // UUIDs may be absent again during teardown.
                             L2CAPController.disconnectedPod(context, device)
@@ -89,9 +87,8 @@ object HeadsetStateDispatcher {
                             }
                             return@post
                         }
-                        val statusBarManager = context.getSystemService("statusbar") as StatusBarManager
                         if (currState == BluetoothHeadset.STATE_CONNECTED) {
-                            statusBarManager.setIconVisibility("wireless_headset", true)
+                            SystemIntegrations.current.headsetIcon(context, true)
                             val hookRes = runCatching { nativeGetHookResult() }.getOrDefault(false)
                             if (!hookRes) {
                                 Toast.makeText(
@@ -103,12 +100,12 @@ object HeadsetStateDispatcher {
                                 return@post
                             }
                             audioSessions.claim(device.address, connectedEvent)?.let { event ->
-                                runCatching { showPodConnectingByMiuiBt(context, device, event) }
+                                runCatching { SystemIntegrations.current.audioConnected(context, device, event) }
                                     .onFailure { Log.e("Art_Chen", "Unable to announce audio connection", it) }
                                 L2CAPController.connectPod(context, device)
                             }
                         } else if (currState == BluetoothHeadset.STATE_DISCONNECTING || currState == BluetoothHeadset.STATE_DISCONNECTED) {
-                            statusBarManager.setIconVisibility("wireless_headset", false)
+                            SystemIntegrations.current.headsetIcon(context, false)
                         }
                     } catch (error: Exception) {
                         Log.e("Art_Chen", "Unable to handle headset connection state", error)

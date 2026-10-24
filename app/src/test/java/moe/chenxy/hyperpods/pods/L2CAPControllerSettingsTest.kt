@@ -18,6 +18,9 @@ import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AirPods5
 import moe.chenxy.hyperpods.utils.AppPreferences
 import moe.chenxy.hyperpods.utils.PodsSettings
+import moe.chenxy.hyperpods.utils.SystemIntegrations
+import moe.chenxy.hyperpods.utils.SystemProfile
+import moe.chenxy.hyperpods.utils.PhoneSystem
 import moe.chenxy.hyperpods.utils.SinglePodAnc
 import moe.chenxy.hyperpods.utils.LowBatterySettings
 import moe.chenxy.hyperpods.utils.LowBatteryReminder
@@ -48,6 +51,7 @@ class L2CAPControllerSettingsTest {
     private fun pending() = field("pendingSettings").get(controller) as Map<*, *>
 
     @Before fun setUp() {
+        field("systemIntegrations").set(controller, SystemIntegrations(SystemProfile.forSystem(PhoneSystem.HYPER_OS)))
         field("allowUnfinishedFeatures").setBoolean(controller, true)
         `when`(device.address).thenReturn("02:00:00:00:00:01")
         field("headGestures").setBoolean(controller, false)
@@ -84,6 +88,7 @@ class L2CAPControllerSettingsTest {
         type.getDeclaredMethod("resetConversationVolume").apply { isAccessible = true }.invoke(controller)
         field("mContext").set(controller, null)
         controller.disconnectedPod(ContextWrapper(null), device)
+        field("systemIntegrations").set(controller, SystemIntegrations.current)
         broadcasts.close()
     }
 

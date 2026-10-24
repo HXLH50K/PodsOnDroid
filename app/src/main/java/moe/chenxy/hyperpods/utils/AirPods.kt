@@ -31,8 +31,12 @@ open class AirPodsBase(
     val leftBudsRes: Int,
     val rightBudsRes: Int,
     val caseRes: Int,
-    val capabilities: Set<Capability>
-)
+    val capabilities: Set<Capability>,
+    val headTrackingVariant: HeadTrackingStream.Variant = HeadTrackingStream.Variant.ALTERNATE,
+    val needsSinglePodAncRecovery: Boolean = false,
+) {
+    fun supports(capability: Capability): Boolean = capability in capabilities
+}
 enum class Capability {
     LISTENING_MODE,
     CONVERSATION_AWARENESS,
@@ -45,7 +49,10 @@ enum class Capability {
     ADAPTIVE_AUDIO,
     ADAPTIVE_VOLUME,
     SWIPE_FOR_VOLUME,
-    HRM
+    HRM,
+    PRESS_TIMING,
+    MICROPHONE_SELECTION,
+    TONE_VOLUME
 }
 
 class AirPods: AirPodsBase(
@@ -56,7 +63,7 @@ class AirPods: AirPodsBase(
     leftBudsRes = R.drawable.airpods_1_left,
     rightBudsRes = R.drawable.airpods_1_right,
     caseRes = R.drawable.airpods_1_case,
-    capabilities = emptySet()
+    capabilities = setOf(Capability.MICROPHONE_SELECTION, Capability.TONE_VOLUME)
 )
 
 class AirPods2: AirPodsBase(
@@ -67,7 +74,7 @@ class AirPods2: AirPodsBase(
     leftBudsRes = R.drawable.airpods_2_left,
     rightBudsRes = R.drawable.airpods_2_right,
     caseRes = R.drawable.airpods_2_case,
-    capabilities = emptySet()
+    capabilities = setOf(Capability.MICROPHONE_SELECTION, Capability.TONE_VOLUME)
 )
 
 class AirPods3: AirPodsBase(
@@ -79,7 +86,10 @@ class AirPods3: AirPodsBase(
     rightBudsRes = R.drawable.airpods_3_right,
     caseRes = R.drawable.airpods_3_case,
     capabilities = setOf(
-        Capability.HEAD_GESTURES
+        Capability.HEAD_GESTURES,
+        Capability.PRESS_TIMING,
+        Capability.MICROPHONE_SELECTION,
+        Capability.TONE_VOLUME
     )
 )
 
@@ -94,7 +104,10 @@ class AirPods4: AirPodsBase(
     capabilities = setOf(
         Capability.HEAD_GESTURES,
         Capability.SLEEP_DETECTION,
-        Capability.ADAPTIVE_VOLUME
+        Capability.ADAPTIVE_VOLUME,
+        Capability.PRESS_TIMING,
+        Capability.MICROPHONE_SELECTION,
+        Capability.TONE_VOLUME
     )
 )
 
@@ -112,11 +125,15 @@ class AirPods4ANC: AirPodsBase(
         Capability.HEAD_GESTURES,
         Capability.ADAPTIVE_AUDIO,
         Capability.SLEEP_DETECTION,
-        Capability.ADAPTIVE_VOLUME
+        Capability.ADAPTIVE_VOLUME,
+        Capability.PRESS_TIMING,
+        Capability.MICROPHONE_SELECTION,
+        Capability.TONE_VOLUME
     )
 )
 
-// Model numbers and hardware capabilities follow LibrePods 89356c0.
+// Model identity and base capabilities follow LibrePods 89356c0.
+// Common setting flags retain the inherited control availability.
 // Firmware support must still be verified on the connected headset.
 class AirPods5: AirPodsBase(
     modelNumber = listOf("A3531", "A3532", "A3533"),
@@ -133,8 +150,12 @@ class AirPods5: AirPodsBase(
         Capability.ADAPTIVE_AUDIO,
         Capability.SLEEP_DETECTION,
         Capability.ADAPTIVE_VOLUME,
-        Capability.STEM_CONFIG
-    )
+        Capability.STEM_CONFIG,
+        Capability.PRESS_TIMING,
+        Capability.MICROPHONE_SELECTION,
+        Capability.TONE_VOLUME
+    ),
+    headTrackingVariant = HeadTrackingStream.Variant.AIRPODS5,
 )
 
 class AirPods5WCC: AirPodsBase(
@@ -154,8 +175,13 @@ class AirPods5WCC: AirPodsBase(
         Capability.SLEEP_DETECTION,
         Capability.ADAPTIVE_VOLUME,
         Capability.STEM_CONFIG,
-        Capability.SWIPE_FOR_VOLUME
-    )
+        Capability.SWIPE_FOR_VOLUME,
+        Capability.PRESS_TIMING,
+        Capability.MICROPHONE_SELECTION,
+        Capability.TONE_VOLUME
+    ),
+    headTrackingVariant = HeadTrackingStream.Variant.AIRPODS5,
+    needsSinglePodAncRecovery = true,
 )
 
 class AirPodsPro1: AirPodsBase(
@@ -168,7 +194,10 @@ class AirPodsPro1: AirPodsBase(
     rightBudsRes = R.drawable.airpods_pro_1_right,
     caseRes = R.drawable.airpods_pro_1_case,
     capabilities = setOf(
-        Capability.LISTENING_MODE
+        Capability.LISTENING_MODE,
+        Capability.PRESS_TIMING,
+        Capability.MICROPHONE_SELECTION,
+        Capability.TONE_VOLUME
     )
 )
 
@@ -191,7 +220,10 @@ class AirPodsPro2Lightning: AirPodsBase(
         Capability.HEARING_AID,
         Capability.ADAPTIVE_AUDIO,
         Capability.ADAPTIVE_VOLUME,
-        Capability.SWIPE_FOR_VOLUME
+        Capability.SWIPE_FOR_VOLUME,
+        Capability.PRESS_TIMING,
+        Capability.MICROPHONE_SELECTION,
+        Capability.TONE_VOLUME
     )
 )
 
@@ -214,7 +246,10 @@ class AirPodsPro2USBC: AirPodsBase(
         Capability.HEARING_AID,
         Capability.ADAPTIVE_AUDIO,
         Capability.ADAPTIVE_VOLUME,
-        Capability.SWIPE_FOR_VOLUME
+        Capability.SWIPE_FOR_VOLUME,
+        Capability.PRESS_TIMING,
+        Capability.MICROPHONE_SELECTION,
+        Capability.TONE_VOLUME
     )
 )
 
@@ -239,7 +274,10 @@ class AirPodsPro3: AirPodsBase(
         Capability.ADAPTIVE_AUDIO,
         Capability.ADAPTIVE_VOLUME,
         Capability.SWIPE_FOR_VOLUME,
-        Capability.HRM
+        Capability.HRM,
+        Capability.PRESS_TIMING,
+        Capability.MICROPHONE_SELECTION,
+        Capability.TONE_VOLUME
     )
 )
 

@@ -33,7 +33,7 @@ import moe.chenxy.hyperpods.utils.data.TextParams
 
 @SuppressLint("WrongConstant")
 object MiuiStrongToastUtil {
-    internal val audioSessions = AudioConnectionSessions()
+    internal val audioSessions = AudioConnectionSessions.shared
     private val colorRed = "#FFFF3B30".toColorInt()
 
     fun showStringToast(context: Context, text: String?, colorType: Int) {

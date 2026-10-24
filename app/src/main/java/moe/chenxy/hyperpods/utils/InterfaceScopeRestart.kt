@@ -3,6 +3,7 @@ package moe.chenxy.hyperpods.utils
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
+import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -78,6 +79,11 @@ object InterfaceScopeRestart {
     @Synchronized
     fun start(context: Context, mode: Mode, confirmedProcesses: Set<String>): Boolean {
         if (state.value.running) return false
+        val available = ScopeRestartSelection.available().map { it.processName }.toSet()
+        if (confirmedProcesses.isEmpty() || !available.containsAll(confirmedProcesses)) {
+            Log.w("PODS-ScopeRestart", "Restart rejected: target is outside the active system profile")
+            return false
+        }
         val application = context.applicationContext
         val confirmed = confirmedProcesses.toSet()
         mutableState.value = State(operationId = state.value.operationId + 1, running = true)

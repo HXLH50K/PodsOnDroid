@@ -1,5 +1,102 @@
 # 03 Architecture
 
+## Compatibility policies and extension points (2026-10-24)
+
+The long-term product goal covers Android phones and AirPods families. The
+accepted hardware baseline is still AP5/HyperOS 4. A declared implementation
+or upstream model capability is not a new hardware acceptance claim.
+
+### Two independent runtime dimensions
+
+1. `SystemProfile` declares the phone-system adapter's implemented features,
+   hook roles, query packages and restart processes. `SystemEnvironment`
+   resolves it once per process from ROM evidence and manufacturer/brand hints.
+   A HyperOS ROM property takes priority over hardware branding. Xiaomi hardware
+   alone does not enable HyperOS private interfaces, including on AOSP ROMs.
+2. `AirPodsModels` maps reported model numbers to `AirPodsBase.capabilities`
+   and explicit protocol/recovery choices. `PodsSettings` is the common
+   setting-availability/value/readiness policy used by the UI and controller.
+   A phone vendor must not change the headphone's declared capabilities.
+
+These replace compile-time macros with runtime policy, so one APK can react
+to the actual phone and connected headset:
+
+```kotlin
+if (profile.supports(SystemFeature.NATIVE_BATTERY_ISLAND)) {
+    // Use the implemented platform presentation adapter.
+}
+if (PodsSettings.supports(Key.ADJUST_VOLUME_BY_SWIPER, model)) {
+    // Offer the existing headphone setting.
+}
+```
+
+### Implemented versus reserved phone systems
+
+| Profile | OEM integrations | Active module targets |
+| --- | --- | --- |
+| HyperOS | Native battery island, system headphone card, headset status icon; existing class/schema checks still apply | Android Bluetooth, Xiaomi Bluetooth, System UI; Xiaomi `:ui` is optional for restart |
+| Xiaomi without HyperOS evidence | None | Shared Android Bluetooth only |
+| Vivo/iQOO, Oppo/OnePlus/realme, Samsung, AOSP/Google, other | Reserved only; no substitute island/card implementation | Shared Android Bluetooth only |
+
+`HookEntry` uses the profile's hook roles before installing OEM code.
+`SystemIntegrations` is the presentation boundary used by the Bluetooth
+dispatcher/controller; vendor services are not accessed on reserved systems.
+Selecting the HyperOS backend requires both the system family and its feature
+flag; a future vendor flag must not accidentally route into Xiaomi services.
+The generic audio-session ledger is shared with the existing HyperOS adapter.
+Module status collection, restart selection and settings categories follow the
+same profile, rather than reporting every absent Xiaomi package as a failure.
+An unsupported restored settings page shows an explicit unavailable message.
+
+The module's static `scope.list` and manifest queries remain the union of
+implemented hosts. They do not enable all host hooks on every ROM. Host identity,
+UID, call-state, exact-process and current-build verification are not weakened.
+The restart entry also rejects targets outside the active system profile.
+
+ROM-property reads are bounded and cached. Read failures are logged and do not
+grant OEM features. Private native layouts still need runtime signature/schema
+validation; a system-family match is not proof that every ROM version works.
+
+### Headphone model contract
+
+The existing capabilities are retained. Microphone selection, tone volume and
+press timing are now explicit capability entries instead of universal/type-name
+assumptions in `PodsSettings`. Existing registered models retain their previous
+control availability. A future model with an empty capability set inherits none
+of those setting features.
+
+AP5/5 WCC's CMA head-stream choice and the WCC-only single-ear ANC recovery quirk
+are declared on the model entries. The transport no longer chooses these by
+checking concrete model classes. Packet bytes, ownership behavior, readback
+rules and recovery scheduling are unchanged.
+
+### Adding support later
+
+- **Another phone system:** add the verified feature set and hook roles in the
+  system registry, implement its adapter behind `SystemIntegrations`, and extend
+  host queries/scope metadata and the strict trusted-host/restart vocabulary if
+  new processes are required. Do not reuse Xiaomi class names or invent package
+  targets. Unimplemented profiles keep an empty OEM feature set.
+- **Another AirPods model:** add verified model numbers, artwork and an explicit
+  capability set. Declare any known stream/recovery differences in that model.
+  Extend a protocol strategy only when evidence requires it; do not add model
+  class checks throughout the UI or controller.
+- **Validation:** test profile detection, absence of OEM calls on other systems,
+  UI/query/restart consistency, and model capability/quirk mapping. Regress the
+  existing AP5/HyperOS paths before a user-operated device round. Unknown reports
+  remain unknown and unverified combinations remain unverified.
+
+This is extension structure, not implementation of other vendors, a rootless
+backend, older Android releases or every future AirPods feature. The current
+API 35 minimum and modern libxposed API 102 requirement remain in force.
+
+Local verification for this refactor passed **596 Debug JVM regressions** and
+**80 focused Release JVM regressions**, including the platform/model policy
+matrix and existing AP5 controller behavior. App and Android UI-test APKs
+compile; Debug and Release Lint pass. Android UI tests were compiled, not
+executed. No new phone, earbud, island presentation or process-restart
+acceptance is claimed, and no live host restart is part of this refactor.
+
 ## Alpha17 model-specific stream selection and unfinished controls
 
 The physical head-stream arbiter selects and retains a variant for each lease.

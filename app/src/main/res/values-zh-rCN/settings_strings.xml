@@ -1,4 +1,5 @@
 <resources>
+    <string name="system_integration_unavailable">当前手机系统尚未提供这项适配。</string>
     <string name="setting_select_to_apply">尚未读取，可手动设置</string>
     <string name="settings_reading">等待耳机状态同步</string>
     <string name="setting_pending">等待耳机确认…</string>

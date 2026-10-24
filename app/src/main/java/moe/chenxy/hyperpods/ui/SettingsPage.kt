@@ -26,6 +26,8 @@ import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.ui.components.*
 import moe.chenxy.hyperpods.utils.SettingsDestination
+import moe.chenxy.hyperpods.utils.SystemEnvironment
+import moe.chenxy.hyperpods.utils.SystemProfile
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.icon.MiuixIcons
@@ -33,7 +35,8 @@ import top.yukonga.miuix.kmp.icon.icons.basic.ArrowRight
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun SettingsPage(padding: PaddingValues, diagnostics: Bundle? = null, isActive: Boolean = true) {
+fun SettingsPage(padding: PaddingValues, diagnostics: Bundle? = null, isActive: Boolean = true,
+    profile: SystemProfile = SystemEnvironment.current) {
     var destination by rememberSaveable { mutableStateOf(SettingsDestination.ROOT) }
     var moduleReport by rememberSaveable { mutableStateOf("") }
     val lists = SettingsDestination.entries.map { rememberLazyListState() }
@@ -56,7 +59,7 @@ fun SettingsPage(padding: PaddingValues, diagnostics: Bundle? = null, isActive: 
                             DashboardGroup { UnfinishedFeaturesSettings(current) }
                         }
                     }
-                    page.groups(BuildConfig.BUILD_TYPE == "debug").forEachIndexed { index, group ->
+                    page.groups(BuildConfig.BUILD_TYPE == "debug", profile).forEachIndexed { index, group ->
                         item(key = "group_$index") {
                             Column(Modifier.padding(horizontal = 16.dp)) {
                                 val heading = if (page == SettingsDestination.ROOT) {
@@ -75,12 +78,13 @@ fun SettingsPage(padding: PaddingValues, diagnostics: Bundle? = null, isActive: 
                 } else item(key = page.name) {
                     Column(Modifier.padding(horizontal = 16.dp)) {
                         when (page) {
-                            SettingsDestination.NOTIFICATIONS -> BatteryNotificationSettingsPanel()
+                            SettingsDestination.NOTIFICATIONS -> if (page.available(profile)) BatteryNotificationSettingsPanel()
+                                else Text(stringResource(R.string.system_integration_unavailable))
                             SettingsDestination.APPEARANCE -> AppearanceSettings()
                             SettingsDestination.CONNECTION -> DashboardGroup {
                                 ConnectionDiagnostics(diagnostics, includeModuleCheck = false, knownModuleReport = moduleReport)
                             }
-                            SettingsDestination.MODULES -> ModuleSettings { moduleReport = it }
+                            SettingsDestination.MODULES -> ModuleSettings(profile) { moduleReport = it }
                             SettingsDestination.HEAD_TRACKING -> DashboardGroup { HeadTrackingPage(current) }
                             SettingsDestination.LID_OBSERVATION -> if (BuildConfig.BUILD_TYPE == "debug")
                                 DashboardGroup { LidObservationPanel(current) }

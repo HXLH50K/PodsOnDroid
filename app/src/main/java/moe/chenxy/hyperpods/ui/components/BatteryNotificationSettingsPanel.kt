@@ -65,7 +65,7 @@ internal fun saveBatteryNotificationSettings(context: Context, settings: Battery
     return true
 }
 
-/** Phone-only settings; place directly in an always-visible settings list item. */
+/** App-owned settings; the system profile decides whether this integration is offered. */
 @Composable
 fun BatteryNotificationSettingsPanel(modifier: Modifier = Modifier) {
     val context = LocalContext.current

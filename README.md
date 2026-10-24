@@ -1,6 +1,28 @@
 # P.O.D.S.
 
-A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
+A private HyperPods-derived project aiming to support AirPods across Android phones.
+Current physical acceptance is limited to the user's AirPods 5 and Xiaomi HyperOS 4.
+Other phone/headphone combinations are extension targets, not verified support.
+
+## Compatibility structure
+
+Phone-system integrations and headphone features are independent runtime
+policies, not separate APKs or scattered manufacturer/model checks.
+[System profiles](app/src/main/java/moe/chenxy/hyperpods/utils/SystemCompatibility.kt)
+select implemented OEM hooks, presentation features, settings and module hosts.
+Only the HyperOS adapter currently provides a native battery island and system
+headphone card; other vendor profiles reserve extension points without enabling
+Xiaomi interfaces. The shared Android Bluetooth control path remains separate.
+
+[AirPods models](app/src/main/java/moe/chenxy/hyperpods/utils/AirPods.kt) declare
+capabilities and protocol/recovery quirks. Both the UI and controller use
+[the same setting policy](app/src/main/java/moe/chenxy/hyperpods/utils/PodsSettings.kt).
+Declared model capabilities are not a substitute for firmware readback or
+physical acceptance. Unknown models do not inherit unsupported controls.
+
+See [the extension guide](docs/03-architecture.md#compatibility-policies-and-extension-points-2026-10-24).
+This refactor does not lower the current Android 15 / API 35 minimum, remove
+the root/API 102 requirement, or implement another OEM's integration.
 
 ## Current checkpoint: alpha18 UI and tone-volume refinements
 

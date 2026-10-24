@@ -22,41 +22,45 @@ import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
 import moe.chenxy.hyperpods.utils.ModuleStatus
+import moe.chenxy.hyperpods.utils.SystemEnvironment
+import moe.chenxy.hyperpods.utils.SystemProfile
 import moe.chenxy.hyperpods.utils.data.HyperPodsAction
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import java.util.UUID
 
 @Composable
-internal fun ModuleSettings(onReport: (String) -> Unit) {
+internal fun ModuleSettings(profile: SystemProfile = SystemEnvironment.current, onReport: (String) -> Unit) {
     var refreshToken by remember { mutableIntStateOf(0) }
     Column {
         DashboardSection(stringResource(R.string.scope_restart_section))
         DashboardGroup(Modifier.testTag("scope_restart_section")) {
-            ScopeRestartPanel { refreshToken++ }
+            ScopeRestartPanel(profile) { refreshToken++ }
         }
         DashboardSection(stringResource(R.string.scope_module_status))
         DashboardGroup(Modifier.testTag("module_status_section")) {
-            ModuleSelfCheck(refreshToken, onReport)
+            ModuleSelfCheck(refreshToken, profile, onReport)
         }
     }
 }
 
 @Composable
-fun ModuleSelfCheck(refreshToken: Int = 0, onReport: (String) -> Unit) {
+fun ModuleSelfCheck(refreshToken: Int = 0, profile: SystemProfile = SystemEnvironment.current, onReport: (String) -> Unit) {
     val context = LocalContext.current
     var request by remember(refreshToken) { mutableStateOf(UUID.randomUUID().toString()) }
     var reports by remember { mutableStateOf(emptyMap<String, ModuleStatus.Report>()) }
     var waiting by remember { mutableStateOf(true) }
-    DisposableEffect(context, request) {
+    val hosts = remember(profile) { profile.modulePackages }
+    DisposableEffect(context, request, hosts) {
         reports = emptyMap()
         waiting = true
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                ModuleStatus.read(context, this, intent, request)?.let { reports = reports + (it.processName to it) }
+                ModuleStatus.read(context, this, intent, request)?.takeIf { it.packageName in hosts }
+                    ?.let { reports = reports + (it.processName to it) }
             }
         }
         context.registerReceiver(receiver, IntentFilter(HyperPodsAction.ACTION_MODULE_STATUS), Context.RECEIVER_EXPORTED)
-        ModuleStatus.packages.forEach { host ->
+        hosts.forEach { host ->
             HyperPodsBroadcasts.send(context, Intent(HyperPodsAction.ACTION_MODULE_STATUS_REQUEST).putExtra("request", request), host)
         }
         onDispose { context.unregisterReceiver(receiver) }
@@ -64,7 +68,7 @@ fun ModuleSelfCheck(refreshToken: Int = 0, onReport: (String) -> Unit) {
     LaunchedEffect(request) { delay(2500); waiting = false }
     BasicComponent(title = stringResource(R.string.module_self_check),
         summary = stringResource(R.string.module_installed, BuildConfig.VERSION_CODE, BuildConfig.BUILD_REVISION))
-    val processNames = ModuleStatus.packages + reports.keys.filter { it !in ModuleStatus.packages }.sorted()
+    val processNames = hosts + reports.keys.filter { it !in hosts }.sorted()
     val fields = processNames.map { process ->
         val report = reports[process]
         val title = stringResource(scopeHostTitle(process))

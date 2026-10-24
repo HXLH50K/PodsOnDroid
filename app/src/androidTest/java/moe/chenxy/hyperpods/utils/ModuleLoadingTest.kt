@@ -38,7 +38,7 @@ class ModuleLoadingTest {
 
     @Test fun allRequiredHostsReportTheActualApi102Build() = runBlocking {
         val reports = ModuleStatusQuery.collect(context, 5000)
-        for (host in ModuleStatus.packages) {
+        for (host in SystemEnvironment.current.modulePackages) {
             val report = reports[host]
             assertNotNull("No authenticated module report from $host", report)
             val actual = requireNotNull(report)

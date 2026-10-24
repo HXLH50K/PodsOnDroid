@@ -66,10 +66,10 @@ object PodsSettings {
             Key.ADAPTIVE_AUDIO_LEVEL -> Capability.ADAPTIVE_AUDIO in model.capabilities
             Key.ADJUST_VOLUME_BY_SWIPER -> Capability.SWIPE_FOR_VOLUME in model.capabilities
             Key.ALLOW_OFF_OPTION -> Capability.LOUD_SOUND_REDUCTION in model.capabilities
-            Key.MICROPHONE_MODE -> true
-            Key.PRESS_SPEED, Key.HOLD_DURATION -> model !is AirPods && model !is AirPods2
+            Key.MICROPHONE_MODE -> model.supports(Capability.MICROPHONE_SELECTION)
+            Key.PRESS_SPEED, Key.HOLD_DURATION -> model.supports(Capability.PRESS_TIMING)
             Key.SWIPE_SPEED -> Capability.SWIPE_FOR_VOLUME in model.capabilities
-            Key.CHIME_VOLUME -> true
+            Key.CHIME_VOLUME -> model.supports(Capability.TONE_VOLUME)
             // Loud-sound reduction requires a separate ATT connection, which is not implemented.
             else -> false
         }

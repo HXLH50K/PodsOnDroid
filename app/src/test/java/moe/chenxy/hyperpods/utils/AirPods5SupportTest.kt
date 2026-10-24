@@ -44,7 +44,8 @@ class AirPods5SupportTest {
     @Test fun capabilitiesMatchLibrePodsAndOnlyWirelessSupportsVolumeSwipe() {
         val common = setOf(Capability.LISTENING_MODE, Capability.CONVERSATION_AWARENESS,
             Capability.HEAD_GESTURES, Capability.ADAPTIVE_AUDIO, Capability.SLEEP_DETECTION,
-            Capability.ADAPTIVE_VOLUME, Capability.STEM_CONFIG)
+            Capability.ADAPTIVE_VOLUME, Capability.STEM_CONFIG, Capability.PRESS_TIMING,
+            Capability.MICROPHONE_SELECTION, Capability.TONE_VOLUME)
         standard.forEach { assertEquals(common, model(it).capabilities) }
         wireless.forEach { assertEquals(common + Capability.SWIPE_FOR_VOLUME, model(it).capabilities) }
         standard.forEach {

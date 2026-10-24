@@ -31,6 +31,8 @@ import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.utils.InterfaceScopeRestart
 import moe.chenxy.hyperpods.utils.ScopeRestart
 import moe.chenxy.hyperpods.utils.ScopeRestartSelection
+import moe.chenxy.hyperpods.utils.SystemEnvironment
+import moe.chenxy.hyperpods.utils.SystemProfile
 import top.yukonga.miuix.kmp.basic.BasicComponent
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
@@ -39,10 +41,10 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-fun ScopeRestartPanel(onFinished: () -> Unit) {
+fun ScopeRestartPanel(profile: SystemProfile = SystemEnvironment.current, onFinished: () -> Unit) {
     val context = LocalContext.current
     val state by InterfaceScopeRestart.state.collectAsState()
-    val hosts = remember { ScopeRestartSelection.available() }
+    val hosts = remember(profile) { ScopeRestartSelection.available(profile) }
     val initialSelection = remember(context, hosts) {
         try {
             ScopeRestartSelection.read(context, hosts)

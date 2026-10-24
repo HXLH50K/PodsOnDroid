@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name" translatable="false">P.O.D.S.</string>
-    <string name="module_description">AirPods controls and native headset integration for Xiaomi HyperOS 4. Requires Xposed API 102.</string>
+    <string name="module_description">AirPods controls for Android with system-specific integrations. Requires root and Xposed API 102. Current test setup: AirPods 5 + HyperOS 4.</string>
     <string name="module_hook_failed">P.O.D.S.: the Bluetooth compatibility hook could not load. Check module diagnostics.</string>
     <string name="project_maintainer">P.O.D.S. maintainer</string>
     <string name="project_repository">P.O.D.S. repository</string>

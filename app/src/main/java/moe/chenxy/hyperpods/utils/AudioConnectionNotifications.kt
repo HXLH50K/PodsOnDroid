@@ -9,6 +9,10 @@ internal data class AudioConnectionEvent(val id: Long, val connectedAt: Long)
 
 /** Shared by direct A2DP handling and late UUID discovery in the Bluetooth process. */
 internal class AudioConnectionSessions {
+    companion object {
+        val shared = AudioConnectionSessions()
+    }
+
     private data class Session(val event: AudioConnectionEvent, var claimed: Boolean = false)
     private val sessions = mutableMapOf<String, Session>()
     private val cancellationIds = mutableMapOf<String, Long>()

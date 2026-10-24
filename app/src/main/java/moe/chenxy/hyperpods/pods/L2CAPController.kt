@@ -33,8 +33,6 @@ import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AACPWriter
 import moe.chenxy.hyperpods.utils.AppPreferences
-import moe.chenxy.hyperpods.utils.AirPods5WCC
-import moe.chenxy.hyperpods.utils.AirPods5
 import moe.chenxy.hyperpods.utils.AirPodsInstance
 import moe.chenxy.hyperpods.utils.MediaControl
 import moe.chenxy.hyperpods.utils.HeadGestureCalls
@@ -52,8 +50,7 @@ import moe.chenxy.hyperpods.utils.BatteryNotificationSettings
 import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
 import moe.chenxy.hyperpods.utils.SystemApisUtils
 import moe.chenxy.hyperpods.utils.SinglePodAnc
-import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil
-import moe.chenxy.hyperpods.utils.miuiStrongToast.MiuiStrongToastUtil.cancelPodsNotificationByMiuiBt
+import moe.chenxy.hyperpods.utils.SystemIntegrations
 import moe.chenxy.hyperpods.utils.data.BatteryParams
 import moe.chenxy.hyperpods.utils.data.EarDetectionParams
 import moe.chenxy.hyperpods.utils.data.HyperPodsAction
@@ -66,6 +63,7 @@ import kotlin.experimental.or
 
 @SuppressLint("MissingPermission", "StaticFieldLeak")
 object L2CAPController {
+    private var systemIntegrations = SystemIntegrations.current
     private const val TAG = "HyperPods-L2CAPController"
 
     // Basic Object
@@ -150,10 +148,8 @@ object L2CAPController {
         sendStandard = { start -> sendHeadTrackingCommand(start, HeadTrackingStream.Variant.STANDARD) },
         sendAirPods5 = { start -> sendHeadTrackingCommand(start, HeadTrackingStream.Variant.AIRPODS5) },
         selectVariant = {
-            when (currentPodsInfo?.modelNumber?.let(AirPodsModels::getModelByModelNumber)) {
-                is AirPods5, is AirPods5WCC -> HeadTrackingStream.Variant.AIRPODS5
-                else -> HeadTrackingStream.Variant.ALTERNATE
-            }
+            currentPodsInfo?.modelNumber?.let(AirPodsModels::getModelByModelNumber)?.headTrackingVariant
+                ?: HeadTrackingStream.Variant.ALTERNATE
         },
     ) { start -> sendHeadTrackingCommand(start, HeadTrackingStream.Variant.ALTERNATE) }
 
@@ -497,7 +493,7 @@ object L2CAPController {
                         intent.getParcelableExtra("lowBatterySettings", LowBatterySettings::class.java)?.takeIf { it.valid }?.let { settings ->
                             lowBatterySettings = settings
                             if (::currentBatteryParams.isInitialized)
-                                MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext, currentBatteryParams, mDevice, lowBatterySettings,
+                                systemIntegrations.updateBattery(mContext, currentBatteryParams, mDevice, lowBatterySettings,
                                     modelNumber = currentPodsInfo?.modelNumber, batteryNotificationSettings = batteryNotificationSettings, controlGeneration = sessionId)
                         }
                     } else if (intent.hasExtra("value")) {
@@ -792,7 +788,7 @@ object L2CAPController {
             currentBatteryParams.left?.isInCase = leftInCase
             currentBatteryParams.right?.isInCase = rightInCase
             if (caseStateChanged) {
-                MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext, currentBatteryParams, mDevice, lowBatterySettings,
+                systemIntegrations.updateBattery(mContext, currentBatteryParams, mDevice, lowBatterySettings,
                     modelNumber = currentPodsInfo?.modelNumber, batteryNotificationSettings = batteryNotificationSettings, controlGeneration = sessionId)
                 changeUIBatteryStatus(currentBatteryParams)
             }
@@ -805,7 +801,7 @@ object L2CAPController {
 
     private fun singlePodAncEnabled(): Boolean =
         !conversationAwarenessActive &&
-            currentPodsInfo?.modelNumber?.let(AirPodsModels::getModelByModelNumber) is AirPods5WCC &&
+            currentPodsInfo?.modelNumber?.let(AirPodsModels::getModelByModelNumber)?.needsSinglePodAncRecovery == true &&
             confirmedSettings()[HyperPodsPrefsKey.SINGLE_POD_ANC] == 1
 
     private fun cancelSinglePodAncRestore() {
@@ -1016,14 +1012,13 @@ object L2CAPController {
         // The transient animation must never block the persistent settings entry
         // or usable battery data. A genuine 0% is also a valid reading.
         if (shouldShowToast && batteryStateValid) {
-            MiuiStrongToastUtil.showPodsBatteryToastByMiuiBt(mContext, batteryParams)
             mShowedConnectedToast = true
         }
         lastCaseConnected = case.isConnected
         // Only records from this packet may trigger/rearm a reminder, never other cached components.
         val fresh = if (AirPodsNotifications.BatteryNotification.isBatteryData(packet))
             (7 until packet.size step 5).map { packet[it].toInt() and 0xff }.toIntArray() else intArrayOf()
-        MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext, batteryParams, mDevice, lowBatterySettings, fresh,
+        systemIntegrations.updateBattery(mContext, batteryParams, mDevice, lowBatterySettings, fresh,
             modelNumber = currentPodsInfo?.modelNumber, batteryNotificationSettings = batteryNotificationSettings, controlGeneration = sessionId)
         changeUIBatteryStatus(batteryParams)
 
@@ -1097,7 +1092,7 @@ object L2CAPController {
             updateHeadGestures()
         }
         if (remindersChanged && batteryStateValid && ::currentBatteryParams.isInitialized)
-            MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext, currentBatteryParams, mDevice, lowBatterySettings,
+            systemIntegrations.updateBattery(mContext, currentBatteryParams, mDevice, lowBatterySettings,
                 modelNumber = currentPodsInfo?.modelNumber, batteryNotificationSettings = batteryNotificationSettings, controlGeneration = sessionId)
     }
 
@@ -1258,13 +1253,13 @@ object L2CAPController {
                 }
                     .onFailure { Log.w(TAG, "Unable to update Bluetooth alias") }
                 sendSettingResult(PodsSettings.RENAME, true)
-                MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext, currentBatteryParams, mDevice, lowBatterySettings,
+                systemIntegrations.updateBattery(mContext, currentBatteryParams, mDevice, lowBatterySettings,
                     modelNumber = currentPodsInfo?.modelNumber, batteryNotificationSettings = batteryNotificationSettings, controlGeneration = sessionId)
             } else if (previousModelNumber != deviceInformation.modelNumber &&
                 PodsIslandData.modelForIcons(deviceInformation.modelNumber) != null && ::currentBatteryParams.isInitialized) {
                 // Information can arrive after battery data. Replace the temporary icon now,
                 // without treating cached battery values as a new low-battery reading.
-                MiuiStrongToastUtil.showPodsNotificationByMiuiBt(mContext, currentBatteryParams, mDevice, lowBatterySettings,
+                systemIntegrations.updateBattery(mContext, currentBatteryParams, mDevice, lowBatterySettings,
                     modelNumber = deviceInformation.modelNumber, batteryNotificationSettings = batteryNotificationSettings, controlGeneration = sessionId)
             }
             sendConnectedStatus()
@@ -1486,7 +1481,7 @@ object L2CAPController {
                     recordEvent("retry", attempt.toString())
                     sendConnectedStatus()
                     changeUIBatteryStatus(currentBatteryParams)
-                    MiuiStrongToastUtil.showPodsNotificationByMiuiBt(context, currentBatteryParams, device, lowBatterySettings,
+                    systemIntegrations.updateBattery(context, currentBatteryParams, device, lowBatterySettings,
                         modelNumber = currentPodsInfo?.modelNumber, batteryNotificationSettings = batteryNotificationSettings, controlGeneration = sessionId)
                 }
             }
@@ -1556,7 +1551,7 @@ object L2CAPController {
                 lastStatusFailure = ""
                 manager.setPacketCallback(packetCallback)
                 updateHeadGestures()
-                MiuiStrongToastUtil.showPodsNotificationByMiuiBt(context, currentBatteryParams, device, lowBatterySettings,
+                systemIntegrations.updateBattery(context, currentBatteryParams, device, lowBatterySettings,
                     modelNumber = currentPodsInfo?.modelNumber, batteryNotificationSettings = batteryNotificationSettings, controlGeneration = sessionId)
                 sendConnectedStatus()
             }
@@ -1645,7 +1640,7 @@ object L2CAPController {
         speakerSwitchJob?.cancel()
         speakerSwitchJob = null
         if (::mDevice.isInitialized && mContext != null) {
-            MiuiStrongToastUtil.notifyBatteryControlGap(mContext, mDevice)
+            systemIntegrations.controlGap(mContext, mDevice)
         }
         singlePodAnc.reset()
         singlePodAncRestoreAttempts = 0
@@ -1698,7 +1693,7 @@ object L2CAPController {
 
         mContext?.let {
             runCatching { stopRoutesScan() }
-            cancelPodsNotificationByMiuiBt(it, device)
+            systemIntegrations.cancelBattery(it, device)
             Intent(HyperPodsAction.ACTION_PODS_DISCONNECTED).apply {
                 putExtra("initialization_failed", lastStatusFailure.isNotEmpty())
                 HyperPodsBroadcasts.send(it, this)

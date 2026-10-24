@@ -9,9 +9,6 @@ import android.os.UserHandle
 import android.os.VibrationEffect
 import android.os.VibratorManager
 import android.provider.Settings
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStreamReader
 
 
 object SystemApisUtils {
@@ -318,21 +315,12 @@ object SystemApisUtils {
         HostReflection.call(this, "setIconVisibility", iconName, show)
     }
 
-    private fun getPropByShell(propName: String): String {
-        return try {
-            val p = Runtime.getRuntime().exec("getprop $propName")
-            BufferedReader(InputStreamReader(p.inputStream), 1024).use { it.readLine() ?: "" }
-        } catch (ignore: IOException) {
-            ""
-        }
-    }
-
-    private val hyperOSVersion by lazy { getPropByShell("ro.mi.os.version.code") }
-    private val islandFeature by lazy { getPropByShell("persist.sys.feature.island") }
-    val isHyperOS: Boolean get() = hyperOSVersion.isNotEmpty()
-    val isHyperOS3: Boolean get() = hyperOSVersion == "3"
+    private val islandFeature by lazy { SystemEnvironment.readProperty("persist.sys.feature.island") }
+    val isHyperOS: Boolean get() = SystemEnvironment.current.system == PhoneSystem.HYPER_OS
+    val isHyperOS3: Boolean get() = SystemEnvironment.hyperOSVersion == "3"
 
     fun supportsIsland(context: Context): Boolean {
+        if (!SystemEnvironment.current.supports(SystemFeature.NATIVE_BATTERY_ISLAND)) return false
         val protocol = Settings.System.getInt(
             context.contentResolver,
             "notification_focus_protocol",

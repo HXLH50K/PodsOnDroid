@@ -1,5 +1,23 @@
 # 02 Product scope and interaction
 
+## 2026-10-24 compatibility goal
+
+The product goal is AirPods support across Android phone brands and AirPods
+families, not a Xiaomi/AP5-only product. Current physical acceptance is limited
+to the user's AirPods 5 and HyperOS 4 phone. Other vendors and headphone models
+must have clear extension points, but no speculative implementation or claim
+of verified support is required in this milestone.
+
+Separate phone-system integrations from headphone capabilities. Shared controls
+must not require an OEM presentation adapter; an unimplemented system adapter
+must not expose Xiaomi-only notifications or module hosts. Model capabilities,
+firmware readiness and actual setting reports remain distinct.
+
+The existing API 35 minimum and rooted modern API 102 backend are unchanged.
+Rootless transport, older Android versions and other OEM UI integrations require
+separate implementation and testing. Historical HyperOS-oriented milestones
+below describe the initial implementation, not the architectural support limit.
+
 ## 2026-10-23 design-language clarification
 
 The user clarified that Liquid Glass describes only selected controls, not the

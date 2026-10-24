@@ -15,6 +15,8 @@ import moe.chenxy.hyperpods.utils.PodsFocusCardFooter
 import moe.chenxy.hyperpods.utils.PodsIslandData
 import moe.chenxy.hyperpods.utils.PodsIslandLayout
 import moe.chenxy.hyperpods.utils.PodsIslandMiniBar
+import moe.chenxy.hyperpods.utils.SystemEnvironment
+import moe.chenxy.hyperpods.utils.SystemFeature
 import java.util.Collections
 import java.util.WeakHashMap
 
@@ -26,7 +28,8 @@ object SystemUIPluginHook {
     private val savedGravity = Collections.synchronizedMap(WeakHashMap<View, Int>())
 
     fun install(framework: XposedInterface, classLoader: ClassLoader) {
-        installHook("notification-free battery bridge") { NativeBatteryIslandBridge.install(framework, classLoader) }
+        if (SystemEnvironment.current.supports(SystemFeature.NATIVE_BATTERY_ISLAND))
+            installHook("notification-free battery bridge") { NativeBatteryIslandBridge.install(framework, classLoader) }
         val pluginInstance = Class.forName("com.android.systemui.shared.plugins.PluginInstance", false, classLoader)
         HostReflection.methods(pluginInstance, "loadPlugin").forEach { method ->
             framework.intercept(method) { chain ->
@@ -60,8 +63,11 @@ object SystemUIPluginHook {
     }
 
     private fun installPlugin(framework: XposedInterface, loader: ClassLoader) {
-        installHook("SystemUI device card") { DeviceCardHook.install(framework, loader) }
-        installHook("SystemUI AirPods artwork") { DeviceCardArtworkHook.install(framework, loader) }
+        if (SystemEnvironment.current.supports(SystemFeature.SYSTEM_HEADPHONE_CARD)) {
+            installHook("SystemUI device card") { DeviceCardHook.install(framework, loader) }
+            installHook("SystemUI AirPods artwork") { DeviceCardArtworkHook.install(framework, loader) }
+        }
+        if (!SystemEnvironment.current.supports(SystemFeature.NATIVE_BATTERY_ISLAND)) return
         optionalHook("focus footer", loader,
             "miui.systemui.notification.focus.moduleV3.ModuleTextButtonViewHolder") { type ->
             HostReflection.methods(type, "bind", 2).forEach { method ->
