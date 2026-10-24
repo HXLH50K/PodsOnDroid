@@ -1560,3 +1560,50 @@ without re-requesting ownership or reconnecting. Return to Connection diagnostic
 afterward and preserve that window before another traced action overwrites it.
 Only then decide whether further ownership/routing work is needed. #2/#3 remain
 open; no fix or denial is inferred merely from the missing ownership report.
+
+### Pose comparison after the one-shot ownership request
+
+The user completed one pose test without requesting ownership again. The
+Connection diagnostics page initially still displayed the previous ownership
+window. Its read-only refresh action exposed the actual new head-test window;
+returning to the page alone had not refreshed this snapshot. Do not mistake that
+stale UI for a missing user operation.
+
+The refreshed window contains:
+
+- Alternate start (27-byte queued request), followed by a 20-byte head reply.
+- At about two seconds, alternate stop (27 bytes) and standard start (28 bytes),
+  followed by two more 20-byte head replies.
+- At about seven seconds, standard stop (29 bytes), followed by a fourth
+  20-byte head reply.
+- No long head/sensor envelope in the captured window. Ownership remains
+  unreported and the last ownership experiment remains timed out.
+
+All four short replies have the same eight-byte-body wire structure. Interpreted
+only as protobuf wire fields, their outer field 1 values are 5, 6, 7 and 8; outer
+field 2 is 1; length-delimited field 9 contains a field 1 value of 16, 16, 14 and
+14 respectively. Those nested values match parameters in the alternate and
+standard requests. Field names and success/error semantics are not established.
+These are request-correlated short replies, not valid pose samples and not proven
+permission-denied messages. The UI's rejected count describes sensor-parser
+rejection, not an explicit rejection by the headphones.
+
+This comparison did not show the expected sensor stream starting after the
+one-shot ownership request. It does not rule out a more complete negotiation
+requirement, since ownership was never positively reported. No new ownership,
+pose, swipe or scope command was issued while reading this result. Raw captures
+remain local, outside Git; only derived protocol observations are recorded here.
+
+Primary-source checks did not supply a verified schema for these reply fields:
+[librepods-org/librepods#713](https://github.com/librepods-org/librepods/issues/713)
+explicitly reports no hardware testing, and the public
+[pods-head-tracker probe](https://github.com/batubozkan/pods-head-tracker/blob/main/airpods_ht_probe.py)
+prints short replies without assigning a negative-acknowledgement meaning.
+Its hardware report concerns AirPods 4 ANC, not this user's AirPods 5. P.O.D.S.
+already requests authenticated/encrypted classic L2CAP sockets; do not blindly
+change those flags based on a generic encryption suggestion.
+
+Further work should first make retained evidence retrieval fresh and reliable
+without depending on logcat, then investigate stream-start negotiation using
+these full short replies. No further identical user test is needed for this
+evidence milestone, and no sensor-acceptance relaxation is justified.
