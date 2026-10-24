@@ -1531,3 +1531,32 @@ than a new background policy. No scope restart, automatic pose test, swipe
 selection, audio transfer, wake/unlock/lock operation or radio capture was
 performed during packaging. Head/swipe effectiveness is still unverified and
 issues #2/#3 stay open. Source and delivery records are local; no push was requested.
+
+### Alpha16 ownership request result
+
+After the user completed the reload and manual request, the retained diagnostics
+show a connected, synchronized control channel and an ownership-request timeout:
+
+- The evidence window contains its begin record and one `tx_queued` control
+  `0x06` record, packet size 11, requested value 1. No allowlisted RX record is
+  retained in that window. No retry was sent.
+- Reported ownership remains unknown. This proves neither that the headphones
+  denied ownership nor that queuing the request acquired it; an unreported
+  ownership change is still possible.
+- The same new connection has an actual swipe-interval reply of **1**, with
+  **no swipe request in this connection**. Alpha15 previously showed request 1
+  and reply 3. This is consistent with the earlier setting taking effect, but
+  neither its causal ordering nor physical swipe effectiveness is established.
+
+The read-only collector returned no matching records, including a bounded root
+query, despite the evidence being present in the app's retained snapshot. The
+request was within the device-time window. Treat logcat retrieval as unavailable
+for this round, not as proof that the experiment emitted no events. A single
+diagnostic-page scroll exposed the retained records; no action button, headset
+command, new test, setting or scope restart was triggered while reading.
+
+The next useful comparison is one independent pose test in this same connection,
+without re-requesting ownership or reconnecting. Return to Connection diagnostics
+afterward and preserve that window before another traced action overwrites it.
+Only then decide whether further ownership/routing work is needed. #2/#3 remain
+open; no fix or denial is inferred merely from the missing ownership report.
