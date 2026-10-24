@@ -11,4 +11,15 @@
     <string name="swipe_protocol_summary">Last request in this connection: %1$s\nLast 0x23 reply: %2$s\nA request is not a confirmed headphone value.</string>
     <string name="control_raw_reply">Payload length (bytes): %1$d; first four: %2$s</string>
     <string name="swipe_reply_missing">No reply recorded</string>
+    <string name="ownership_experiment_request">Request local control once (DEBUG)</string>
+    <string name="ownership_experiment_reload">Reload the full DEBUG scopes first; the Bluetooth host has not reported support for this experiment.</string>
+    <string name="ownership_experiment_warning">Sends one ownership request. May affect other devices. No automatic retry or audio transfer. Related protocol evidence is captured for up to 10 seconds.</string>
+    <string name="ownership_experiment_status">Last ownership experiment</string>
+    <string name="ownership_experiment_idle">No request made in this connection</string>
+    <string name="ownership_experiment_pending">Request queued; waiting for a real ownership report</string>
+    <string name="ownership_experiment_confirmed">The headphones report that this connection owns control</string>
+    <string name="ownership_experiment_not_granted">The headphones report that this connection does not own control</string>
+    <string name="ownership_experiment_timeout">No ownership confirmation within 3 seconds; no retry was sent</string>
+    <string name="protocol_evidence_title">Limited protocol evidence (DEBUG)</string>
+    <string name="protocol_evidence_empty">An explicit ownership request, pose test or swipe-interval change opens a 10-second / 64-record window. Queued writes are not headphone confirmations. No full sensor stream is captured.</string>
 </resources>

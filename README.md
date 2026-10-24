@@ -2,7 +2,25 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha15 protocol-evidence follow-up
+## Current checkpoint: alpha16 authorized ownership experiment
+
+The user authorized headphone ownership operations. Connection diagnostics in
+the debug build now offers one manual local-ownership request, with an explicit
+pending/real-report/timeout result. It does not enable automatic takeover, send
+smart-routing/hijack commands, or initiate audio transfer. The button remains
+disabled until the Bluetooth host reports support for the new experiment.
+
+Explicit ownership requests, pose tests and swipe-interval changes open bounded
+debug evidence windows: at most 10 seconds and 64 allowlisted records. The trace
+distinguishes queued writes, failed writes and actual replies. It can retain the
+observed 20-byte short head response, but never a full sensor stream or unrelated
+key/device-information packets.
+
+[The read-only capture script](tools/capture_protocol_evidence.py) retrieves only
+these metadata records, is time/record bounded, and rejects output inside the
+repository. This experiment is not yet proof that ownership fixes #2 or #3.
+
+## Previous checkpoint: alpha15 protocol-evidence follow-up
 
 User acceptance confirmed speaker switching when the earbud sensors are not
 covered: issue [#4](https://github.com/HXLH50K/PodsOnDroid/issues/4) is closed.

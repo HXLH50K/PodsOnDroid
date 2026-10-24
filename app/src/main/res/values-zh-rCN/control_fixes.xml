@@ -11,4 +11,15 @@
     <string name="swipe_protocol_summary">本次连接最近请求：%1$s\n最近 0x23 回复：%2$s\n请求值不等于耳机已确认值。</string>
     <string name="control_raw_reply">载荷 %1$d 字节；前四字节：%2$s</string>
     <string name="swipe_reply_missing">尚未记录到回复</string>
+    <string name="ownership_experiment_request">申请本机控制权一次（DEBUG）</string>
+    <string name="ownership_experiment_reload">请先完整重启 DEBUG 作用域，蓝牙宿主尚未回报对本实验的支持。</string>
+    <string name="ownership_experiment_warning">仅发送一次申请，可能影响其他设备。不会自动重试或切换音频。相关协议证据最多采集 10 秒。</string>
+    <string name="ownership_experiment_status">最近一次控制权实验</string>
+    <string name="ownership_experiment_idle">本次连接尚未申请</string>
+    <string name="ownership_experiment_pending">申请已进入发送队列，等待耳机实际回报控制权</string>
+    <string name="ownership_experiment_confirmed">耳机回报本连接已拥有控制权</string>
+    <string name="ownership_experiment_not_granted">耳机回报本连接未拥有控制权</string>
+    <string name="ownership_experiment_timeout">3 秒内未确认控制权，未发送重试</string>
+    <string name="protocol_evidence_title">有限协议证据（DEBUG）</string>
+    <string name="protocol_evidence_empty">手动申请控制权、姿态测试或修改滑动间隔会开启最多 10 秒、64 条记录的采集。进入发送队列不等于耳机确认。不会采集完整传感器流。</string>
 </resources>

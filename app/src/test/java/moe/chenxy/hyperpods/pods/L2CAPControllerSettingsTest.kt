@@ -99,6 +99,65 @@ class L2CAPControllerSettingsTest {
         manager.receivePacket(byteArrayOf(4, 0, 4, 0, 9, 0, identifier, value, 0, 0, 0))
     }
 
+    private fun requestOwnership() = synchronized(controller) {
+        val intent = mock(Intent::class.java)
+        `when`(intent.action).thenReturn(HyperPodsAction.ACTION_REQUEST_CONTROL_OWNERSHIP)
+        controller.handleUIEvent(intent)
+    }
+
+    @Test fun ownershipExperimentSendsOnceAndRequiresARealReport() {
+        receive(0x23, 3)
+        requestOwnership()
+        requestOwnership()
+        assertArrayEquals(byteArrayOf(4, 0, 4, 0, 9, 0, 6, 1, 0, 0, 0), output.toByteArray())
+        assertEquals("pending", field("ownershipRequestStatus").get(controller))
+        assertFalse(manager.owns)
+        receive(6, 1)
+        assertEquals("confirmed", field("ownershipRequestStatus").get(controller))
+        assertNull(field("ownershipRequestJob").get(controller))
+        requestOwnership()
+        assertEquals(11, output.size())
+    }
+
+    @Test fun ownershipTimeoutNeverRetriesAndLateReportsRemainAuthoritative() = runBlocking {
+        receive(0x23, 3)
+        requestOwnership()
+        delay(3250)
+        assertEquals("timeout", field("ownershipRequestStatus").get(controller))
+        assertEquals(11, output.size())
+        assertFalse(manager.owns)
+        receive(6, 1)
+        assertEquals("confirmed", field("ownershipRequestStatus").get(controller))
+        receive(6, 0)
+        assertEquals("not_granted", field("ownershipRequestStatus").get(controller))
+    }
+
+    @Test fun ownershipRequiresReadinessAndResetCancelsTheExperiment() {
+        requestOwnership()
+        assertEquals("not_ready", field("ownershipRequestStatus").get(controller))
+        assertEquals(0, output.size())
+        receive(0x23, 3)
+        requestOwnership()
+        val job = field("ownershipRequestJob").get(controller) as Job
+        field("mContext").set(controller, null)
+        controller.disconnectedPod(ContextWrapper(null), device)
+        assertTrue(job.isCancelled)
+        assertEquals("idle", field("ownershipRequestStatus").get(controller))
+        assertNull(field("ownershipRequestJob").get(controller))
+    }
+
+    @Test fun failedOwnershipWriteDoesNotBecomePendingOrOwned() {
+        receive(0x23, 3)
+        field("aacpManager").set(controller, AACPManager(socket, writer = { false }).also {
+            it.receivePacket(byteArrayOf(4, 0, 4, 0, 9, 0, 0x23, 3, 0, 0, 0))
+        })
+        requestOwnership()
+        assertEquals("write_failed", field("ownershipRequestStatus").get(controller))
+        assertNull(field("ownershipRequestJob").get(controller))
+        assertFalse(manager.owns)
+        assertEquals(0, output.size())
+    }
+
     @Test fun sleepToggleUsesLibrePodsOptimisticStatusAndLaterReportsWin() {
         request(Key.SLEEP_DETECTION, 1)
         assertArrayEquals(byteArrayOf(4, 0, 4, 0, 9, 0, 0x35, 1, 0, 0, 0), output.toByteArray())

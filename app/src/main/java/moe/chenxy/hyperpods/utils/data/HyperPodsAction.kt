@@ -27,5 +27,6 @@ object HyperPodsAction {
     const val ACTION_PODS_STATUS_RETRY = "com.hxlh50k.pods.action.status_retry"
     const val ACTION_HEAD_TRACKING_COMMAND = "com.hxlh50k.pods.action.head_tracking_command"
     const val ACTION_HEAD_TRACKING_SAMPLE = "com.hxlh50k.pods.action.head_tracking_sample"
+    const val ACTION_REQUEST_CONTROL_OWNERSHIP = "com.hxlh50k.pods.action.request_control_ownership"
     const val ACTION_PODS_STATUS_CHANGED = "com.hxlh50k.pods.action.pods_status_changed"
 }

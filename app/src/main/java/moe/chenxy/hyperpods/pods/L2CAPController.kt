@@ -85,6 +85,8 @@ object L2CAPController {
     private var lastSettingKey = ""
     private var lastSettingStatus = ""
     private var lastSwipeRequest: Int? = null
+    private var ownershipRequestStatus = "idle"
+    private var ownershipRequestJob: Job? = null
     private var lastDiagnostics: Bundle? = null
     private var lastTimelineState = ""
     private var lastTimelineStage = ""
@@ -238,6 +240,55 @@ object L2CAPController {
     private fun headTrackingOwnership(): Int = aacpManager?.getControlCommandStatus(
         AACPManager.Companion.ControlCommandIdentifiers.OWNS_CONNECTION)?.value?.firstOrNull()?.toInt()?.and(0xff) ?: -1
 
+    private fun requestControlOwnership() {
+        if (BuildConfig.BUILD_TYPE != "debug") {
+            Log.w(TAG, "Ownership experiment is unavailable in this build")
+            return
+        }
+        if (ownershipRequestStatus == "pending") {
+            sendDiagnostics(force = true)
+            return
+        }
+        val manager = aacpManager
+        if (manager == null || !manager.socket.isConnected || currentPodsInfo == null ||
+            manager.initializationStage != AACPManager.InitializationStage.STATUS) {
+            ownershipRequestStatus = "not_ready"
+            Log.w(TAG, "Ownership experiment requires a ready control connection")
+            sendDiagnostics(force = true)
+            return
+        }
+        manager.beginProtocolEvidence("ownership")
+        if (headTrackingOwnership() == 1) {
+            ownershipRequestStatus = "confirmed"
+            sendDiagnostics(force = true)
+            return
+        }
+        ownershipRequestStatus = "pending"
+        val generation = sessionId
+        if (!manager.sendControlCommand(AACPManager.Companion.ControlCommandIdentifiers.OWNS_CONNECTION.value, 1)) {
+            ownershipRequestStatus = "write_failed"
+        } else if (ownershipRequestStatus == "pending") {
+            ownershipRequestJob = CoroutineScope(Dispatchers.Default).launch {
+                delay(3000)
+                synchronized(this@L2CAPController) {
+                    ensureActive()
+                    if (sessionId == generation && aacpManager === manager && ownershipRequestStatus == "pending") {
+                        ownershipRequestStatus = "timeout"
+                        ownershipRequestJob = null
+                        sendDiagnostics(force = true)
+                    }
+                }
+            }
+        }
+        sendDiagnostics(force = true)
+    }
+
+    private fun clearOwnershipRequest() {
+        ownershipRequestJob?.cancel()
+        ownershipRequestJob = null
+        ownershipRequestStatus = "idle"
+    }
+
     private fun headTrackingWorn() = earDetectionStateValid && ::currentEarDetectionParams.isInitialized &&
         (currentEarDetectionParams.left == EarDetectionStatus.IN_EAR || currentEarDetectionParams.right == EarDetectionStatus.IN_EAR)
 
@@ -327,6 +378,7 @@ object L2CAPController {
                 val command = intent.getStringExtra("command") ?: return
                 val at = SystemClock.elapsedRealtime()
                 if (command == "start") {
+                    aacpManager?.beginProtocolEvidence("head")
                     headPreviewWatchdog?.cancel()
                     headPreview.start(id, at, aacpManager?.socket?.isConnected == true,
                         headTrackingSupported(), headTrackingWorn(), phoneInCall(), ready = headTrackingReady())
@@ -348,6 +400,7 @@ object L2CAPController {
                 }
             }
             HyperPodsAction.ACTION_PODS_DIAGNOSTICS_REQUEST -> sendDiagnostics(force = true)
+            HyperPodsAction.ACTION_REQUEST_CONTROL_OWNERSHIP -> requestControlOwnership()
             HyperPodsAction.ACTION_PODS_UI_INIT -> {
                 Log.i(TAG, "UI Init")
 
@@ -477,6 +530,8 @@ object L2CAPController {
     }
 
     private fun diagnosticsSnapshot(): Bundle = Bundle().apply {
+        putString("ownership_request", ownershipRequestStatus)
+        putStringArrayList("protocol_evidence", ArrayList(aacpManager?.protocolEvidenceSnapshot().orEmpty()))
         putInt("swipe_requested", lastSwipeRequest ?: -1)
         putInt("swipe_reply_size", aacpManager?.swipeReplySize ?: 0)
         putString("swipe_raw_reply", aacpManager?.rawSwipeReply()?.let {
@@ -618,6 +673,7 @@ object L2CAPController {
         val identifier = PodsSettings.identifiers[key] ?: return
         if (key == HyperPodsPrefsKey.SWIPE_SPEED) lastSwipeRequest = value
         val manager = aacpManager
+        if (key == HyperPodsPrefsKey.SWIPE_SPEED) manager?.beginProtocolEvidence("swipe")
         val written = if (key == HyperPodsPrefsKey.CHIME_VOLUME && manager != null) {
             // Change only the volume; retain the second configuration byte from the headset.
             val second = manager.getControlCommandStatus(identifier)?.value?.getOrNull(1) ?: run {
@@ -1208,6 +1264,11 @@ object L2CAPController {
         }
 
         override fun onOwnershipChangeReceived(owns: Boolean) {
+            if (ownershipRequestStatus != "idle") {
+                ownershipRequestJob?.cancel()
+                ownershipRequestJob = null
+                ownershipRequestStatus = if (owns) "confirmed" else "not_granted"
+            }
             sendDiagnostics(force = true)
         }
 
@@ -1254,6 +1315,7 @@ object L2CAPController {
             this.addAction(HyperPodsAction.ACTION_PODS_STATUS_RETRY)
             this.addAction(HyperPodsAction.ACTION_PODS_DIAGNOSTICS_REQUEST)
             this.addAction(HyperPodsAction.ACTION_HEAD_TRACKING_COMMAND)
+            if (BuildConfig.BUILD_TYPE == "debug") this.addAction(HyperPodsAction.ACTION_REQUEST_CONTROL_OWNERSHIP)
             this.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED)
         }, Context.RECEIVER_EXPORTED)
         sendDiagnostics()
@@ -1549,6 +1611,7 @@ object L2CAPController {
     }
 
     private fun resetControlState() {
+        clearOwnershipRequest()
         lastSwipeRequest = null
         speakerSwitchJob?.cancel()
         speakerSwitchJob = null
@@ -1580,6 +1643,7 @@ object L2CAPController {
     @Synchronized
     fun disconnectedPod(context: Context, device: BluetoothDevice) {
         if (::mDevice.isInitialized && device != mDevice) return
+        clearOwnershipRequest()
         lastSwipeRequest = null
         singlePodAnc.reset()
         singlePodAncRestoreAttempts = 0

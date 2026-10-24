@@ -38,6 +38,14 @@ import kotlin.io.encoding.ExperimentalEncodingApi
  */
 class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) -> Boolean)? = null,
     private val now: () -> Long = System::currentTimeMillis) {
+    private val protocolEvidence = ProtocolEvidence(android.os.SystemClock::elapsedRealtime) {
+        Log.i(ProtocolEvidence.TAG, it)
+    }
+    fun beginProtocolEvidence(reason: String) {
+        if (BuildConfig.BUILD_TYPE == "debug") protocolEvidence.begin(reason)
+    }
+    fun protocolEvidenceSnapshot(): List<String> = protocolEvidence.snapshot()
+
     companion object {
         private const val TAG = "AACPManager"
 
@@ -385,7 +393,8 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
     }
 
     fun sendDataPacket(data: ByteArray): Boolean {
-        return sendPacket(createDataPacket(data))
+        val packet = createDataPacket(data)
+        return sendPacket(packet).also { protocolEvidence.packet(packet, it) }
     }
 
     fun sendControlCommand(identifier: Byte, value: ByteArray): Boolean {
@@ -476,6 +485,7 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
             Log.w(TAG, "Ignoring invalid AACP header (${packet.size} bytes)")
             return
         }
+        protocolEvidence.packet(packet)
         try {
             if (packet[4] == 0x2b.toByte() && packet[5] == 0.toByte()) {
                 receivedPacketCount++
@@ -524,6 +534,10 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
                 val identifier = ControlCommandIdentifiers.fromByte(controlCommand.identifier) ?: return
                 val key = PodsSettings.keyFor(identifier.value)
                 val value = controlCommand.value[0].toInt() and 0xff
+                if (identifier == ControlCommandIdentifiers.OWNS_CONNECTION && value !in 0..1) {
+                    Log.w(TAG, "Ignoring invalid ownership report")
+                    return
+                }
                 if (identifier == ControlCommandIdentifiers.VOLUME_SWIPE_INTERVAL) {
                     // Diagnostics must retain an unrecognized reply without making it a setting value.
                     swipeReplySize = packet.size - 7
@@ -1288,6 +1302,7 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
     }
 
     fun disconnected() {
+        protocolEvidence.clear()
         Log.d(TAG, "Disconnected, clearing state")
         controlCommandStatusList.clear()
         controlCommandListeners.clear()

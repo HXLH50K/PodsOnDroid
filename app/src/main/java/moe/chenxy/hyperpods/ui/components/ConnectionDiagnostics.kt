@@ -71,7 +71,7 @@ fun ConnectionDiagnostics(snapshot: Bundle?, includeModuleCheck: Boolean = true,
         2 -> R.string.diagnostics_setting_disabled
         else -> R.string.diagnostics_never
     })
-    val fields = listOf(
+    val fields = listOfNotNull(
         stringResource(R.string.diagnostics_audio) to stringResource(when {
             snapshot == null -> R.string.module_no_report
             snapshot.getString("connection") == "disconnected" -> R.string.diagnostics_no_session
@@ -83,6 +83,18 @@ fun ConnectionDiagnostics(snapshot: Bundle?, includeModuleCheck: Boolean = true,
             snapshot?.getInt("head_rejected_packets") ?: 0, snapshot?.getInt("head_filtered_samples") ?: 0,
             snapshot?.getInt("head_last_packet_size") ?: 0),
         stringResource(R.string.head_tracking_ownership) to headTrackingOwnershipLabel(snapshot?.getInt("head_ownership", -1) ?: -1),
+        if (BuildConfig.BUILD_TYPE == "debug") stringResource(R.string.ownership_experiment_status) to stringResource(when (snapshot?.getString("ownership_request")) {
+            "pending" -> R.string.ownership_experiment_pending
+            "confirmed" -> R.string.ownership_experiment_confirmed
+            "not_granted" -> R.string.ownership_experiment_not_granted
+            "timeout" -> R.string.ownership_experiment_timeout
+            "write_failed" -> R.string.setting_write_failed
+            "not_ready" -> R.string.head_tracking_not_ready
+            else -> R.string.ownership_experiment_idle
+        }) else null,
+        if (BuildConfig.BUILD_TYPE == "debug") stringResource(R.string.protocol_evidence_title) to snapshot?.getStringArrayList("protocol_evidence")
+            ?.joinToString("\n").orEmpty()
+            .ifEmpty { stringResource(R.string.protocol_evidence_empty) } else null,
         stringResource(R.string.swipe_protocol_title) to stringResource(R.string.swipe_protocol_summary,
             snapshot?.getInt("swipe_requested", -1)?.takeIf { it in 1..3 }?.toString()
                 ?: stringResource(R.string.diagnostics_none),
@@ -160,6 +172,19 @@ fun ConnectionDiagnostics(snapshot: Bundle?, includeModuleCheck: Boolean = true,
     if (includeModuleCheck) ModuleSelfCheck { moduleReport = it }
     // Read-only information is not a disabled action; keep its text contrast intact.
     BasicComponent(title = stringResource(R.string.diagnostics_title), summary = stringResource(explanation))
+    if (BuildConfig.BUILD_TYPE == "debug") {
+        BasicComponent(title = stringResource(R.string.ownership_experiment_request),
+            summary = stringResource(if (snapshot?.containsKey("ownership_request") == true)
+                R.string.ownership_experiment_warning else R.string.ownership_experiment_reload),
+            enabled = snapshot?.getString("connection") == "connected" &&
+                snapshot.containsKey("ownership_request") &&
+                snapshot.getString("stage") == "STATUS" && snapshot.getBoolean("information") &&
+                snapshot.getString("ownership_request") != "pending" && snapshot.getInt("head_ownership", -1) != 1,
+            onClick = {
+                HyperPodsBroadcasts.send(context, Intent(HyperPodsAction.ACTION_REQUEST_CONTROL_OWNERSHIP),
+                    HyperPodsBroadcasts.BLUETOOTH)
+            })
+    }
     fields.forEach { (label, value) -> BasicComponent(title = label, summary = value) }
     BasicComponent(title = stringResource(R.string.diagnostics_history),
         summary = historyReport ?: stringResource(R.string.diagnostics_no_history))

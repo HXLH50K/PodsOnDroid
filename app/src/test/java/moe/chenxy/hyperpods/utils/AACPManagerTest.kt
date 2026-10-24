@@ -16,6 +16,27 @@ class AACPManagerTest {
         this[4] = opcode
     }
 
+    @Test fun ownershipRequestCannotManufactureOwnershipAndInvalidReportsStayUnknown() {
+        val session = AACPManager(mock(BluetoothSocket::class.java), writer = { true })
+        val id = AACPManager.Companion.ControlCommandIdentifiers.OWNS_CONNECTION
+        session.setPacketCallback(callback)
+        session.beginProtocolEvidence("ownership")
+        assertTrue(session.sendControlCommand(id.value, 1))
+        assertNull(session.getControlCommandStatus(id))
+        assertFalse(session.owns)
+        session.receivePacket(packet(9, 11).apply { this[6] = id.value; this[7] = 2 })
+        assertNull(session.getControlCommandStatus(id))
+        verify(callback, never()).onOwnershipChangeReceived(anyBoolean())
+        session.receivePacket(packet(9, 11).apply { this[6] = id.value; this[7] = 1 })
+        assertTrue(session.owns)
+        verify(callback).onOwnershipChangeReceived(true)
+        assertTrue(session.protocolEvidenceSnapshot().any { it.contains("event=tx_queued") })
+        assertTrue(session.protocolEvidenceSnapshot().any { it.contains("event=rx") })
+        session.disconnected()
+        assertFalse(session.owns)
+        assertTrue(session.protocolEvidenceSnapshot().isEmpty())
+    }
+
     @Test fun unrecognizedSwipeReplyRemainsDiagnosticEvidenceNotASettingValue() {
         val id = AACPManager.Companion.ControlCommandIdentifiers.VOLUME_SWIPE_INTERVAL
         manager.receivePacket(packet(9, 11).apply { this[6] = id.value; this[7] = 0 })

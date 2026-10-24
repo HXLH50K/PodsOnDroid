@@ -1435,4 +1435,63 @@ The next experimental milestone requires explicit agreement before changing
 ownership. Capture should retain bounded short-reply details and timestamped
 ownership/swipe TX/RX events so that a granted ownership report, not a local write,
 can be compared with the two behaviors. Until then, both issues remain open and
-alpha15 remains installed unchanged.
+alpha15 remains installed unchanged at this investigation checkpoint.
+
+## 28. Alpha16 authorized, one-shot ownership experiment
+
+The user explicitly approved headphone ownership operations on 2026-10-24.
+Implement the narrow comparison first rather than permanent automatic takeover:
+
+- A debug-only Connection diagnostics action sends the existing control command
+  `0x06 = 1` once. It requires a connected control socket, a known device and
+  STATUS initialization. Duplicate actions while pending do not send again.
+- No media-information, smart-routing/hijack, A2DP transfer, playback, call or
+  automatic head-preview operation is attached to that request.
+- Queuing the write never updates the received ownership cache. Only a valid
+  actual 0/1 report changes reported ownership. Unsupported ownership values
+  remain invalid, not false/true defaults.
+- The request times out after three seconds without retry. A late real report
+  remains authoritative. Reset/disconnect cancels pending work; an already-owned
+  connection does not receive another ownership write.
+- The UI action is disabled when an older Bluetooth host has not reported the
+  experiment fields, with an explicit full-scope reload instruction.
+
+### Bounded automatic evidence
+
+An explicit ownership action, independent pose-test start or swipe-interval write
+arms a debug-only **10-second / 64-record** window. A fresh explicit action opens
+a new window; there is no background polling or automatic command loop.
+
+The allowlist includes only ownership/swipe control values (at most four bytes),
+notification-request metadata, and head-message envelopes. The specific observed
+20-byte head reply with the matching short envelope can retain its eight-byte
+body. Other head replies expose only the first 12 bytes; at most one long sensor
+envelope is recorded per window. Sensor decoding and gesture acceptance are
+unchanged. Keys, names, addresses and unrelated opcodes are excluded.
+
+Records use device monotonic timestamps and distinguish `tx_queued`, `tx_failed`
+and `rx`. A queued write is not proof of a physical write or device acceptance.
+The most recent window is available in Connection diagnostics and its normal
+copy report; it is cleared with the manager on disconnect. The debug log tag is
+`PODS-ProtocolEvidence`, gated by build type rather than `BuildConfig.DEBUG`.
+
+The host script is read-only and retrieves the recent matching log records:
+
+```powershell
+python -B tools\capture_protocol_evidence.py --serial $env:ANDROID_SERIAL --seconds 30 --output "$env:TEMP\pods-protocol-evidence.log"
+```
+
+Choose a new output name for each run. The script rejects repository-local output
+and existing files, accepts only the metadata grammar, deduplicates records, and
+stops at its deadline (at most 120 seconds) or 512 records. It does not clear logs,
+send broadcasts, open UI, reconnect, or write settings. Recent earlier windows
+may also be included; use their begin records/timestamps rather than treating
+everything as a reply to the latest action. Empty capture, ADB failures and
+timeouts are explicit failures; any partial output is not hardware acceptance.
+
+Validation covers the exact time/record limits, short-response exception,
+long-envelope suppression, sensitive-opcode exclusion, no optimistic ownership,
+duplicate/failed requests, timeout without retry, late reports and reset
+cancellation. The first local run passed **228 affected JVM tests**, app and
+AndroidTest assembly, Lint **0 errors / 130 warnings / 2 hints**, and **4 Python
+collector tests**. No new hardware behavior is claimed by those results.
