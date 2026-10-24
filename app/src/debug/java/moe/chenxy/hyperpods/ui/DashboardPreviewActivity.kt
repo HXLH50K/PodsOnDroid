@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import moe.chenxy.hyperpods.ui.components.DashboardGroup
 import moe.chenxy.hyperpods.ui.components.ScopeRestartControls
+import moe.chenxy.hyperpods.ui.components.ChimeVolumeSlider
 import moe.chenxy.hyperpods.utils.InterfaceScopeRestart
 import moe.chenxy.hyperpods.utils.ScopeRestartSelection
 import moe.chenxy.hyperpods.pods.EarDetectionStatus
@@ -51,6 +52,10 @@ class DashboardPreviewActivity : ComponentActivity() {
                 AppAppearanceProvider {
                 if (intent.getBooleanExtra("scope_restart_preview", false)) {
                     ScopeRestartPreview()
+                    return@AppAppearanceProvider
+                }
+                if (intent.getBooleanExtra("tone_volume_preview", false)) {
+                    ToneVolumePreview()
                     return@AppAppearanceProvider
                 }
                 var anc by remember { mutableStateOf(NoiseControlMode.NOISE_CANCELLATION) }
@@ -139,6 +144,21 @@ class DashboardPreviewActivity : ComponentActivity() {
                             hosts = selected.map { InterfaceScopeRestart.HostResult(it, optional = false) })
                         true
                     })
+            }
+
+        }
+    }
+
+    @Composable
+    private fun ToneVolumePreview() {
+        var value by remember { mutableIntStateOf(60) }
+        var feedback by remember { mutableStateOf("reported") }
+        Column(Modifier.fillMaxSize().background(MiuixTheme.colorScheme.background).statusBarsPadding().padding(16.dp)) {
+            DashboardGroup {
+                ChimeVolumeSlider(value, feedback, true, null, {
+                    value = it
+                    feedback = "sent"
+                })
             }
         }
     }

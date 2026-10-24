@@ -245,12 +245,25 @@ The promised rewrite fix is present in the released
 the [pinned Accessibility screen](https://github.com/librepods-org/librepods/blob/80aa7461df414470f379ebdfe540b2e8889fcbe2/android/app/src/main/kotlin/me/kavishdevar/librepods/presentation/screens/apple/AccessibilitySettingsScreen.kt)
 uses `15f..100f`, whereas `main` still uses `0f..100f`.
 
-**Adopted locally:** restrict user-submitted tone values to 15-100 in both the
-slider and controller validation. Incoming 0-100 reports remain accepted:
-a real lower reading must not be rejected or relabeled as 15. Its number stays
-visible while the thumb is bounded by the writable range. Merely opening the
-control does not send a new setting. The existing animation/notice behavior
-continues to handle different later reports.
+**Initial adoption:** restrict user-submitted tone values to 15-100 in both the
+slider and controller validation, while accepting actual 0-100 reports.
+
+**User-requested UI follow-up:** 15 percent is now a two-stage stop rather than
+a hard write minimum. A gesture starting above 15 stops there for that entire
+gesture. Release and start a new gesture from 15 or below to submit a lower
+value. The low range is orange-red in both themes and shows a warning toast on
+release. The controller allows explicit requests throughout 0-100; lower requests
+can still be rejected by firmware. Cancelled gestures do not submit a setting
+or carry an unlocked drag into the next gesture.
+
+Actual readings are never relabeled as 15. Merely opening the control does not
+send a setting. The existing animation/notice behavior continues to handle
+different later reports. This deliberately softens the upstream minimum at the
+user's request; it does not establish that lower values work on AirPods 5.
+The soft-stop follow-up passed 128 focused JVM tests, app/UI-test compilation
+and Lint. A bounded synthetic phone check confirmed a drag from 60 stopped at
+15, a new gesture reached 4, the track turned orange-red, and the release toast
+appeared. The preview used local callbacks only, not headphone commands.
 
 Both upstream screens send `CHIME_VOLUME` (`0x1F`) with a hardcoded second byte
 of `0x50` and initialize a local slider value with a 75-percent fallback.
@@ -281,7 +294,7 @@ or establish that the failures are unique to AirPods 5. No additional protocol
 write, ATT polling loop, firmware reset or ownership takeover is justified by
 the evidence above.
 
-Local validation passed: **122 focused JVM tests** for controller behavior,
+The initial range correction passed **122 focused JVM tests** for controller behavior,
 setting bounds, tone interaction state and AACP parsing; app/UI-test compilation;
 and Lint with **0 errors, 129 warnings and 2 hints**. UI instrumentation was
 compiled, not executed, because the earlier device idle blocker remains.

@@ -5,10 +5,11 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PodsSettingsTest {
-    @Test fun toneWritesUseTheUpstreamMinimumWithoutDiscardingLowerActualReports() {
+    @Test fun toneWritesAllowExplicitLowValuesButStayWithinTheProtocolRange() {
         for (model in listOf(AirPods5(), AirPods5WCC(), AirPodsPro3(), AirPodsPro2USBC())) {
-            for (value in 0..14) assertFalse(PodsSettings.validValue(Key.CHIME_VOLUME, value, model, emptyMap()))
-            for (value in 15..100) assertTrue(PodsSettings.validValue(Key.CHIME_VOLUME, value, model, emptyMap()))
+            for (value in 0..100) assertTrue(PodsSettings.validValue(Key.CHIME_VOLUME, value, model, emptyMap()))
+            assertFalse(PodsSettings.validValue(Key.CHIME_VOLUME, -1, model, emptyMap()))
+            assertFalse(PodsSettings.validValue(Key.CHIME_VOLUME, 101, model, emptyMap()))
         }
         for (value in 0..100) assertTrue(PodsSettings.knownValue(Key.CHIME_VOLUME, value))
     }

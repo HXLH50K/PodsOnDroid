@@ -541,16 +541,22 @@ class L2CAPControllerSettingsTest {
         assertTrue(pending().isEmpty())
     }
 
-    @Test fun toneControllerRejectsBelowMinimumButAcceptsRealLowerReadings() {
+    @Test fun toneControllerSendsExplicitLowValuesWithoutFabricatingReports() {
         manager.receivePacket(byteArrayOf(4, 0, 4, 0, 9, 0, 0x1f, 0, 67, 0, 0))
         val id = AACPManager.Companion.ControlCommandIdentifiers.CHIME_VOLUME
         assertEquals(0, manager.reportedControlValue(id))
         for (value in 0..14) {
             request(Key.CHIME_VOLUME, value)
+            assertArrayEquals(byteArrayOf(4, 0, 4, 0, 9, 0, 0x1f, value.toByte(), 67, 0, 0), output.toByteArray())
+            assertEquals("sent", field("lastSettingStatus").get(controller))
+            assertEquals(0, manager.reportedControlValue(id))
+            output.reset()
+        }
+        for (value in listOf(-1, 101)) {
+            request(Key.CHIME_VOLUME, value)
             assertEquals(0, output.size())
             assertEquals("invalid", field("lastSettingStatus").get(controller))
         }
-        assertEquals(0, manager.reportedControlValue(id))
         request(Key.CHIME_VOLUME, 15)
         assertArrayEquals(byteArrayOf(4, 0, 4, 0, 9, 0, 0x1f, 15, 67, 0, 0), output.toByteArray())
         assertEquals(0, manager.reportedControlValue(id))
