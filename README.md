@@ -2,7 +2,11 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha17 accepted AirPods 5 head tracking
+## Current checkpoint: alpha18 UI and tone-volume refinements
+
+Alpha18 packages the UI corrections, simplified About page and two-stage
+tone-volume slider. Version code is 18. AirPods 5 head tracking was accepted
+on alpha17; this version bump does not claim new physical-device acceptance.
 
 UI follow-up corrections: the remaining root-title gap was a duplicated
 status-bar inset, not the title size. The page frame now consumes its manually
