@@ -79,7 +79,8 @@ The app's API 35 minimum already exceeds AGSL's API 33 requirement.
 - Debug/Release builds, the minified Release and both Lint variants pass.
   No new runtime dependency is added.
 
-Emulator rendering is not a physical HyperOS GPU/performance acceptance claim.
+After deployment the user accepted the visual result on the HyperOS 4 phone.
+Emulator rendering and that visual acceptance are not broad GPU/performance acceptance.
 No headphone setting, radio capture, module activation or scope restart is part
 of this UI validation. The temporary emulator does not modify the user's phone.
 

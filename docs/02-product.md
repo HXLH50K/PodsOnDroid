@@ -67,7 +67,7 @@ Status: confirmed design baseline; imported functionality is not automatically v
 - Android owns pairing and A2DP/HFP audio; the module adds controls rather than replacing the audio stack.
 - Require root and runtime-verified modern API 102. No legacy framework support or dedicated rootless backend.
 - Preserve applicable HyperPods controls and tests. A UI redesign must not silently remove controls or change saved/default policies without evidence.
-- Hosting is private; the latest privacy instruction supersedes earlier public intent.
+- The user explicitly authorized public GitHub hosting and a signed beta release on 2026-10-24. This supersedes the earlier private-hosting requirement; signing material and local device artifacts remain excluded.
 
 Target: AirPods 5 wireless-charging variant, user-reported firmware `1.0.0`; read model/protocol fields when connected. Initial platform: `houji`, `OS4.0.0.14.XNCCNXM`. Xiaomi 17 Pro is the daily phone, not an additional starting gate. Native comparison: Xiaomi Open-ear Headphones Pro, reported `1.1.0.3`; finish the current verified stage and wait when hardware is needed.
 

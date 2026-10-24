@@ -1,12 +1,30 @@
 # 05 Confirmed decisions and remaining choices
 
+## 2026-10-24 publication and visual acceptance
+
+The user accepted the liquid-glass visual result on the HyperOS 4 test phone
+and requested version `0.2.1-beta`, an in-place Release update if needed,
+pushing pending commits, public repository visibility when permitted, and
+a signed GitHub prerelease. Administrator permission was available and GitHub
+confirmed public visibility. This explicitly supersedes the earlier private
+hosting requirement.
+
+Keep signing keys/passwords, local environment configuration, captured system
+APKs, raw device logs and the local issue summary outside Git and release assets.
+Only the signed APK and checksum are intended for this release's public assets.
+Existing licensing, attribution, independent-history and API 102 requirements
+remain unchanged. No new earbud/system-host acceptance or automatic restart
+is implied by publication.
+
 Updated: 2026-10-22. This is a faithful English decision summary, not a verbatim transcript. The original Chinese user answers were preserved byte-for-byte outside the repository before import. Historical Chinese upstream documents remain in the reference project and external history backup, not the independent P.O.D.S. branch.
 
 Latest decision: remove inherited HyperPods commit ancestry, keep the source/license/attribution, and continue development. The user reports the migration preview's basic functionality works and the original issues remain as expected. This does not declare native popups, the dedicated panel, or Liquid Glass complete.
 
 Latest test feedback supersedes the older presentation assumptions: paired Xiaomi reconnect and wearing are silent; first-pairing/discovery shows a connect card on the tested setup. The user wants a brief battery island on P.O.D.S. reconnection, **without either the inherited persistent island or ordinary notification**. They suggested that the first-pairing popup might be unnecessary. A confirmation attempt was unavailable, so implementation provisionally defers that separate feature rather than treating its permanent removal as confirmed. Notification cleanup proceeds independently.
 
-**Latest instructions take precedence:** the repository is private; all coding documentation and commit messages are English; the app supports English and Simplified Chinese (`zh-CN`) only. The earlier public-release intention is superseded.
+**Current instructions take precedence:** public hosting is authorized by the
+2026-10-24 decision above. All coding documentation and commit messages remain
+English; the app supports English and Simplified Chinese (`zh-CN`) only.
 
 **2026-10-23 morning priorities:** no further computer shutdown. The highest priority is an effective debug **full-scope process reload** after APK updates, not only interface-process restart. Battery presentation must ultimately be a direct native animation without an ordinary notification/card; use left/right earbud icons, not battery gauges. Alpha4's notification-to-island transition did not satisfy that requirement. Fixing its expansion flag is only an interim visual change, not proof of a pure native-animation route.
 
@@ -24,7 +42,7 @@ There is no unresolved product question blocking M0/M1-A. Source/history import 
 | Q02 | AirPods 5 wireless-charging variant; reported firmware `1.0.0`, unchanged since manufacture; connect when needed | Read actual model and firmware fields then. Complete the independently verifiable stage and wait for the user, without continuous polling |
 | Q03 | API 102 only | Daemon-reported API 102 is verified. Actual P.O.D.S. host injection and new API calls remain M1 app-test requirements, not reasons to reopen the framework-route decision |
 | Q04 | HyperPods Actions latest daily; missing connection popup, persistent island and repeated battery-refresh alerts, some controls/feedback unreliable | Pin `a44bc10e387f527062b9ba2b8f90b154b2e61248` as the imported baseline. Obtain the exact daily run/hash when comparing a reported defect; never lock a build to rolling `latest` |
-| Q05 | User owns the project; **latest instruction: private** | [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid) is created private, with no push at this checkpoint. Retain GPL/attribution; do not make it public without explicit authorization |
+| Q05 | User owns the project; **public hosting explicitly authorized on 2026-10-24** | [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid) was initially private and is now public. Retain GPL/attribution and keep signing material/local device artifacts excluded |
 
 ## 2. Experience and functionality
 
@@ -101,7 +119,7 @@ or license attribution. Reduced transparency is a readability option rather
 than a switch back to the old interface.
 
 1. Before generating the release key: password custody, delivery, and independent encrypted backup.
-2. Before distribution: authorize the specific push/release operation and review what is included. The repository URL is already known; **private visibility remains mandatory**.
+2. Before distribution: authorize the specific push/release operation and review what is included. The 2026-10-24 instruction authorizes the public `0.2.1-beta` release; signing material and local artifacts remain excluded.
 3. If native-panel reuse encounters a demonstrated hard limit: present the alternative and obtain the user's decision.
 
 Exact headphone model fields, the current daily run/hash, and specific Liquid Glass reference pages can be supplied when relevant. They do not block M0/M1-A. Whether the headphones were initialized on an Apple device matters only if a related feature fails.

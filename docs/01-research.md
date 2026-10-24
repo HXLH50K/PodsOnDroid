@@ -164,7 +164,7 @@ Confidence is high that the foundation is worth extending. Native entry points h
 - The pinned [LibrePods README](https://github.com/librepods-org/librepods/blob/89356c08cea3db0b6b54792d9329d09a87cc85fa/README.md) states GPL-3.0-or-later; OpenPods also grants v3-or-later.
 - Preserve pinned source provenance, copyright, modification notices, and applicable corresponding-source obligations. Independent Git history and private hosting do not relicense derived work or remove distribution duties.
 - Review assets independently. LibrePods distinguishes trademarks and mentions Apple fonts; use system fonts and original/clearly licensed art rather than unverified Apple renders or animations.
-- [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid) remains private until explicit visibility authorization. Review licensing/assets before any approved distribution. This is engineering guidance, not legal advice.
+- [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid) was private during the initial research. The user explicitly authorized public hosting and beta publication on 2026-10-24. Preserve the source/license/asset notices for distribution. This is engineering guidance, not legal advice.
 
 ## 10. Setting readback audit (2026-10-24)
 

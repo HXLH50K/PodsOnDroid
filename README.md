@@ -1,6 +1,6 @@
 # P.O.D.S.
 
-A private HyperPods-derived project aiming to support AirPods across Android phones.
+A HyperPods-derived project aiming to support AirPods across Android phones.
 Current physical acceptance is limited to the user's AirPods 5 and Xiaomi HyperOS 4.
 Other phone/headphone combinations are extension targets, not verified support.
 
@@ -20,7 +20,8 @@ See [references and rendering contract](docs/03-architecture.md#liquid-glass-nav
 Validation includes 18 focused JVM checks per build variant and 19 passing
 API 35 emulator UI cases, with actual AGSL output, 4.5:1 selected-label contrast,
 normal/zero motion, RTL, opaque fallback and popup-host regression coverage.
-Physical HyperOS GPU/performance acceptance remains separate.
+The user accepted the visual effect on the HyperOS 4 test phone. Broader
+GPU/performance acceptance remains separate.
 
 ## Compatibility structure
 
@@ -42,7 +43,29 @@ See [the extension guide](docs/03-architecture.md#compatibility-policies-and-ext
 This refactor does not lower the current Android 15 / API 35 minimum, remove
 the root/API 102 requirement, or implement another OEM's integration.
 
-## Current checkpoint: 0.2.0-beta signed Release
+## Current release: 0.2.1-beta
+
+`0.2.1-beta` uses version code 20 and the existing production package/signing
+identity. It includes the accepted liquid-glass bottom navigation, platform/model
+compatibility structure and the preceding settings/UI refinements.
+The repository is public following the user's explicit authorization on
+2026-10-24. Signed beta APKs are distributed through
+[GitHub Releases](https://github.com/HXLH50K/PodsOnDroid/releases).
+
+Requirements: Android 15 / API 35 or later, root and a modern API 102 module
+framework. Enable production package `com.hxlh50k.pods` in the module manager
+and select the applicable scopes. A same-certificate Release update keeps app
+data; Debug is a different package and does not migrate automatically.
+Do not enable competing AirPods control modules.
+
+Only AP5 + HyperOS 4 is the current physical test baseline. Other OEM
+integrations are placeholders, swipe interval remains unfinished, and initial
+microphone/long-press-cycle readbacks remain unresolved. A beta download is not
+a claim of universal compatibility. Upstream attribution, source provenance and
+file-level license notices are retained; see
+[licensing and delivery](docs/06-signing-and-maintenance.md).
+
+### Previous checkpoint: 0.2.0-beta signed Release
 
 Version name is `0.2.0-beta`, with monotonically increased version code 19.
 The release uses the production application ID `com.hxlh50k.pods`, with code
@@ -81,7 +104,8 @@ UI follow-up: both main tabs now use compact headers. App copy uses direct
 instructions rather than implementation language; detailed protocol identifiers
 remain in diagnostics. About lists the original and forked HyperPods repositories,
 LibrePods and OpenPods with visible, clickable addresses. Attribution, the pinned
-source revision and license notices are retained; the repository remains private.
+source revision and license notices are retained. The repository was private
+at that checkpoint; current publication follows the explicit authorization above.
 About uses the shared tagline "Please Open Door, Siri." in both languages and
 keeps brief credits, reference links and license notices. Import provenance
 remains in developer documentation, not in the user-facing page.
@@ -440,7 +464,7 @@ At the user's request, `main` now starts at the independent P.O.D.S. snapshot **
 
 - App/module title: **P.O.D.S.**; release application ID `com.hxlh50k.pods` (unsigned), isolated debug ID `com.hxlh50k.pods.debug`. The Kotlin/Android namespace remains `moe.chenxy.hyperpods`.
 - Per-app locales implemented: **English and Simplified Chinese (`zh-CN`) only**. Coding documentation and commit messages are English.
-- Repository: [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid), **private**. The user authorized publication of this checkpoint; keep the repository private unless explicitly instructed otherwise.
+- Repository: [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid), now **public** under the user's explicit 2026-10-24 authorization. Earlier checkpoints were privately hosted.
 - Preserve HyperPods attribution, pinned source provenance, and applicable [GPL terms](LICENSE), not its Git ancestry. Private hosting and independent history do not waive distribution obligations.
 
 ## Prerequisites and validation
@@ -477,7 +501,7 @@ Start with [readiness and stage boundaries](docs/09-readiness.md) and [confirmed
 | [Battery notification specification](docs/10-battery-notification-spec.md) | Authoritative dual-ear colors, visible timing, downward crossings, initial-low suppression and joint acceptance cases |
 | [Architecture](docs/03-architecture.md) | Process ownership, protocol, IPC, and recovery |
 | [Delivery and acceptance](docs/04-delivery-plan.md) | Milestones, hardware gates, and measurable targets |
-| [Signing and maintenance](docs/06-signing-and-maintenance.md) | Independent identity, private delivery, rollback, and licensing |
+| [Signing and maintenance](docs/06-signing-and-maintenance.md) | Independent identity, release delivery, rollback, and licensing |
 | [Device and native integration](docs/07-device-and-native-integration.md) | Recorded device evidence and unverified OEM integration |
 | [API 102 migration](docs/08-hyperpods-api102-migration.md) | Modern module contract and migration acceptance |
 | [Upstream UI evidence](design-qa.md) | Historical HyperPods results, **not P.O.D.S. verification** |

@@ -1,4 +1,32 @@
-# 06 Signing, private delivery, and maintenance
+# 06 Signing, release delivery, and maintenance
+
+## 2026-10-24 public 0.2.1-beta
+
+The user explicitly authorized public repository visibility, pushing the
+completed work, signed GitHub Release publication and updating the test phone.
+GitHub confirmed administrator permission and the visibility change to public.
+This supersedes earlier private-hosting language in historical checkpoints.
+It does not authorize publication of private keys, passwords, local signing
+configuration, captured system APKs, raw device logs or the local issue document.
+
+Version `0.2.1-beta` has monotonically increased version code 20. It retains the
+same production application ID and certificate recorded below. Publish only
+the signed, minified APK and its SHA-256 sidecar as prerelease assets, attached
+to a tag at the exact build-source commit. Source and existing license notices
+are available at that tag; no upstream notice is removed or relicensed.
+
+Publication preflight inspected 802 historical file blobs for high-confidence
+private-key, GitHub-token, AWS-key and literal signing-password markers, and
+checked current/history filenames for excluded key/binary/device-log material.
+No matches were found. This is a targeted publication check, not a comprehensive
+security or licensing certification.
+
+The user accepted the liquid-glass visual result on the target phone. AP5 +
+HyperOS 4 remains the only physical test baseline; known missing setting
+readbacks and unfinished controls remain disclosed in the release notes.
+Release build, 112 focused production-variant JVM checks and Lint passed for
+this version bump; signature, package version, alignment and uploaded asset
+bytes must also be checked before considering publication complete.
 
 ## 2026-10-24 beta release signing
 
@@ -75,7 +103,7 @@ that a release key has since been created.
 Historical planning baseline: 2026-10-22. The older procedures below are plans;
 completed key creation and beta validation are recorded in the section above.
 
-**Privacy supersedes the earlier public intention:** [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid) has been created private, with no initial push at this checkpoint. Keep it private until the user explicitly authorizes a visibility change. Private storage does not waive applicable GPL obligations when distributing a derivative.
+**Historical privacy checkpoint:** [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid) was initially private. The explicit public authorization above supersedes that policy. Public or private storage does not waive applicable GPL obligations when distributing a derivative.
 
 ## 1. Product and signing identity
 
@@ -178,7 +206,7 @@ Proposed rule: each KSU release records its embedded APK version/hash. User upda
 - [ ] English/Simplified Chinese app resources and English documentation are consistent; no additional locale claim.
 - [ ] License inventory, modification notices, corresponding source/build instructions, and asset authorization are ready.
 - [ ] If KSU exists, embedded/standalone APK equality and install/disable/uninstall are tested.
-- [ ] The exact private delivery channel/upload is authorized; repository remains private. No automatic code/log/signing-material upload.
+- [ ] The exact delivery channel/upload and repository visibility are authorized. Never upload signing material or raw device logs.
 
 ## 7. Disable and rollback
 
@@ -216,4 +244,6 @@ File-level licensing still needs attention before wider distribution: the inheri
 - Capture raw debug messages only during an authorized window and clean them afterward. Release diagnostics are fixed-field/local, never automatic remote collection.
 - Record reused project/commit/file, license, copyright, changes, and asset grants. When distributing, satisfy applicable corresponding-source/build-instruction obligations even if hosting remains private.
 
-Repository creation is complete, but creation does not authorize a push, release, or visibility change. Future automated distribution requires its own decision.
+Repository creation alone does not authorize a push, release, or visibility change.
+The 2026-10-24 publication authorization above covers this beta. Future automated
+signing/distribution still requires its own decision and must not expose local keys.
