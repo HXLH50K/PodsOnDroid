@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.onNodeWithText
+import moe.chenxy.hyperpods.BuildConfig
 import moe.chenxy.hyperpods.R
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -74,6 +75,14 @@ class AboutPageTest(private val theme: Int) {
             "https://github.com/adolfintel/OpenPods")) {
             compose.revealSetting(url).assertIsDisplayed()
         }
+    }
+
+    @Test fun aboutShowsTheTaglineWithoutBuildOrImportHistory() {
+        compose.onNodeWithText("Please Open Door, Siri.").assertIsDisplayed()
+        compose.onNodeWithText(BuildConfig.VERSION_NAME).assertIsDisplayed()
+        compose.onNodeWithText(BuildConfig.BUILD_REVISION, substring = true).assertDoesNotExist()
+        compose.revealSetting(compose.activity.getString(R.string.about_sources_description)).assertIsDisplayed()
+        compose.onNodeWithText("a44bc10e387f527062b9ba2b8f90b154b2e61248", substring = true).assertDoesNotExist()
     }
 
 }

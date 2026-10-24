@@ -18,6 +18,9 @@ instructions rather than implementation language; detailed protocol identifiers
 remain in diagnostics. About lists the original and forked HyperPods repositories,
 LibrePods and OpenPods with visible, clickable addresses. Attribution, the pinned
 source revision and license notices are retained; the repository remains private.
+About uses the shared tagline "Please Open Door, Siri." in both languages and
+keeps brief credits, reference links and license notices. Import provenance
+remains in developer documentation, not in the user-facing page.
 The original UI batch passed 156 affected JVM regressions, app/UI-test
 compilation and Lint. Both APKs installed on the HyperOS 4 phone without clearing app data.
 The first phone instrumentation attempt exited in its first About test;

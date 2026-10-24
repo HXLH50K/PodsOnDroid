@@ -43,7 +43,7 @@ fun AboutPage(padding: PaddingValues, onBack: (() -> Unit)? = null,
                         Image(painterResource(R.drawable.ic_launcher_foreground), null, Modifier.size(64.dp),
                             colorFilter = ColorFilter.tint(MiuixTheme.colorScheme.primary))
                         Text(stringResource(R.string.app_name), fontSize = 28.sp, fontWeight = FontWeight.Medium)
-                        Text("${BuildConfig.VERSION_NAME} · ${BuildConfig.BUILD_REVISION}", fontSize = 13.sp,
+                        Text(BuildConfig.VERSION_NAME, fontSize = 13.sp,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
                         Text(stringResource(R.string.about_project_description), fontSize = 15.sp, lineHeight = 23.sp)
                         Text(stringResource(R.string.about_project_maintainer), fontSize = 13.sp,

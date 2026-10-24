@@ -15,15 +15,14 @@
     <string name="settings_modules_summary">检查模块版本，按需重新加载</string>
     <string name="settings_lid_summary">测试能否检测到耳机盒开盖</string>
     <string name="settings_tools_notice">这些工具按需使用。打开本菜单不会重启进程或开始耳机测试。</string>
-    <string name="about_project_description">在小米 HyperOS 上查看 AirPods 电量、切换降噪模式、调整耳机设置。</string>
     <string name="about_project_maintainer">由 HXLH50K 维护</string>
     <string name="about_sources">源码与致谢</string>
-    <string name="about_sources_description">P.O.D.S. 基于 HyperPods 开发，保留了 Art_Chen 及包括 Mo-SeTian 在内的继承分支贡献者提供的协议、控制、图片与其他源代码。\n\n导入基线固定为 a44bc10e387f527062b9ba2b8f90b154b2e61248。P.O.D.S. 维护独立 Git 历史，源代码中的上游声明继续保留。</string>
+    <string name="about_sources_description">基于 HyperPods 开发，感谢 Art_Chen、Mo-SeTian 以及以下开源项目。</string>
     <string name="about_upstream_source">HyperPods · Art-Chen（原版）</string>
     <string name="about_hyperpods_fork">HyperPods · Mo-SeTian（修改版）</string>
     <string name="about_librepods">LibrePods · 耳机协议与控制参考</string>
     <string name="about_openpods">OpenPods · 电量广播参考</string>
     <string name="about_licenses">开源声明</string>
-    <string name="about_license_description">项目保留 GPLv3 许可证及继承文件中的许可声明，包括 AACP 源码中的 AGPLv3 声明。具体适用条款请参阅源码及各文件说明。独立历史不代表可以移除上游归属或许可义务。</string>
+    <string name="about_license_description">保留 GPLv3 许可证及源文件中的许可声明，包括 AACP 文件中的 AGPLv3 声明。具体条款请查看许可证及相应源文件。</string>
     <string name="about_view_license">查看项目许可证</string>
 </resources>

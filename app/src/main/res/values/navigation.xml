@@ -15,15 +15,15 @@
     <string name="settings_modules_summary">Check module versions and reload them if needed</string>
     <string name="settings_lid_summary">Check whether opening the case can be detected</string>
     <string name="settings_tools_notice">These tools are optional. Opening this menu does not restart processes or begin a headset test.</string>
-    <string name="about_project_description">Control your AirPods on Xiaomi HyperOS, with battery display, noise control and more.</string>
+    <string name="about_project_description" translatable="false">Please Open Door, Siri.</string>
     <string name="about_project_maintainer">Maintained by HXLH50K</string>
     <string name="about_sources">Sources and acknowledgements</string>
-    <string name="about_sources_description">P.O.D.S. is derived from HyperPods. It retains protocol, control, artwork and other source contributions by Art_Chen and inherited fork contributors including Mo-SeTian.\n\nThe imported baseline is pinned to a44bc10e387f527062b9ba2b8f90b154b2e61248. P.O.D.S. maintains independent Git history; upstream notices remain in the source.</string>
+    <string name="about_sources_description">Based on HyperPods. Thanks to Art_Chen, Mo-SeTian and the projects below.</string>
     <string name="about_upstream_source">HyperPods · Art-Chen (original)</string>
     <string name="about_hyperpods_fork">HyperPods · Mo-SeTian (fork)</string>
     <string name="about_librepods">LibrePods · protocol and controls</string>
     <string name="about_openpods">OpenPods · battery broadcast reference</string>
     <string name="about_licenses">Open-source notices</string>
-    <string name="about_license_description">The project retains its GPLv3 license and inherited file-level notices, including AGPLv3 notices in AACP sources. Refer to the source and individual files for the applicable terms. Independent history does not remove upstream attribution or license obligations.</string>
+    <string name="about_license_description">The GPLv3 license and source-file notices are retained, including AGPLv3 notices in AACP files. See the license and source files for details.</string>
     <string name="about_view_license">View project license</string>
 </resources>
