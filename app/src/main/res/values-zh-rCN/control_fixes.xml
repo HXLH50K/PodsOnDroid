@@ -2,4 +2,13 @@
     <string name="long_press_autosave">有效修改会在返回或点击外部时发送；取消会放弃修改。</string>
     <string name="long_press_select_two">请至少选择两种受支持的模式，或取消以放弃修改。</string>
     <string name="long_press_unavailable">控制尚未就绪，当前选择未发送。</string>
+    <string name="head_reply_short">最近拒绝的回复不足以容纳当前支持的传感器布局，不会被当作姿态数据。</string>
+    <string name="head_reply_envelope">最近拒绝的回复使用了不同的传感器封装。</string>
+    <string name="head_reply_marker">最近拒绝的回复中，第 10–11 字节封装字段尚不支持。</string>
+    <string name="head_reply_decode">最近回复无法解析为传感器采样。</string>
+    <string name="head_reply_header">最近拒绝回复：%1$d 字节\n仅前 12 字节：%2$s</string>
+    <string name="swipe_protocol_title">滑动间隔协议证据</string>
+    <string name="swipe_protocol_summary">本次连接最近请求：%1$s\n最近 0x23 回复：%2$s\n请求值不等于耳机已确认值。</string>
+    <string name="control_raw_reply">载荷 %1$d 字节；前四字节：%2$s</string>
+    <string name="swipe_reply_missing">尚未记录到回复</string>
 </resources>

@@ -26,6 +26,24 @@ class HeadTrackingPreviewTest {
             val value = (1200 * sin(2 * PI * index / 24)).toInt()
             preview.onPacket(if (horizontal) packet(horizontal = value) else packet(vertical = value), at)
         }
+
+    }
+
+    @Test fun rejectedReplyEvidenceIsBoundedAndSurvivesStoppingWithoutBecomingPose() {
+        start()
+        val unknown = syntheticHeadTrackingPacket(size = 80, report = 0x46)
+        preview.onPacket(unknown, 100)
+        assertEquals(0, latest.packets)
+        assertEquals(1, latest.rejectedPackets)
+        assertEquals("unsupported_marker", latest.rejectionReason)
+        assertEquals(80, latest.rejectedSize)
+        assertEquals("04 00 04 00 17 00 00 00 10 00 46 00", latest.rejectedHeader)
+        assertNull(latest.sample)
+        preview.stop("stopped")
+        assertEquals(80, latest.rejectedSize)
+        start("next")
+        assertEquals("", latest.rejectedHeader)
+        assertEquals(0, latest.rejectedPackets)
     }
 
     @Test fun poseDecodesSignedLittleEndianAndCalibratesRelativeToTenSamples() {

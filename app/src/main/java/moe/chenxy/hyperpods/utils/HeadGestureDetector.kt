@@ -29,9 +29,14 @@ class HeadGestureDetector {
         /** LibrePods 89356c0 data/Packets.kt isHeadTrackingData envelope.
          * Opcode 0x17 alone also covers requests and acknowledgements, not just sensors.
          * The source recognizes reports over 60 bytes; 70 was an unrelated dispatch cutoff. */
-        fun isSensorPacket(packet: ByteArray): Boolean =
-            packet.size > 60 && sensorPrefix.indices.all { packet[it] == sensorPrefix[it] } &&
-                packet[10] in byteArrayOf(0x44, 0x45) && packet[11] == 0.toByte()
+        fun packetRejection(packet: ByteArray): String? = when {
+            packet.size <= 60 -> "short_reply"
+            sensorPrefix.indices.any { packet[it] != sensorPrefix[it] } -> "envelope_mismatch"
+            packet[10] !in byteArrayOf(0x44, 0x45) || packet[11] != 0.toByte() -> "unsupported_marker"
+            else -> null
+        }
+
+        fun isSensorPacket(packet: ByteArray): Boolean = packetRejection(packet) == null
 
         fun motion(packet: ByteArray): Orientation? {
             if (!isSensorPacket(packet)) return null

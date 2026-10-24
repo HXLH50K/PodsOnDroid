@@ -2,7 +2,36 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha14 functional corrections
+## Current checkpoint: alpha15 protocol-evidence follow-up
+
+User acceptance confirmed speaker switching when the earbud sensors are not
+covered: issue [#4](https://github.com/HXLH50K/PodsOnDroid/issues/4) is closed.
+P.O.D.S. consumes the headphone-reported wear state; it does not implement
+Apple's skin/object classifier. Cycle auto-save is also accepted; issue
+[#5](https://github.com/HXLH50K/PodsOnDroid/issues/5) now tracks deferred minor UI
+follow-up only.
+
+Issues [#2](https://github.com/HXLH50K/PodsOnDroid/issues/2) and
+[#3](https://github.com/HXLH50K/PodsOnDroid/issues/3) remain **unresolved**:
+alpha14 showed rejected head replies but no sensor samples, and swipe interval
+has no confirmed readback or observed effect. Alpha15 prepares bounded evidence
+instead of broadening the sensor parser or remembering a request as a device value.
+
+- Pose diagnostics show why the last reply was rejected, its length and only
+  its first 12 envelope bytes, never a full sensor payload.
+- Connection diagnostics retain the first four bytes/length of actual `0x23`
+  replies, including values rejected by the current setting schema.
+- An explicit swipe-interval write can issue one existing status-subscription
+  refresh while awaiting its echo; the original deadline is unchanged.
+- Last-request information is connection-local diagnostic state only. It is
+  neither persisted as a preference nor used as the selected headphone value.
+
+All **218 affected JVM regressions pass**; app/UI-test builds and Lint pass.
+No ownership takeover, background log collector, automatic headset test,
+sensor override or minor UI fix is included. A user-operated round is needed
+to obtain the missing real protocol evidence.
+
+## Previous checkpoint: alpha14 functional corrections
 
 Four English issues track the latest reports: [#2](https://github.com/HXLH50K/PodsOnDroid/issues/2)
 combines missing head gestures/pose data, [#3](https://github.com/HXLH50K/PodsOnDroid/issues/3)

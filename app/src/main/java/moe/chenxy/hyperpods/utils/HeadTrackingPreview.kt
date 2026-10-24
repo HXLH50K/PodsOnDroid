@@ -7,7 +7,8 @@ class HeadTrackingPreview(private val stream: HeadTrackingStream, private val em
         val packets: Int = 0, val sample: HeadPose.Sample? = null,
         val nods: Int = 0, val shakes: Int = 0, val gesture: String = "",
         val rejectedPackets: Int = 0, val filteredSamples: Int = 0, val lastPacketSize: Int = 0,
-        val variant: String = "alternate")
+        val variant: String = "alternate", val rejectedSize: Int = 0,
+        val rejectedHeader: String = "", val rejectionReason: String = "")
     private val pose = HeadPose()
     private val detector = HeadGestureDetector()
     private var snapshot = Snapshot("", 0, "idle")
@@ -122,6 +123,8 @@ class HeadTrackingPreview(private val stream: HeadTrackingStream, private val em
         if (sample == null) {
             detector.reset()
             snapshot = snapshot.copy(rejectedPackets = snapshot.rejectedPackets + 1, sample = null, gesture = "",
+                rejectedSize = packet.size, rejectedHeader = ProtocolSummary.prefix(packet, 12),
+                rejectionReason = HeadGestureDetector.packetRejection(packet) ?: "decode_failed",
                 state = if (snapshot.packets == 0) "starting" else "calibrating")
             if (at - lastEmit >= 100) {
                 lastEmit = at

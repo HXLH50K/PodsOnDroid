@@ -1,5 +1,25 @@
 # 03 Architecture
 
+## Alpha15 bounded protocol evidence
+
+The alpha14 user result did not validate head motion or swipe interval. Keep
+strict sensor/value validation and distinguish missing knowledge from failure.
+`packetRejection` reuses the existing sensor predicate rather than relaxing it.
+The preview stores only the last rejection's size/reason and a maximum 12-byte
+envelope prefix during an explicitly started test.
+
+For `VOLUME_SWIPE_INTERVAL`, the manager preserves at most four received bytes
+and the actual payload length before semantic validation, with defensive copying
+and disconnect clearing. This diagnostic cache is never an optimistic setting.
+The controller's last request is connection-local only. One existing status
+request during the original acknowledgement window may solicit an echo; it
+does not extend the deadline or turn a missing echo into success.
+
+The user confirmed that uncovered-sensor wear reports route correctly. Skin/
+object classification remains on the headphone side; no table-detection
+heuristic or firmware-report override is added. Issue #4 is closed, #5 saving
+is accepted with UI follow-up deferred, and #2/#3 remain open.
+
 ## Alpha14 motion, settings and route corrections
 
 The current head stream has one local owner (call recognition or explicit

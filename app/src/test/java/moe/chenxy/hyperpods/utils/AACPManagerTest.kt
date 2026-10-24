@@ -16,6 +16,34 @@ class AACPManagerTest {
         this[4] = opcode
     }
 
+    @Test fun unrecognizedSwipeReplyRemainsDiagnosticEvidenceNotASettingValue() {
+        val id = AACPManager.Companion.ControlCommandIdentifiers.VOLUME_SWIPE_INTERVAL
+        manager.receivePacket(packet(9, 11).apply { this[6] = id.value; this[7] = 0 })
+        assertArrayEquals(byteArrayOf(0, 0, 0, 0), manager.rawSwipeReply())
+        assertEquals(4, manager.swipeReplySize)
+        assertNull(manager.getControlCommandStatus(id))
+        assertNull(manager.reportedControlValue(id))
+        manager.rawSwipeReply()!!.fill(9)
+        assertArrayEquals(byteArrayOf(0, 0, 0, 0), manager.rawSwipeReply())
+        manager.disconnected()
+        assertNull(manager.rawSwipeReply())
+        assertEquals(0, manager.swipeReplySize)
+    }
+
+    @Test fun swipeRequestsAndOtherReportsNeverManufactureASwipeReply() {
+        val session = AACPManager(mock(BluetoothSocket::class.java), writer = { true })
+        val id = AACPManager.Companion.ControlCommandIdentifiers.VOLUME_SWIPE_INTERVAL
+        session.sendControlCommand(id.value, 3)
+        session.receivePacket(packet(9, 11).apply { this[6] = 0x17; this[7] = 2 })
+        assertNull(session.rawSwipeReply())
+        session.receivePacket(packet(9, 15).apply {
+            this[6] = id.value; this[7] = 3
+            for (i in 11 until size) this[i] = 0x7f
+        })
+        assertArrayEquals(byteArrayOf(3, 0, 0, 0), session.rawSwipeReply())
+        assertEquals(8, session.swipeReplySize)
+    }
+
     @Test fun nativeStemControlsAreRestoredOncePerConnectionAndFailedWritesCanRetry() {
         val socket = mock(BluetoothSocket::class.java)
         val output = ByteArrayOutputStream()

@@ -1,6 +1,6 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-23 evening:** the user requested four English issues and fixes for head motion, swipe-interval readiness, outside-case speaker routing and cycle auto-save. Section 26 records the alpha14 implementation and test evidence, with hardware acceptance still pending. Miscellaneous UI work remains excluded. No automated earbud/call/audio-route operation or scope restart is authorized by these local checks.
+**Current status, 2026-10-24:** the user accepts #4's routing behavior with unobstructed sensors and #5's cycle auto-save. #4 is closed; #5 retains only deferred UI follow-up. #2 and #3 are not accepted: motion has only rejected replies, and swipe interval has no readback/observable effect. Section 27 records the bounded alpha15 protocol-evidence follow-up; it is not a claim that those two functions are fixed.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -1293,3 +1293,61 @@ If it still has no samples, report the displayed valid/rejected/filtered counts,
 last size, request variant and ownership report, rather than repeating blind
 reconnects. A second check can cover cycle selection and Back dismissal.
 The remaining swipe/speaker checks should be a separate agreed round.
+
+## 27. Alpha15 targeted protocol evidence after user feedback
+
+### Accepted and deferred items
+
+The user reports that automatic speaker switching works when both earbud skin
+sensors face open air. Obstructing them with a table may leave the headphones
+reporting IN_EAR. `AirPodsNotifications.EarDetection` only validates the received
+status bytes and maps primary/secondary to left/right; P.O.D.S. contains no
+optical/skin classifier. Overriding an IN_EAR report based on a guessed table
+position would risk routing audio away from a genuinely worn earbud. Issue #4
+was closed with this boundary, without changing the wear policy again.
+
+The user confirms long-press cycle auto-save works. Issue #5 was retained and
+retitled for minor UI follow-up; details were not provided and are not invented.
+No cycle UI change is included in this batch.
+
+### Remaining evidence gaps
+
+- #2: only rejected replies, no valid pose samples. A rejected head-opcode reply
+  is not necessarily sensor data; it may be an acknowledgement or another format.
+  Current public LibrePods source still uses the same strict envelope/marker
+  classifier. No new decoder or packet interpretation is assumed from a count.
+- #3: no returned value, no retained confirmed selection, and no observed effect.
+  Public upstream describes this setting as the waiting interval between swipes,
+  not the size of a volume step. That does not establish support on this firmware.
+  A local-memory workaround would not prove that the headphones applied anything.
+
+### Implemented evidence path
+
+- The sensor acceptance predicate is unchanged. It now explains short replies,
+  envelope mismatch or unsupported wrapper fields. The explicit pose test retains
+  only the last rejected reply's size, reason and first **12 bytes**. Full payloads,
+  audio, keys and device addresses are not recorded by this helper.
+- The `0x23` path retains a defensive copy of at most **four actual reply bytes**
+  before setting-value validation. Unknown/invalid values remain excluded from
+  reported settings. Diagnostic payload length is recorded separately; all
+  evidence is cleared when the manager disconnects.
+- Connection diagnostics distinguish the last request in the current connection
+  from an actual reply. The request is not persisted and never becomes a displayed
+  confirmed setting merely because it was sent.
+- While awaiting a swipe-setting echo, one existing notification/status request
+  can be sent after one second. An immediate echo cancels that refresh. The
+  original three-second deadline is not extended; missing replies remain failure/
+  unconfirmed state. No guessed getter opcode or repeated refresh loop was added.
+
+218 affected JVM tests pass, including exact header limits, rejected samples
+remaining non-pose, invalid replies remaining non-settings, defensive copies,
+disconnect reset and one-shot readback/echo cancellation. App and instrumentation
+APKs compile; no new real-device test is counted as passing. The previous six
+preference-suite baseline failures are unchanged and were not rerun or hidden.
+
+Only the already-visible P.O.D.S. screen was read once; no test, swipe setting,
+call, audio route or head motion was initiated by the assistant. No log collector
+was started. Next joint round after module reload: run the explicit pose test and
+record rejection reason/size/header plus variant/ownership; then make one deliberate
+swipe-interval request and read its raw reply in Connection diagnostics. Do not
+repeat reconnects or widen decoding before those observations are available.

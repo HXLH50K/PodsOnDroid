@@ -253,6 +253,10 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
     private val localWrites = mutableSetOf<ControlCommandIdentifiers>()
     // Keep fixed, validated setting values separate from optimistic UI values.
     private val reportedControlValues = mutableMapOf<ControlCommandIdentifiers, Int>()
+    private var lastSwipeReply: ByteArray? = null
+    var swipeReplySize: Int = 0
+        private set
+    fun rawSwipeReply(): ByteArray? = lastSwipeReply?.copyOf()
     private var nativeStemConfigured = false
     fun isAwaitingReport(identifier: ControlCommandIdentifiers): Boolean = identifier in localWrites
     fun reportedControlValue(identifier: ControlCommandIdentifiers): Int? = reportedControlValues[identifier]
@@ -520,6 +524,11 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
                 val identifier = ControlCommandIdentifiers.fromByte(controlCommand.identifier) ?: return
                 val key = PodsSettings.keyFor(identifier.value)
                 val value = controlCommand.value[0].toInt() and 0xff
+                if (identifier == ControlCommandIdentifiers.VOLUME_SWIPE_INTERVAL) {
+                    // Diagnostics must retain an unrecognized reply without making it a setting value.
+                    swipeReplySize = packet.size - 7
+                    lastSwipeReply = controlCommand.value.take(4).toByteArray()
+                }
                 if (key != null) {
                     if (!PodsSettings.knownValue(key, value)) {
                         Log.w(TAG, "Ignoring invalid control setting ${identifier.name}")
@@ -1282,6 +1291,8 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
         Log.d(TAG, "Disconnected, clearing state")
         controlCommandStatusList.clear()
         controlCommandListeners.clear()
+        lastSwipeReply = null
+        swipeReplySize = 0
         owns = false
         oldConnectedDevices = listOf()
         connectedDevices = listOf()

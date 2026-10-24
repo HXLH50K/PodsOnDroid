@@ -84,6 +84,7 @@ object L2CAPController {
     private var lastRecordedFailure = ""
     private var lastSettingKey = ""
     private var lastSettingStatus = ""
+    private var lastSwipeRequest: Int? = null
     private var lastDiagnostics: Bundle? = null
     private var lastTimelineState = ""
     private var lastTimelineStage = ""
@@ -169,6 +170,9 @@ object L2CAPController {
             putExtra("filtered_samples", snapshot.filteredSamples)
             putExtra("last_packet_size", snapshot.lastPacketSize)
             putExtra("variant", snapshot.variant)
+            putExtra("rejected_size", snapshot.rejectedSize)
+            putExtra("rejected_header", snapshot.rejectedHeader)
+            putExtra("rejection_reason", snapshot.rejectionReason)
             putExtra("ownership", headTrackingOwnership())
             putExtra("nods", snapshot.nods)
             putExtra("shakes", snapshot.shakes)
@@ -473,6 +477,11 @@ object L2CAPController {
     }
 
     private fun diagnosticsSnapshot(): Bundle = Bundle().apply {
+        putInt("swipe_requested", lastSwipeRequest ?: -1)
+        putInt("swipe_reply_size", aacpManager?.swipeReplySize ?: 0)
+        putString("swipe_raw_reply", aacpManager?.rawSwipeReply()?.let {
+            moe.chenxy.hyperpods.utils.ProtocolSummary.prefix(it, 4)
+        }.orEmpty())
         putInt("head_packets", headGestureCalls?.packets ?: 0)
         putInt("head_rejected_packets", headGestureCalls?.rejectedPackets ?: 0)
         putInt("head_filtered_samples", headGestureCalls?.filteredSamples ?: 0)
@@ -607,6 +616,7 @@ object L2CAPController {
             return
         }
         val identifier = PodsSettings.identifiers[key] ?: return
+        if (key == HyperPodsPrefsKey.SWIPE_SPEED) lastSwipeRequest = value
         val manager = aacpManager
         val written = if (key == HyperPodsPrefsKey.CHIME_VOLUME && manager != null) {
             // Change only the volume; retain the second configuration byte from the headset.
@@ -636,7 +646,17 @@ object L2CAPController {
         // Other settings still require a matching headset report.
         val generation = sessionId
         val timeout = CoroutineScope(Dispatchers.Default).launch {
-            delay(3000)
+            if (key == HyperPodsPrefsKey.SWIPE_SPEED) {
+                delay(1000)
+                synchronized(this@L2CAPController) {
+                    ensureActive()
+                    if (sessionId == generation && pendingSettings[key]?.value == value &&
+                        aacpManager === manager && manager?.sendNotificationRequest() != true) {
+                        Log.w(TAG, "Swipe interval readback refresh was not sent")
+                    }
+                }
+                delay(2000) // Keep the original deadline; an unanswered refresh is not confirmation.
+            } else delay(3000)
             if (key == HyperPodsPrefsKey.ALLOW_OFF_OPTION) {
                 synchronized(this@L2CAPController) {
                     ensureActive()
@@ -1529,6 +1549,7 @@ object L2CAPController {
     }
 
     private fun resetControlState() {
+        lastSwipeRequest = null
         speakerSwitchJob?.cancel()
         speakerSwitchJob = null
         if (::mDevice.isInitialized && mContext != null) {
@@ -1559,6 +1580,7 @@ object L2CAPController {
     @Synchronized
     fun disconnectedPod(context: Context, device: BluetoothDevice) {
         if (::mDevice.isInitialized && device != mDevice) return
+        lastSwipeRequest = null
         singlePodAnc.reset()
         singlePodAncRestoreAttempts = 0
         conversationAwarenessActive = false

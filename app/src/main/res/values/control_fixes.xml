@@ -2,4 +2,13 @@
     <string name="long_press_autosave">Valid changes are sent when you return or tap outside. Cancel discards changes.</string>
     <string name="long_press_select_two">Select at least two supported modes, or cancel to discard changes.</string>
     <string name="long_press_unavailable">The control is not ready. Your selection has not been sent.</string>
+    <string name="head_reply_short">The last rejected reply is too short for the supported sensor layout; it is not treated as motion.</string>
+    <string name="head_reply_envelope">The last rejected reply uses a different sensor envelope.</string>
+    <string name="head_reply_marker">The last rejected reply has an unsupported envelope field at bytes 10–11.</string>
+    <string name="head_reply_decode">The last reply could not be decoded as a sensor sample.</string>
+    <string name="head_reply_header">Rejected reply length (bytes): %1$d\nFirst 12 bytes only: %2$s</string>
+    <string name="swipe_protocol_title">Swipe interval protocol evidence</string>
+    <string name="swipe_protocol_summary">Last request in this connection: %1$s\nLast 0x23 reply: %2$s\nA request is not a confirmed headphone value.</string>
+    <string name="control_raw_reply">Payload length (bytes): %1$d; first four: %2$s</string>
+    <string name="swipe_reply_missing">No reply recorded</string>
 </resources>

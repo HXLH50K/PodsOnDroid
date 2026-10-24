@@ -12,6 +12,7 @@ import android.media.MediaRouter2
 import android.os.Bundle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AirPods5
@@ -475,6 +476,33 @@ class L2CAPControllerSettingsTest {
         assertNull(manager.getControlCommandStatus(id))
         receive(0x23, 1)
         assertEquals(1, manager.reportedControlValue(id))
+        assertFalse(pending().containsKey(Key.SWIPE_SPEED))
+    }
+
+    @Test fun swipeWriteRequestsOneReadbackRefreshWhileWaitingForAGenuineEcho() = runBlocking {
+        receive(0x23, 2)
+        output.reset()
+        request(Key.SWIPE_SPEED, 1)
+        val command = output.toByteArray()
+        val refresh = manager.createDataPacket(manager.createRequestNotificationPacket())
+        withTimeout(2500) { while (output.size() < command.size + refresh.size) delay(20) }
+        assertArrayEquals(command + refresh, output.toByteArray())
+        assertTrue(pending().containsKey(Key.SWIPE_SPEED))
+        assertEquals(2, manager.reportedControlValue(AACPManager.Companion.ControlCommandIdentifiers.VOLUME_SWIPE_INTERVAL))
+        receive(0x23, 1)
+        delay(1100)
+        assertArrayEquals(command + refresh, output.toByteArray())
+        assertFalse(pending().containsKey(Key.SWIPE_SPEED))
+    }
+
+    @Test fun immediateSwipeEchoCancelsTheRefresh() = runBlocking {
+        receive(0x23, 2)
+        output.reset()
+        request(Key.SWIPE_SPEED, 1)
+        val command = output.toByteArray()
+        receive(0x23, 1)
+        delay(1200)
+        assertArrayEquals(command, output.toByteArray())
         assertFalse(pending().containsKey(Key.SWIPE_SPEED))
     }
 

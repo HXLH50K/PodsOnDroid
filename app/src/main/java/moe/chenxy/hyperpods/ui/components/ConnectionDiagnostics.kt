@@ -83,6 +83,12 @@ fun ConnectionDiagnostics(snapshot: Bundle?, includeModuleCheck: Boolean = true,
             snapshot?.getInt("head_rejected_packets") ?: 0, snapshot?.getInt("head_filtered_samples") ?: 0,
             snapshot?.getInt("head_last_packet_size") ?: 0),
         stringResource(R.string.head_tracking_ownership) to headTrackingOwnershipLabel(snapshot?.getInt("head_ownership", -1) ?: -1),
+        stringResource(R.string.swipe_protocol_title) to stringResource(R.string.swipe_protocol_summary,
+            snapshot?.getInt("swipe_requested", -1)?.takeIf { it in 1..3 }?.toString()
+                ?: stringResource(R.string.diagnostics_none),
+            snapshot?.getString("swipe_raw_reply")?.takeIf { it.isNotEmpty() }?.let {
+                stringResource(R.string.control_raw_reply, snapshot.getInt("swipe_reply_size"), it)
+            } ?: stringResource(R.string.swipe_reply_missing)),
         stringResource(R.string.diagnostics_stage) to stringResource(stage),
         stringResource(R.string.diagnostics_packets) to received.toString(),
         stringResource(R.string.diagnostics_retries) to (snapshot?.getInt("retries") ?: 0).toString(),

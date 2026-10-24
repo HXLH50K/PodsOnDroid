@@ -92,7 +92,10 @@ fun HeadTrackingPage(isActive: Boolean) {
                     rejectedPackets = intent.getIntExtra("rejected_packets", 0),
                     filteredSamples = intent.getIntExtra("filtered_samples", 0),
                     lastPacketSize = intent.getIntExtra("last_packet_size", 0),
-                    variant = intent.getStringExtra("variant") ?: "alternate")
+                    variant = intent.getStringExtra("variant") ?: "alternate",
+                    rejectedSize = intent.getIntExtra("rejected_size", 0),
+                    rejectedHeader = intent.getStringExtra("rejected_header").orEmpty(),
+                    rejectionReason = intent.getStringExtra("rejection_reason").orEmpty())
                 ownership = intent.getIntExtra("ownership", -1)
                 lastReceived = SystemClock.elapsedRealtime()
                 stale = false
@@ -180,6 +183,16 @@ fun HeadTrackingContent(snapshot: Snapshot, history: List<HeadPose.Sample>, stal
                 Text(stringResource(if (snapshot.variant == "standard") R.string.head_test_standard else
                     R.string.head_test_alternate), fontSize = 12.sp, color = secondary)
                 Text(headTrackingOwnershipLabel(ownership), fontSize = 12.sp, color = secondary)
+                if (snapshot.rejectedHeader.isNotEmpty()) {
+                    Text(stringResource(when (snapshot.rejectionReason) {
+                        "short_reply" -> R.string.head_reply_short
+                        "envelope_mismatch" -> R.string.head_reply_envelope
+                        "unsupported_marker" -> R.string.head_reply_marker
+                        else -> R.string.head_reply_decode
+                    }), fontSize = 12.sp, color = secondary)
+                    Text(stringResource(R.string.head_reply_header, snapshot.rejectedSize, snapshot.rejectedHeader),
+                        fontSize = 12.sp, color = secondary)
+                }
                 Button(onClick = if (active) onStop else onStart,
                     enabled = enabled && snapshot.state != "stopping", modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(if (active) R.string.head_test_stop else R.string.head_test_start),
