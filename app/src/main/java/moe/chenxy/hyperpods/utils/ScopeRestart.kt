@@ -169,12 +169,18 @@ class ScopeRestart(private val runner: CommandRunner = RootCommandRunner()) {
     suspend fun discoverDebugProcessExit(
         verifiedHosts: List<VerifiedHost>,
         explicitUserApproval: Boolean,
+        confirmedHosts: Set<Host>? = null,
     ): DebugDiscoveryResult {
         if (!debugProcessExitAllowed(BuildConfig.BUILD_TYPE, explicitUserApproval)) {
             return DebugDiscoveryResult.Rejected(Failure(FailureCode.DEBUG_PROCESS_EXIT_NOT_APPROVED))
         }
         val evidence = verifiedHosts.toList()
-        for (host in requiredReloadHosts) {
+        if (confirmedHosts != null && (confirmedHosts.isEmpty() ||
+            evidence.any { Host.exact(it.packageName, it.processName) !in confirmedHosts })) {
+            return DebugDiscoveryResult.Rejected(Failure(FailureCode.UNAUTHORIZED_HOST))
+        }
+        val required = confirmedHosts?.filter { it != Host.XIAOMI_UI } ?: requiredReloadHosts
+        for (host in required) {
             if (evidence.none { Host.exact(it.packageName, it.processName) == host }) {
                 return DebugDiscoveryResult.Rejected(Failure(FailureCode.MISSING_REQUIRED_HOST, host))
             }

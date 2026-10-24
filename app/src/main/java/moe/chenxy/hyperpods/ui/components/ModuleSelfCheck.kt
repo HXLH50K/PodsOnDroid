@@ -43,17 +43,13 @@ fun ModuleSelfCheck(onReport: (String) -> Unit) {
         onDispose { context.unregisterReceiver(receiver) }
     }
     LaunchedEffect(request) { delay(2500); waiting = false }
+    ScopeRestartPanel { request = UUID.randomUUID().toString() }
     BasicComponent(title = stringResource(R.string.module_self_check),
         summary = stringResource(R.string.module_installed, BuildConfig.VERSION_CODE, BuildConfig.BUILD_REVISION))
     val processNames = ModuleStatus.packages + reports.keys.filter { it !in ModuleStatus.packages }.sorted()
     val fields = processNames.map { process ->
         val report = reports[process]
-        val title = stringResource(when (process) {
-            HyperPodsBroadcasts.BLUETOOTH -> R.string.module_bluetooth
-            HyperPodsBroadcasts.SYSTEM_UI -> R.string.module_system_ui
-            "${HyperPodsBroadcasts.XIAOMI_BLUETOOTH}:ui" -> R.string.module_xiaomi_bluetooth_ui
-            else -> R.string.module_xiaomi_bluetooth
-        })
+        val title = stringResource(scopeHostTitle(process))
         val summary = if (report == null) stringResource(if (waiting) R.string.module_checking else R.string.module_no_report)
         else stringResource(R.string.module_loaded, report.version, report.revision) + "\n" +
             stringResource(if (report.matchesInstalled) R.string.module_matches else R.string.module_restart) + "\n" +
@@ -75,5 +71,4 @@ fun ModuleSelfCheck(onReport: (String) -> Unit) {
     val reportText = fields.joinToString("\n") { (title, summary) -> "$title: $summary" }
     LaunchedEffect(reportText) { onReport(reportText) }
     BasicComponent(title = stringResource(R.string.module_check_again), onClick = { request = UUID.randomUUID().toString() })
-    ScopeRestartPanel(reports.values) { request = UUID.randomUUID().toString() }
 }

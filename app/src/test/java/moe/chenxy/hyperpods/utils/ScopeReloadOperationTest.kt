@@ -18,6 +18,34 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ScopeReloadOperationTest {
+    @Test fun selectedModeSignalsOnlyTheExplicitlyChosenSubsetInReloadOrder() = runBlocking {
+        for (selection in listOf(setOf(Host.SYSTEM_UI), setOf(Host.BLUETOOTH),
+            setOf(Host.XIAOMI_BLUETOOTH, Host.SYSTEM_UI))) {
+            val fake = Fake()
+            val names = selection.map { it.processName }.toSet()
+            val result = fake.operation().run(Mode.DEBUG_SELECTED, names)
+            assertNull(result.failure)
+            assertEquals(ScopeRestart.reloadOrder.filter { it in selection }, fake.signals.map { it.host })
+            assertEquals(names, result.completed.toSet())
+            assertEquals(names, result.hosts.map { it.processName }.toSet())
+        }
+    }
+
+    @Test fun selectedModeStillRequiresFreshCallStateAndAllSelectedIdentities() = runBlocking {
+        val selected = setOf(Host.SYSTEM_UI.processName)
+        val busy = Fake().apply {
+            reports[Host.BLUETOOTH.processName] = reports.getValue(Host.BLUETOOTH.processName).copy(callState = "busy")
+        }
+        assertEquals(Failure.ACTIVE_CALL, busy.operation().run(Mode.DEBUG_SELECTED, selected).failure)
+        assertTrue(busy.commands.isEmpty())
+        val absent = Fake().apply { reports.remove(Host.SYSTEM_UI.processName) }
+        assertEquals(Failure.HOST_UNAVAILABLE, absent.operation().run(Mode.DEBUG_SELECTED, selected).failure)
+        assertTrue(absent.commands.isEmpty())
+        val empty = Fake()
+        assertEquals(Failure.NO_VERIFIED_HOSTS, empty.operation().run(Mode.DEBUG_SELECTED, emptySet()).failure)
+        assertTrue(empty.commands.isEmpty())
+    }
+
     @Test fun oldBuildsReloadAllThreeProvidersBeforeConsumersAndVerifyBetweenEverySignal() = runBlocking {
         val fake = Fake()
         val result = fake.operation().run(Mode.DEBUG_ALL, required)

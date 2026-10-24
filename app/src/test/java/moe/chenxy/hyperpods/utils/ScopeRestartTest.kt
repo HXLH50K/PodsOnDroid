@@ -35,6 +35,21 @@ class ScopeRestartTest {
         assertFalse(ScopeRestart.debugProcessExitAllowed("Debug", true))
     }
 
+    @Test fun selectedDebugApprovalCannotAddAnUnselectedHost() = runBlocking {
+        val runner = Runner()
+        val core = ScopeRestart(runner)
+        val selected = setOf(Host.BLUETOOTH)
+        val rejected = core.discoverDebugProcessExit(
+            listOf(host(Host.BLUETOOTH), host(Host.SYSTEM_UI)), true, selected)
+            as ScopeRestart.DebugDiscoveryResult.Rejected
+        assertEquals(FailureCode.UNAUTHORIZED_HOST, rejected.failure.code)
+        assertTrue(runner.commands.isEmpty())
+        val plan = (core.discoverDebugProcessExit(listOf(host(Host.BLUETOOTH)), true, selected)
+            as ScopeRestart.DebugDiscoveryResult.Ready).plan
+        assertEquals(listOf(Host.BLUETOOTH), plan.targets.map { it.host })
+        assertTrue(core.signalDebugProcessExit(plan, plan.targets.single()) is SignalResult.Completed)
+    }
+
     @Test fun explicitDebugExitNeedsImmutableApprovalAndAllThreeRequiredHosts() = runBlocking {
         val runner = Runner()
         val core = ScopeRestart(runner)

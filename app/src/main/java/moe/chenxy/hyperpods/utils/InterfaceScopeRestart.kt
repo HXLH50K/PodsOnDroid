@@ -20,7 +20,7 @@ import moe.chenxy.hyperpods.BuildConfig
 
 /** Application-owned, bounded work: leaving or scrolling About does not cancel verification. */
 object InterfaceScopeRestart {
-    enum class Mode { INTERFACE_ONLY, DEBUG_ALL }
+    enum class Mode { INTERFACE_ONLY, DEBUG_ALL, DEBUG_SELECTED }
     enum class Failure {
         ALREADY_RUNNING, DEBUG_ONLY, NO_VERIFIED_HOSTS, HOST_UNAVAILABLE, ACTIVE_CALL,
         CALL_STATE_UNKNOWN, AUDIO_STATE_UNAVAILABLE, IDENTITY_CHANGED, ROOT_COMMAND_FAILED,
@@ -72,13 +72,13 @@ object InterfaceScopeRestart {
         mode: Mode = Mode.INTERFACE_ONLY,
     ): List<ModuleStatus.Report> = reports.filter {
         val host = ScopeRestart.Host.exact(it.packageName, it.processName)
-        host != null && (mode == Mode.DEBUG_ALL || !host.affectsControlIpc) &&
+        host != null && (mode != Mode.INTERFACE_ONLY || !host.affectsControlIpc) &&
             it.frameworkApi in 102..1000 && it.pid > 1 && it.uid > 0
     }.sortedBy { ScopeRestart.reloadOrder.indexOf(ScopeRestart.Host.exact(it.packageName, it.processName)) }
 
     @Synchronized
     fun start(context: Context, mode: Mode, confirmedProcesses: Set<String>): Boolean {
-        if (state.value.running || mode == Mode.DEBUG_ALL && BuildConfig.BUILD_TYPE != "debug") return false
+        if (state.value.running || mode != Mode.INTERFACE_ONLY && BuildConfig.BUILD_TYPE != "debug") return false
         val application = context.applicationContext
         val confirmed = confirmedProcesses.toSet()
         mutableState.value = State(operationId = state.value.operationId + 1, running = true)
@@ -138,7 +138,7 @@ internal class ScopeReloadOperation(
     ): InterfaceScopeRestart.Result {
         this.mode = mode
         val confirmed = confirmedProcesses.toSet()
-        val full = mode == InterfaceScopeRestart.Mode.DEBUG_ALL
+        val full = mode != InterfaceScopeRestart.Mode.INTERFACE_ONLY
         val required = ScopeRestart.requiredReloadHosts.map { it.processName }.toSet()
         val allowed = ScopeRestart.Host.entries.filter { full || !it.affectsControlIpc }
             .map { it.processName }.toSet()
@@ -146,7 +146,8 @@ internal class ScopeReloadOperation(
             .forEach { hosts[it] = InterfaceScopeRestart.HostResult(it, full && it == ScopeRestart.Host.XIAOMI_UI.processName) }
         try {
             if (full && BuildConfig.BUILD_TYPE != "debug") return finish(InterfaceScopeRestart.Failure.DEBUG_ONLY)
-            if (confirmed.isEmpty() || !allowed.containsAll(confirmed) || full && !confirmed.containsAll(required)) {
+            if (confirmed.isEmpty() || !allowed.containsAll(confirmed) ||
+                mode == InterfaceScopeRestart.Mode.DEBUG_ALL && !confirmed.containsAll(required)) {
                 return finish(InterfaceScopeRestart.Failure.NO_VERIFIED_HOSTS)
             }
             currentCoroutineContext().ensureActive()
@@ -172,7 +173,10 @@ internal class ScopeReloadOperation(
             }
             var debugPlan: ScopeRestart.DebugProcessExitPlan? = null
             val targets = if (full) {
-                when (val discovered = executor.discoverDebugProcessExit(evidence, explicitUserApproval = true)) {
+                val selectedHosts = if (mode == InterfaceScopeRestart.Mode.DEBUG_SELECTED)
+                    ScopeRestart.Host.entries.filter { it.processName in confirmed }.toSet() else null
+                when (val discovered = executor.discoverDebugProcessExit(evidence, explicitUserApproval = true,
+                    confirmedHosts = selectedHosts)) {
                     is ScopeRestart.DebugDiscoveryResult.Rejected -> return rootFailed(discovered.failure)
                     is ScopeRestart.DebugDiscoveryResult.Ready -> {
                         debugPlan = discovered.plan
@@ -313,7 +317,7 @@ internal class ScopeReloadOperation(
             false -> return InterfaceScopeRestart.Failure.ACTIVE_CALL
             true -> Unit
         }
-        if (mode == InterfaceScopeRestart.Mode.DEBUG_ALL) {
+        if (mode != InterfaceScopeRestart.Mode.INTERFACE_ONLY) {
             val bluetooth = reports[ScopeRestart.Host.BLUETOOTH.processName]
                 ?: return InterfaceScopeRestart.Failure.HOST_UNAVAILABLE
             if (!valid(bluetooth, ScopeRestart.Host.BLUETOOTH.processName)) {

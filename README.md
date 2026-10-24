@@ -9,9 +9,12 @@ instructions rather than implementation language; detailed protocol identifiers
 remain in diagnostics. About lists the original and forked HyperPods repositories,
 LibrePods and OpenPods with visible, clickable addresses. Attribution, the pinned
 source revision and license notices are retained; the repository remains private.
-App and UI-test APK compilation passed. The bounded phone instrumentation
-attempt exited during its first About test without a usable crash report;
-runtime UI acceptance is not claimed.
+All 156 affected JVM regressions pass; app and UI-test APK compilation and Lint
+pass. Both APKs installed on the HyperOS 4 phone without clearing app data.
+The first phone instrumentation attempt exited in its first About test;
+the final 42-case round stalled in that first case for 600 seconds with no
+completed result. The runner and test app were stopped. Runtime UI acceptance
+is not claimed, and no scope restart or physical earbud operation was performed.
 
 Battery settings no longer show an app-card imitation of the Super Island.
 Reminder switches save immediately; valid threshold pairs save on field blur,
@@ -29,6 +32,15 @@ Headphone reports cannot move the thumb during a drag. A different real report
 after release updates the display with a short animation and a toast; sent-only
 optimistic state is not treated as confirmation. Failed writes animate back to
 the last real reading. This is an interaction fix, not an AirPods 5 readback fix.
+
+Module settings put one restart entry first. A checkbox dialog defaults every
+registered scope to selected and remembers each choice locally; new scopes
+default to selected. A non-dismissible progress dialog asks the user not to
+operate the phone and retains a stop-remaining-steps action. Debug builds allow
+an explicitly selected subset of control scopes; release builds retain their
+interface-only restriction. PID/UID checks, call-state checks, provider-first
+ordering and current-build verification remain enforced. Tests use fake process
+executors; no real scope restart is part of this UI validation.
 
 The online audit found a concrete AirPods 5 path in LibrePods'
 `android/rewrite` revision `80aa7461df414470f379ebdfe540b2e8889fcbe2`.
