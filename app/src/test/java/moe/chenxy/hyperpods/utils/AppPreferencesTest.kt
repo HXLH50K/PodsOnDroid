@@ -28,8 +28,20 @@ class AppPreferencesTest {
 
     @Test fun allPolicyChoicesRoundTripWithoutResettingOtherSwitches() {
         assertEquals(snapshot, AppPreferences.decode(snapshot.encode()))
-        assertEquals(8, JSONObject(snapshot.encode()).length())
+        assertEquals(14, JSONObject(snapshot.encode()).length())
         assertEquals(snapshot.copy(headGestures = true), AppPreferences.decode(snapshot.copy(headGestures = true).encode()))
+    }
+
+    @Test fun unfinishedOverrideDefaultsOffMigratesOffAndRequiresAnExplicitBoolean() {
+        assertFalse(AppPreferences.Snapshot().allowUnfinishedFeatures)
+        val previous = JSONObject(snapshot.encode()).apply { remove(Key.ALLOW_UNFINISHED_FEATURES) }
+        assertEquals(snapshot, AppPreferences.decode(previous.toString()))
+        val forced = snapshot.copy(allowUnfinishedFeatures = true)
+        assertEquals(forced, AppPreferences.decode(forced.encode()))
+        assertNull(AppPreferences.decode(previous.put(Key.ALLOW_UNFINISHED_FEATURES, "true").toString()))
+        assertFalse(AppPreferences.fromLegacy(mock(SharedPreferences::class.java).also {
+            `when`(it.all).thenReturn(mapOf(Key.ALLOW_UNFINISHED_FEATURES to true))
+        }).allowUnfinishedFeatures)
     }
 
     @Test fun existingPrivateFileMigratesWithGesturesOffAndOtherPoliciesUnchanged() {
@@ -42,8 +54,8 @@ class AppPreferencesTest {
         assertNull(AppPreferences.decode(null))
         assertNull(AppPreferences.decode("{}"))
         assertNull(AppPreferences.decode("invalid"))
-        for (value in listOf(9, 51, 22)) {
-            assertNull(AppPreferences.decode(JSONObject(snapshot.encode()).put(Key.LOW_BATTERY_CASE_THRESHOLD, value).toString()))
+        for (value in listOf(0, 50, 99)) {
+            assertNull(AppPreferences.decode(JSONObject(snapshot.encode()).put(Key.BATTERY_NOTIFICATION_LOW_THRESHOLD, value).toString()))
         }
         assertNull(AppPreferences.decode(JSONObject(snapshot.encode()).put(Key.EAR_DETECTION, "false").toString()))
     }
@@ -53,15 +65,17 @@ class AppPreferencesTest {
         `when`(legacy.all).thenReturn(mapOf(Key.EAR_DETECTION to false, Key.EAR_DETECTION_SWITCH_SPEAKER to true,
             Key.CONVERSATION_PHONE_VOLUME to false, Key.LOW_BATTERY_EARS to false, Key.LOW_BATTERY_EARS_THRESHOLD to 35,
             Key.LOW_BATTERY_CASE to true, Key.LOW_BATTERY_CASE_THRESHOLD to 15, "unrelated" to "TEST_ONLY"))
-        assertEquals(snapshot, AppPreferences.fromLegacy(legacy))
+        assertEquals(snapshot.copy(batteryNotifications = BatteryNotificationSettings(
+            lowThreshold = 35, lowReminderEnabled = false)), AppPreferences.fromLegacy(legacy))
         assertFalse(AppPreferences.fromLegacy(legacy).encode().contains("unrelated"))
     }
 
-    @Test fun badLegacyValuesUseDefaultsIndividuallyNotForTheEntirePolicy() {
+    @Test fun legacyRecoveryRetainsInvalidThresholdsWithoutResettingOtherPolicies() {
         val legacy = mock(SharedPreferences::class.java)
         `when`(legacy.all).thenReturn(mapOf(Key.EAR_DETECTION to false, Key.CONVERSATION_PHONE_VOLUME to "false",
             Key.LOW_BATTERY_EARS_THRESHOLD to 99, Key.LOW_BATTERY_CASE_THRESHOLD to 35))
-        assertEquals(AppPreferences.Snapshot(false, true, true, LowBatterySettings(true, 20, true, 35)),
+        assertEquals(AppPreferences.Snapshot(false, true, true, LowBatterySettings(true, 99, true, 35),
+            batteryNotificationsMigrationRequired = true),
             AppPreferences.fromLegacy(legacy))
     }
 
@@ -87,13 +101,16 @@ class AppPreferencesTest {
     @Test fun diskWriteFailureRollsBackAndInvalidPolicyNeverOpensTheFile() {
         val store = mock(AtomicFile::class.java)
         val output = mock(FileOutputStream::class.java)
+        `when`(store.baseFile).thenReturn(File(temporary.root, "app_settings.json"))
+        `when`(store.openRead()).thenThrow(FileNotFoundException())
         `when`(store.startWrite()).thenReturn(output)
         doThrow(IOException()).`when`(output).write(any(ByteArray::class.java))
         assertFalse(AppPreferences.write(store, snapshot))
         verify(store).failWrite(output)
         verify(store, never()).finishWrite(output)
         clearInvocations(store)
-        assertFalse(AppPreferences.write(store, snapshot.copy(lowBattery = LowBatterySettings(earsThreshold = 99))))
+        assertFalse(AppPreferences.write(store, snapshot.copy(
+            batteryNotifications = BatteryNotificationSettings(lowThreshold = 50, mediumThreshold = 50))))
         verifyNoInteractions(store)
     }
 
@@ -103,11 +120,12 @@ class AppPreferencesTest {
         `when`(context.filesDir).thenReturn(File("/TEST_ONLY"))
         `when`(context.getSharedPreferences(anyString(), eq(Context.MODE_PRIVATE))).thenReturn(legacy)
         `when`(legacy.all).thenReturn(emptyMap())
-        val input = temporary.newFile().apply { writeText(snapshot.encode()) }
+        val persisted = snapshot.copy(allowUnfinishedFeatures = true)
+        val input = temporary.newFile().apply { writeText(persisted.encode()) }
         mockConstruction(AtomicFile::class.java) { store, _ ->
             `when`(store.openRead()).thenReturn(FileInputStream(input))
         }.use { stores ->
-            assertEquals(snapshot, AppPreferences.read(context))
+            assertEquals(persisted, AppPreferences.read(context))
             verify(stores.constructed().single(), never()).startWrite()
         }
     }
@@ -119,6 +137,7 @@ class AppPreferencesTest {
         `when`(context.getSharedPreferences(anyString(), eq(Context.MODE_PRIVATE))).thenReturn(legacy)
         `when`(legacy.all).thenReturn(mapOf(Key.EAR_DETECTION to false))
         mockConstruction(AtomicFile::class.java) { store, _ ->
+            `when`(store.baseFile).thenReturn(File(temporary.root, "new_settings.json"))
             `when`(store.openRead()).thenThrow(FileNotFoundException())
             `when`(store.startWrite()).thenThrow(IOException())
         }.use {

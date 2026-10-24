@@ -1,4 +1,8 @@
 <resources>
+    <string name="unfinished_features_title">强行使用未实现功能（调试）</string>
+    <string name="unfinished_features_warning">默认关闭。仅供试验，解锁标记为“暂未实现”的控件，目前为滑动调音量间隔。不保证功能可用，打开时不会自动修改耳机设置。</string>
+    <string name="unfinished_feature_disabled">暂未实现。如需强行尝试，请在设置 → 高级与诊断中开启调试开关。</string>
+    <string name="head_test_airpods5">采集请求：AirPods 5 上游 CMA 路径（待验证）</string>
     <string name="long_press_autosave">有效修改会在返回或点击外部时发送；取消会放弃修改。</string>
     <string name="long_press_select_two">请至少选择两种受支持的模式，或取消以放弃修改。</string>
     <string name="long_press_unavailable">控制尚未就绪，当前选择未发送。</string>

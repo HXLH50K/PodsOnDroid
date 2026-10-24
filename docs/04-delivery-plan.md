@@ -1,6 +1,11 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-24:** the user accepts #4's routing behavior with unobstructed sensors and #5's cycle auto-save. #4 is closed; #5 retains only deferred UI follow-up. #2 and #3 are not accepted: motion has only rejected replies, and swipe interval has no readback/observable effect. Section 27 records the bounded alpha15 protocol-evidence follow-up; it is not a claim that those two functions are fixed.
+**Current status, 2026-10-24:** #4's routing and #5's cycle auto-save are accepted;
+#4 is closed and #5 retains UI follow-up only. #2 still lacks a sensor stream.
+#3 has eventual real readback but unverified effectiveness. After the online
+audit in section 29, the user chose one trial of LibrePods' existing AP5-specific
+implementation. Swipe interval is default-disabled with a debug override;
+neither open issue is declared fixed.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -1607,3 +1612,85 @@ Further work should first make retained evidence retrieval fresh and reliable
 without depending on logcat, then investigate stream-start negotiation using
 these full short replies. No further identical user test is needed for this
 evidence milestone, and no sensor-acceptance relaxation is justified.
+
+## 29. Online support audit and the user-approved AP5 trial
+
+### Verified upstream scope
+
+The current LibrePods main revision is
+`89356c08cea3db0b6b54792d9329d09a87cc85fa`, matching the local reference used
+previously. Its Android code contains head gestures, swipe interval values 1..3
+and AP5/5 WCC model profiles. Code presence is not hardware acceptance:
+
+- [librepods-org/librepods#555](https://github.com/librepods-org/librepods/issues/555)
+  reports gesture recognition on Pro 2 USB-C, but a wrong Yes/No classification.
+- [librepods-org/librepods#648](https://github.com/librepods-org/librepods/issues/648)
+  reports working head gestures on Pro 3 until its preference turns off.
+- [librepods-org/librepods#831](https://github.com/librepods-org/librepods/issues/831)
+  concerns AP5 WCC model identification, not proof of working motion/swipe controls.
+- [OpenPods](https://github.com/adolfintel/OpenPods), inspected at
+  `9cd800875f594fa6eb7325dd33d9216c476a5782`, implements BLE status scanning and
+  notifications. Its device list is battery/status support, not this AACP control
+  stack; it does not supply a head-motion/swipe-control replacement.
+
+Therefore these functions are not universally unavailable on all AirPods, but
+neither can the failures be called exclusively an AP5 hardware limitation.
+Model, firmware, host protocol and platform behavior remain relevant.
+
+### Concrete implementation found in the rewrite
+
+Inspection of LibrePods' `android/rewrite` at
+`80aa7461df414470f379ebdfe540b2e8889fcbe2` found:
+
+- [rtbuddy.proto](https://github.com/librepods-org/librepods/blob/80aa7461df414470f379ebdfe540b2e8889fcbe2/android/core/src/main/proto/rtbuddy.proto)
+  defines field 1 as `seq`, field 2 as `log_type`, and field 9 as `start_ack`.
+  Its nested service values name 14 ACTIVITY, 16 DEVMOTION6 and 79 CMA_COMMAND.
+  This supersedes the earlier main/probe-only uncertainty: our short replies
+  match this acknowledgement structure, not a permission-denied error.
+- [AppleDevice.kt](https://github.com/librepods-org/librepods/blob/80aa7461df414470f379ebdfe540b2e8889fcbe2/android/core/src/main/kotlin/me/kavishdevar/librepods/core/devices/AppleDevice.kt)
+  starts AP5/5 WCC with CMA_COMMAND rather than the generic 14/16 services. Its
+  stop path uses DEVMOTION6. The rewrite also consumes 58-byte sensor payloads
+  from the ACTIVITY/CMA/DEVMOTION6 service family.
+- The main branch's swipe-interval mapping remains the same one already used
+  here; no current-device-specific ready fix was established for issue #3.
+
+The user explicitly chose **try the existing solution** rather than immediately
+defer the head feature. No wholesale rewrite import, commit ancestry, new runtime
+dependency or unverified ownership sequence is included.
+
+### Alpha17 implementation
+
+- Six AP5/5 WCC model numbers select the upstream CMA start and DEVMOTION6 stop.
+  The existing encoder retains its sequence field and 40 ms configuration.
+  Generic devices retain their previous pairs. AP5 does not probe old services
+  after two seconds; it uses the existing bounded no-data timeout.
+- The stream arbiter retains this variant across call/preview ownership and
+  cleanup, and the pose page identifies the AP5 upstream path explicitly.
+  Existing sensor acceptance remains strict; acknowledgement is not motion.
+- Swipe interval is labeled **Not yet implemented**, disabled by default, and
+  guarded in both UI dispatch and Bluetooth-side handling. Its real reported
+  value remains available to diagnostics.
+- A persisted **Force unfinished features (debug)** switch lives under Advanced
+  & diagnostics. It unlocks only the unfinished-control gate, not capability,
+  pending-state or value checks. Enabling it sends no headphone setting. Turning
+  it off cancels a pending swipe refresh rather than continuing protocol work.
+  The label remains even while forced.
+- The related app-owned preference schema is now 14 fields. Missing override
+  migrates to false; wrong types are rejected. Existing battery/audio policy is
+  unchanged. Six stale preference-test expectations/AtomicFile fixtures were
+  updated to the current schema/recovery behavior while validating this change.
+- Opening Connection diagnostics requests a fresh read-only snapshot, fixing
+  the stale-window handoff. The non-pose counter no longer implies headphone
+  refusal. The logcat retrieval limitation is not disguised as a working export.
+
+263 targeted JVM tests passed after the import correction, including the complete
+preference class, exact AP5/legacy packet bytes, all six model selections,
+preemption/no-legacy-fallback behavior, disabled/forced controls and pending-job
+cancellation. Both APK assemblies and Lint passed (0 errors / 130 warnings /
+2 hints). Instrumentation definitions cover the default gate and persistent
+warning label, but were not run on the physical device.
+
+Only one AP5 hardware trial is planned. If it still cannot produce valid samples,
+stop protocol work and put the head controls behind the same unfinished-feature
+policy rather than repeating variants or ownership requests. #2/#3 remain open;
+#4 and #5's accepted behavior are unchanged.

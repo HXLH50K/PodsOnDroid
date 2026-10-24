@@ -7,12 +7,19 @@ import org.junit.Test
 class PodsSettingsTest {
     @Test fun unreadSwipeIntervalCanBeExplicitlySetWithoutInventingAValue() {
         val values = emptyMap<String, Int>()
-        assertTrue(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, emptySet(), true))
+        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, emptySet(), true))
+        assertTrue(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, emptySet(), true, allowUnfinished = true))
         assertTrue(values.isEmpty())
-        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, emptySet(), false))
-        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, setOf(Key.SWIPE_SPEED), true))
-        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPodsPro1(), values, emptySet(), true))
+        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, emptySet(), false, true))
+        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, setOf(Key.SWIPE_SPEED), true, true))
+        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPodsPro1(), values, emptySet(), true, true))
         assertFalse(PodsSettings.editable(Key.CHIME_VOLUME, AirPods5WCC(), values, emptySet(), true))
+    }
+
+    @Test fun reportedSwipeValueDoesNotBypassTheDefaultGateOrGateOtherControls() {
+        val values = mapOf(Key.SWIPE_SPEED to 1, Key.PRESS_SPEED to 0)
+        assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, emptySet(), true))
+        assertTrue(PodsSettings.editable(Key.PRESS_SPEED, AirPods5WCC(), values, emptySet(), true))
     }
 
     @Test fun sleepDetectionUsesBooleanWireValuesOnlyOnCapableModels() {

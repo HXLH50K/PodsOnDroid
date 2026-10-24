@@ -32,11 +32,12 @@ object PodsSettings {
     // Older firmware may not report this newer option. It must not block battery,
     // the settings page or the existing initial-status recovery loop.
     val optionalReports = setOf(Key.SLEEP_DETECTION)
+    val unfinished = setOf(Key.SWIPE_SPEED)
     private val writableWithoutReport = setOf(Key.MICROPHONE_MODE, Key.LISTENING_MODE_BYTE, Key.SWIPE_SPEED)
 
     fun editable(key: String, model: AirPodsBase?, values: Map<String, Int>,
-                 pending: Set<String>, connected: Boolean): Boolean =
-        supports(key, model) && key !in pending &&
+                 pending: Set<String>, connected: Boolean, allowUnfinished: Boolean = false): Boolean =
+        (key !in unfinished || allowUnfinished) && supports(key, model) && key !in pending &&
             (key in values || connected && key in writableWithoutReport)
 
     fun keyFor(identifier: Byte): String? = identifiers.entries.find { it.value.value == identifier }?.key

@@ -113,10 +113,11 @@ fun PodDetailPage(
     onAllowOffChange: (Boolean) -> Unit = {},
     onSettingChange: (String, Int) -> Unit = { _, _ -> },
     diagnostics: Bundle? = null,
+    allowUnfinishedFeatures: Boolean = false,
 ) {
     val model = podsInfo?.let { getModelByModelNumber(it.modelNumber) }
     fun ready(key: String) = PodsSettings.editable(key, model, settings, pendingSettings,
-        diagnostics?.getString("connection") == "connected")
+        diagnostics?.getString("connection") == "connected", allowUnfinishedFeatures)
     @Composable
     fun statusText(key: String): String? {
         val status = when (settingFeedback[key]) {
@@ -126,6 +127,7 @@ fun PodDetailPage(
             "write_failed" -> R.string.setting_write_failed
             "timeout" -> R.string.setting_failed
             "invalid" -> R.string.setting_invalid
+            "unimplemented" -> R.string.unfinished_feature_disabled
             else -> return null
         }
         return stringResource(status)
@@ -308,7 +310,11 @@ fun PodDetailPage(
                                     onSelectedIndexChange = { onSettingChange(key, it + offset) },
                                 ) else top.yukonga.miuix.kmp.basic.BasicComponent(
                                     title = stringResource(title),
-                                    summary = stringResource(if (key in pendingSettings) R.string.setting_pending else R.string.settings_reading),
+                                    summary = stringResource(when {
+                                        key in PodsSettings.unfinished && !allowUnfinishedFeatures -> R.string.unfinished_feature_disabled
+                                        key in pendingSettings -> R.string.setting_pending
+                                        else -> R.string.settings_reading
+                                    }),
                                     enabled = false,
                                 )
                             }

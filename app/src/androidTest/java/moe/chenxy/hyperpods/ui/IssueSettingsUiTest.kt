@@ -32,6 +32,7 @@ class IssueSettingsUiTest {
     private val feedback = mutableStateOf<Map<String, String>>(emptyMap())
     private val writes = mutableListOf<Pair<String, Int>>()
     private val modes = mutableListOf<NoiseControlMode>()
+    private val allowUnfinished = mutableStateOf(true)
     private var failWrite = false
     private fun text(id: Int) = compose.activity.getString(id)
 
@@ -64,7 +65,8 @@ class IssueSettingsUiTest {
                         onNoiseCancellationSingleAirPodChange = { write(Key.SINGLE_POD_ANC, if (it) 1 else 2) },
                         settings = settings.value,
                         settingFeedback = feedback.value, onSettingChange = ::write,
-                        diagnostics = Bundle().apply { putString("connection", connection) })
+                        diagnostics = Bundle().apply { putString("connection", connection) },
+                        allowUnfinishedFeatures = allowUnfinished.value)
                     }
                 }
             }
@@ -139,6 +141,20 @@ class IssueSettingsUiTest {
             .filter(SemanticsMatcher("Placed popup row") { it.layoutInfo.isPlaced }).onFirst().performClick()
         compose.waitForIdle()
         assertEquals(listOf(Key.SWIPE_SPEED to 1), writes)
+    }
+
+    @Test fun swipeIsDisabledByDefaultAndTheOverrideDoesNotRemoveItsWarningLabel() {
+        allowUnfinished.value = false
+        settings.value = mapOf(Key.SWIPE_SPEED to 3)
+        render()
+        compose.revealSetting(text(R.string.control_swipe_speed)).performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText(text(R.string.unfinished_feature_disabled), substring = true).assertExists()
+        assertTrue(writes.isEmpty())
+        compose.runOnUiThread { allowUnfinished.value = true }
+        compose.revealSetting(text(R.string.control_swipe_speed)).assertIsEnabled()
+        assertTrue(writes.isEmpty())
+        compose.runOnUiThread { allowUnfinished.value = false }
+        compose.revealSetting(text(R.string.control_swipe_speed)).assertIsNotEnabled()
     }
 
     @Test fun disconnectedUnknownControlsRemainDisabled() {

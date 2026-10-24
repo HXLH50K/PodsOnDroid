@@ -4,10 +4,12 @@ package moe.chenxy.hyperpods.utils
  * a preview, but a late preview stop must never stop a call-owned stream. */
 class HeadTrackingStream(
     private val sendStandard: ((start: Boolean) -> Boolean)? = null,
+    private val sendAirPods5: ((start: Boolean) -> Boolean)? = null,
+    private val selectVariant: () -> Variant = { Variant.ALTERNATE },
     private val send: (start: Boolean) -> Boolean
 ) {
     enum class Owner { CALL, PREVIEW }
-    enum class Variant { ALTERNATE, STANDARD }
+    enum class Variant { ALTERNATE, STANDARD, AIRPODS5 }
     private var owner: Owner? = null
     private var interrupted: (() -> Unit)? = null
     var variant = Variant.ALTERNATE
@@ -29,7 +31,7 @@ class HeadTrackingStream(
             }
             callback?.invoke()
         }
-        variant = Variant.ALTERNATE
+        variant = selectVariant()
         if (!sendCurrent(true)) return false
         owner = request
         interrupted = onInterrupted
@@ -42,8 +44,11 @@ class HeadTrackingStream(
         return stopOwner()
     }
 
-    private fun sendCurrent(start: Boolean) =
-        if (variant == Variant.STANDARD) sendStandard?.invoke(start) == true else send(start)
+    private fun sendCurrent(start: Boolean) = when (variant) {
+        Variant.STANDARD -> sendStandard?.invoke(start) == true
+        Variant.AIRPODS5 -> sendAirPods5?.invoke(start) == true
+        Variant.ALTERNATE -> send(start)
+    }
 
     private fun stopOwner(): Boolean {
         if (!sendCurrent(false)) {

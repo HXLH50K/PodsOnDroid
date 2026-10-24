@@ -1,5 +1,22 @@
 # 03 Architecture
 
+## Alpha17 model-specific stream selection and unfinished controls
+
+The physical head-stream arbiter selects and retains a variant for each lease.
+AP5/5 WCC use the pinned LibrePods rewrite's CMA_COMMAND start / DEVMOTION6 stop
+pair; older models keep alternate/standard behavior. Both preview and incoming
+call handling use the same arbiter. AP5 never runs the legacy fallback, and
+preemption/stop recovery retain the correct pair. No sensor decoder relaxation,
+new ownership takeover or generated protobuf dependency is introduced.
+
+`AppPreferences.Snapshot.allowUnfinishedFeatures` is an app-owned boolean, false
+for new and migrated preferences. The strict IPC decoder rejects a non-boolean
+value. The current unfinished setting is swipe interval. Its UI and controller
+are gated; disabling the override cancels a pending refresh/acknowledgement job
+without undoing a setting already sent. The override neither fabricates readback
+nor starts a test. The head trial remains separately available for the single
+user-approved upstream comparison.
+
 ## Alpha15 bounded protocol evidence
 
 The alpha14 user result did not validate head motion or swipe interval. Keep

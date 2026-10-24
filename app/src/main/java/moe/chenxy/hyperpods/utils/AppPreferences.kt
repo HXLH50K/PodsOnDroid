@@ -35,6 +35,7 @@ object AppPreferences {
         val headGestures: Boolean = false,
         val batteryNotifications: BatteryNotificationSettings = BatteryNotificationSettings(),
         val batteryNotificationsMigrationRequired: Boolean = false,
+        val allowUnfinishedFeatures: Boolean = false,
     ) {
         fun encode(): String {
             require(batteryNotifications.valid) { "Battery thresholds must satisfy 1 <= low < medium <= 99" }
@@ -52,6 +53,7 @@ object AppPreferences {
                 Key.BATTERY_NOTIFICATION_LOW_REMINDER to batteryNotifications.lowReminderEnabled,
                 Key.BATTERY_NOTIFICATION_MEDIUM_REMINDER to batteryNotifications.mediumReminderEnabled,
                 Key.BATTERY_NOTIFICATIONS_MIGRATION_REQUIRED to batteryNotificationsMigrationRequired,
+                Key.ALLOW_UNFINISHED_FEATURES to allowUnfinishedFeatures,
             )).toString()
         }
     }
@@ -97,6 +99,8 @@ object AppPreferences {
                 } else !BatteryNotificationSettings(lowThreshold = battery.earsThreshold).valid ||
                     (json.has(Key.LOW_BATTERY_EARS_THRESHOLD) && legacyThreshold !is Int) ||
                     (json.has(Key.LOW_BATTERY_EARS) && json.opt(Key.LOW_BATTERY_EARS) !is Boolean),
+                if (json.has(Key.ALLOW_UNFINISHED_FEATURES))
+                    json.get(Key.ALLOW_UNFINISHED_FEATURES) as Boolean else false,
             )
         } catch (_: Exception) {
             Log.w("HyperPods-Preferences", "Rejected app settings: malformed JSON, missing field, or invalid field type")

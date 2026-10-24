@@ -96,7 +96,7 @@
     <string name="controls_timing">Press and swipe timing</string>
     <string name="control_press_speed">Press speed</string>
     <string name="control_hold_duration">Press and hold duration</string>
-    <string name="control_swipe_speed">Volume swipe interval</string>
+    <string name="control_swipe_speed">Volume swipe interval (Not yet implemented)</string>
     <string name="control_default">Default</string>
     <string name="control_slower">Slower</string>
     <string name="control_slowest">Slowest</string>

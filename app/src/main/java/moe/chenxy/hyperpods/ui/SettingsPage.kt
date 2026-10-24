@@ -51,6 +51,11 @@ fun SettingsPage(padding: PaddingValues, diagnostics: Bundle? = null, isActive: 
                         Text(stringResource(R.string.settings_tools_notice), fontSize = 14.sp,
                             color = MiuixTheme.colorScheme.onSurfaceVariantSummary, modifier = Modifier.padding(horizontal = 24.dp))
                     }
+                    if (page == SettingsDestination.TOOLS) item(key = "unfinished_features") {
+                        Column(Modifier.padding(horizontal = 16.dp)) {
+                            DashboardGroup { UnfinishedFeaturesSettings(current) }
+                        }
+                    }
                     page.groups(BuildConfig.BUILD_TYPE == "debug").forEachIndexed { index, group ->
                         item(key = "group_$index") {
                             Column(Modifier.padding(horizontal = 16.dp)) {

@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import moe.chenxy.hyperpods.MainActivity
 import moe.chenxy.hyperpods.R
+import moe.chenxy.hyperpods.ui.components.rememberAppPreferences
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AppPreferences
@@ -47,6 +48,10 @@ fun sendBooleanSetting(context: Context, prefKey: String, value: Boolean) {
 }
 
 fun sendPodsSetting(context: Context, prefKey: String, value: Int) {
+    if (prefKey in PodsSettings.unfinished && !AppPreferences.read(context).allowUnfinishedFeatures) {
+        Toast.makeText(context, R.string.unfinished_feature_disabled, Toast.LENGTH_LONG).show()
+        return
+    }
     HyperPodsBroadcasts.send(context, Intent(HyperPodsAction.ACTION_PODS_SETTINGS_CHANGED)
         .putExtra("key", prefKey).putExtra("value", value), HyperPodsBroadcasts.BLUETOOTH)
 }
@@ -58,7 +63,8 @@ fun MainUI() {
     val mainTitle = remember { mutableStateOf("") }
     val context = LocalContext.current
 
-    val initialPolicy = remember(context) { AppPreferences.read(context) }
+    val appPolicy by rememberAppPreferences()
+    val initialPolicy = appPolicy
     val earDetectionEnable = remember { mutableStateOf(initialPolicy.earDetection) }
     val earDetectionParams = remember { mutableStateOf(EarDetectionParams((-1).toByte(), (-1).toByte())) }
     val batteryParams = remember { mutableStateOf(BatteryParams()) }
@@ -140,6 +146,7 @@ fun MainUI() {
                             val success = p1.getBooleanExtra("success", false)
                             if (!success || status == "confirmed" && key != HyperPodsPrefsKey.ALLOW_OFF_OPTION) {
                                 val message = when {
+                                    status == "unimplemented" -> R.string.unfinished_feature_disabled
                                     status == "write_failed" -> R.string.setting_write_failed
                                     status == "invalid" -> R.string.setting_invalid
                                     !success -> R.string.setting_failed
@@ -288,6 +295,7 @@ fun MainUI() {
             onAllowOffChange = { sendBooleanSetting(context, HyperPodsPrefsKey.ALLOW_OFF_OPTION, it) },
             onSettingChange = { key, value -> sendPodsSetting(context, key, value) },
             diagnostics = diagnostics,
+            allowUnfinishedFeatures = appPolicy.allowUnfinishedFeatures,
         )
     }
 }
@@ -331,6 +339,7 @@ fun AppHorizontalPager(
     onAllowOffChange: (Boolean) -> Unit = {},
     onSettingChange: (String, Int) -> Unit = { _, _ -> },
     diagnostics: Bundle? = null,
+    allowUnfinishedFeatures: Boolean = false,
 ) {
     HorizontalPager(
         state = pagerState,
@@ -345,6 +354,7 @@ fun AppHorizontalPager(
                                 onConversationPhoneVolumeChange = onConversationPhoneVolumeChange,
                                 headGestures = headGestures, onHeadGesturesChange = onHeadGesturesChange,
                                 onSettingChange = onSettingChange, diagnostics = diagnostics,
+                                allowUnfinishedFeatures = allowUnfinishedFeatures,
                                 padding = padding,
                                 batteryParams = batteryParams,
                                 earDetectionParams = earDetectionParams,

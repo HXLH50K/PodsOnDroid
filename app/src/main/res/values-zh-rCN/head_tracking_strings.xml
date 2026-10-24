@@ -34,7 +34,7 @@
     <string name="head_test_stop">停止测试</string>
     <string name="head_tracking_not_ready">控制初始化或本次佩戴／型号数据尚未就绪，请同步完成后重试。</string>
     <string name="head_tracking_invalid_data">已收到姿态回复，但未解析出受支持的传感器采样。</string>
-    <string name="head_test_packet_details">拒绝的回复：%1$d · 过滤的运动采样：%2$d · 最近回复：%3$d 字节</string>
+    <string name="head_test_packet_details">非姿态回复：%1$d · 过滤的运动采样：%2$d · 最近回复：%3$d 字节</string>
     <string name="head_test_standard">采集请求：标准协议变体</string>
     <string name="head_test_alternate">采集请求：备用协议变体</string>
     <string name="head_tracking_diagnostics">姿态采集诊断</string>

@@ -112,6 +112,24 @@ class HeadTrackingControllerTest {
             manager.createDataPacket(manager.createAlternateStopHeadTrackingPacket()), output.toByteArray())
     }
 
+    @Test fun allAirPods5ModelNumbersSelectCmaAndDoNotProbeLegacyServices() {
+        for (number in listOf("A3531", "A3532", "A3533", "A3439", "A3440", "A3441")) {
+            output.reset()
+            controller.currentPodsInfo = controller.currentPodsInfo!!.copy(modelNumber = number)
+            command("start", number)
+            val start = manager.createDataPacket(manager.createAirPods5StartHeadTrackingPacket())
+            assertArrayEquals(start, output.toByteArray())
+            assertEquals("airpods5", snapshot.variant)
+            at += 2100
+            preview.command(number, "heartbeat", at)
+            preview.tick(at)
+            assertArrayEquals(start, output.toByteArray())
+            command("stop", number)
+            assertArrayEquals(start + manager.createDataPacket(manager.createAlternateStopHeadTrackingPacket()),
+                output.toByteArray())
+        }
+    }
+
     @Test fun phoneBroadcastStopsPreviewEvenWhenCallGesturesAreDisabled() {
         command("start")
         `when`(phone.callState).thenReturn(TelephonyManager.CALL_STATE_RINGING)

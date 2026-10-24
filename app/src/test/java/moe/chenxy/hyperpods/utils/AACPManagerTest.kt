@@ -7,6 +7,17 @@ import org.mockito.Mockito.*
 import java.io.ByteArrayOutputStream
 
 class AACPManagerTest {
+    @Test fun airPods5StartUsesUpstreamCmaCommandWithoutChangingLegacyPackets() {
+        fun bytes(hex: String) = hex.split(" ").map { it.toInt(16).toByte() }.toByteArray()
+        val prefix = "04 00 04 00 17 00 00 00 10 00 0F 00"
+        assertArrayEquals(bytes("$prefix 08 73 42 0B 08 4F 10 02 1A 05 01 40 9C 00 00"),
+            manager.createDataPacket(manager.createAirPods5StartHeadTrackingPacket()))
+        assertArrayEquals(bytes("$prefix 08 73 42 0B 08 10 10 02 1A 05 01 40 9C 00 00"),
+            manager.createDataPacket(manager.createAlternateStartHeadTrackingPacket()))
+        assertArrayEquals(bytes("$prefix 08 75 42 0B 08 10 10 02 1A 05 01 00 00 00 00"),
+            manager.createDataPacket(manager.createAlternateStopHeadTrackingPacket()))
+    }
+
     private val manager = AACPManager(mock(BluetoothSocket::class.java))
     private val callback = mock(AACPManager.PacketCallback::class.java).also { manager.setPacketCallback(it) }
 

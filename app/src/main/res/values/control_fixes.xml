@@ -1,4 +1,8 @@
 <resources>
+    <string name="unfinished_features_title">Force unfinished features (debug)</string>
+    <string name="unfinished_features_warning">Off by default. Unlocks controls marked “Not yet implemented” for experiments only; currently the volume swipe interval. Does not guarantee support or send settings automatically.</string>
+    <string name="unfinished_feature_disabled">Not yet implemented. To try it anyway, enable the debug override in Settings → Advanced &amp; diagnostics.</string>
+    <string name="head_test_airpods5">Stream request: AirPods 5 upstream CMA path (experimental)</string>
     <string name="long_press_autosave">Valid changes are sent when you return or tap outside. Cancel discards changes.</string>
     <string name="long_press_select_two">Select at least two supported modes, or cancel to discard changes.</string>
     <string name="long_press_unavailable">The control is not ready. Your selection has not been sent.</string>

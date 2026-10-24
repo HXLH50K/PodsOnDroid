@@ -62,6 +62,7 @@ class HeadTrackingPreview(private val stream: HeadTrackingStream, private val em
             return
         }
         active = true
+        snapshot = snapshot.copy(variant = stream.variant.name.lowercase())
         started = at
         heartbeat = at
         lastPacket = at

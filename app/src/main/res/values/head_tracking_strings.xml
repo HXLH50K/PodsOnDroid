@@ -34,7 +34,7 @@
     <string name="head_test_stop">Stop test</string>
     <string name="head_tracking_not_ready">Control initialization or current wear/model data is not ready. Retry after synchronization.</string>
     <string name="head_tracking_invalid_data">Motion replies arrived, but no supported sensor samples were decoded.</string>
-    <string name="head_test_packet_details">Rejected replies: %1$d · filtered motion samples: %2$d · last reply: %3$d bytes</string>
+    <string name="head_test_packet_details">Non-pose replies: %1$d · filtered motion samples: %2$d · last reply: %3$d bytes</string>
     <string name="head_test_standard">Stream request: standard variant</string>
     <string name="head_test_alternate">Stream request: alternate variant</string>
     <string name="head_tracking_diagnostics">Motion stream diagnostics</string>

@@ -6,6 +6,40 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class HeadTrackingPreviewTest {
+    @Test fun airPods5UsesOneUpstreamPairAndNeverFallsBackToLegacyServices() {
+        val commands = mutableListOf<Boolean>()
+        val reports = mutableListOf<HeadTrackingPreview.Snapshot>()
+        val stream = HeadTrackingStream(sendStandard = { error("Unexpected standard request") },
+            sendAirPods5 = { commands.add(it); true },
+            selectVariant = { HeadTrackingStream.Variant.AIRPODS5 }) { error("Unexpected alternate request") }
+        val preview = HeadTrackingPreview(stream, reports::add)
+        preview.start("ap5", 0, true, true, true, false)
+        preview.onPacket(byteArrayOf(4, 0, 4, 0, 0x17, 0, 0, 0, 0x10, 0, 8, 0,
+            8, 1, 0x10, 1, 0x4a, 2, 8, 0x4f), 100)
+        preview.tick(2000)
+        assertTrue(preview.active)
+        assertEquals("airpods5", reports.last().variant)
+        assertEquals(listOf(true), commands)
+        preview.tick(5000)
+        assertFalse(preview.active)
+        assertEquals("invalid_data", reports.last().state)
+        assertEquals(0, reports.last().packets)
+        assertEquals(listOf(true, false), commands)
+    }
+
+    @Test fun airPods5CallPreemptionKeepsTheSelectedStopPair() {
+        val commands = mutableListOf<Boolean>()
+        val stream = HeadTrackingStream(sendAirPods5 = { commands.add(it); true },
+            selectVariant = { HeadTrackingStream.Variant.AIRPODS5 }) { error("Legacy path") }
+        assertTrue(stream.acquire(HeadTrackingStream.Owner.PREVIEW))
+        assertTrue(stream.acquire(HeadTrackingStream.Owner.CALL))
+        assertTrue(stream.release(HeadTrackingStream.Owner.PREVIEW))
+        assertFalse(stream.canRetryWithStandard(HeadTrackingStream.Owner.CALL))
+        assertEquals(listOf(true, false, true), commands)
+        assertTrue(stream.release(HeadTrackingStream.Owner.CALL))
+        assertEquals(listOf(true, false, true, false), commands)
+    }
+
     private val commands = mutableListOf<Boolean>()
     private var writesAccepted = true
     private val stream = HeadTrackingStream { commands.add(it); writesAccepted }

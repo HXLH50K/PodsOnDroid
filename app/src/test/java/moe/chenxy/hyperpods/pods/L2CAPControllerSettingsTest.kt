@@ -48,6 +48,7 @@ class L2CAPControllerSettingsTest {
     private fun pending() = field("pendingSettings").get(controller) as Map<*, *>
 
     @Before fun setUp() {
+        field("allowUnfinishedFeatures").setBoolean(controller, true)
         `when`(device.address).thenReturn("02:00:00:00:00:01")
         field("headGestures").setBoolean(controller, false)
         field("earDetection").setBoolean(controller, true)
@@ -97,6 +98,32 @@ class L2CAPControllerSettingsTest {
 
     private fun receive(identifier: Byte, value: Byte) = synchronized(controller) {
         manager.receivePacket(byteArrayOf(4, 0, 4, 0, 9, 0, identifier, value, 0, 0, 0))
+    }
+
+    @Test fun unfinishedSwipeIsBlockedInTheControllerUntilExplicitlyAllowed() {
+        field("allowUnfinishedFeatures").setBoolean(controller, false)
+        receive(0x23, 3)
+        request(Key.SWIPE_SPEED, 1)
+        assertEquals(0, output.size())
+        assertTrue(pending().isEmpty())
+        assertEquals("unimplemented", field("lastSettingStatus").get(controller))
+        assertEquals(3, manager.reportedControlValue(AACPManager.Companion.ControlCommandIdentifiers.VOLUME_SWIPE_INTERVAL))
+        field("allowUnfinishedFeatures").setBoolean(controller, true)
+        request(Key.SWIPE_SPEED, 1)
+        assertEquals(11, output.size())
+        receive(0x23, 1)
+        assertEquals("confirmed", field("lastSettingStatus").get(controller))
+    }
+
+    @Test fun disablingOverrideCancelsPendingSwipeRefreshWithoutSendingAnotherCommand() = runBlocking {
+        request(Key.SWIPE_SPEED, 1)
+        val before = output.toByteArray()
+        type.getDeclaredMethod("updateFeatureToggle", AppPreferences.Snapshot::class.java)
+            .apply { isAccessible = true }.invoke(controller, AppPreferences.Snapshot(allowUnfinishedFeatures = false))
+        assertTrue(pending().isEmpty())
+        assertEquals("unimplemented", field("lastSettingStatus").get(controller))
+        delay(1250)
+        assertArrayEquals(before, output.toByteArray())
     }
 
     private fun requestOwnership() = synchronized(controller) {

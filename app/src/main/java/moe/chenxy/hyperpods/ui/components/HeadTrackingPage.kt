@@ -180,8 +180,11 @@ fun HeadTrackingContent(snapshot: Snapshot, history: List<HeadPose.Sample>, stal
                 Text(stringResource(R.string.head_test_packets, snapshot.packets), fontSize = 13.sp, color = secondary)
                 Text(stringResource(R.string.head_test_packet_details, snapshot.rejectedPackets,
                     snapshot.filteredSamples, snapshot.lastPacketSize), fontSize = 12.sp, color = secondary)
-                Text(stringResource(if (snapshot.variant == "standard") R.string.head_test_standard else
-                    R.string.head_test_alternate), fontSize = 12.sp, color = secondary)
+                Text(stringResource(when (snapshot.variant) {
+                    "airpods5" -> R.string.head_test_airpods5
+                    "standard" -> R.string.head_test_standard
+                    else -> R.string.head_test_alternate
+                }), fontSize = 12.sp, color = secondary)
                 Text(headTrackingOwnershipLabel(ownership), fontSize = 12.sp, color = secondary)
                 if (snapshot.rejectedHeader.isNotEmpty()) {
                     Text(stringResource(when (snapshot.rejectionReason) {

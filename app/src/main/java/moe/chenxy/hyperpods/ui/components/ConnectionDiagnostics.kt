@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +32,10 @@ import java.util.Locale
 @Composable
 fun ConnectionDiagnostics(snapshot: Bundle?, includeModuleCheck: Boolean = true, knownModuleReport: String = "") {
     val context = LocalContext.current
+    LaunchedEffect(context) {
+        HyperPodsBroadcasts.send(context, Intent(HyperPodsAction.ACTION_PODS_DIAGNOSTICS_REQUEST),
+            HyperPodsBroadcasts.BLUETOOTH)
+    }
     val preferences = remember(context) { DiagnosticsHistory.preferences(context) }
     var history by remember(preferences) { mutableStateOf(DiagnosticsHistory.read(preferences)) }
     var events by remember(preferences) { mutableStateOf(DiagnosticsHistory.events(preferences)) }
@@ -255,6 +260,7 @@ private fun settingStatus(status: String?): Int = when (status) {
     "write_failed" -> R.string.setting_write_failed
     "timeout" -> R.string.setting_failed
     "invalid" -> R.string.setting_invalid
+    "unimplemented" -> R.string.unfinished_feature_disabled
     else -> R.string.diagnostics_none
 }
 

@@ -36,7 +36,7 @@ import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-internal fun rememberBatteryNotificationPreferences(): State<AppPreferences.Snapshot> {
+internal fun rememberAppPreferences(): State<AppPreferences.Snapshot> {
     val context = LocalContext.current
     val policy = remember(context) { mutableStateOf(AppPreferences.read(context)) }
     DisposableEffect(context) {
@@ -68,7 +68,7 @@ internal fun saveBatteryNotificationSettings(context: Context, settings: Battery
 @Composable
 fun BatteryNotificationSettingsPanel(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val policy by rememberBatteryNotificationPreferences()
+    val policy by rememberAppPreferences()
     BatteryNotificationSettingsGroup(
         settings = policy.batteryNotifications,
         migrationRequired = policy.batteryNotificationsMigrationRequired,

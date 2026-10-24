@@ -2,7 +2,29 @@
 
 A private HyperPods-derived Android project for improving the AirPods 5 experience on Xiaomi HyperOS 4.
 
-## Current checkpoint: alpha16 authorized ownership experiment
+## Current checkpoint: alpha17 upstream AirPods 5 trial
+
+The online audit found a concrete AirPods 5 path in LibrePods'
+`android/rewrite` revision `80aa7461df414470f379ebdfe540b2e8889fcbe2`.
+After the user chose to try it, P.O.D.S. now selects CMA_COMMAND (79) for
+AirPods 5/5 WCC stream startup and DEVMOTION6 (16) for stop, matching that
+upstream implementation. Other models retain their existing packet pairs.
+AP5 does not fall back to the obsolete generic starts during this trial.
+Motion decoding is unchanged; hardware success is still unverified.
+
+Swipe interval has no verified fix for the current device. It is labeled
+**Not yet implemented** and disabled by default. Settings > Advanced &
+diagnostics contains an explicit persisted **Force unfinished features (debug)**
+switch. It only unlocks the control, keeps the warning label, and never writes
+a headphone setting by itself. Model/value/readiness checks still apply.
+Both the UI and Bluetooth controller enforce the default gate.
+
+Connection diagnostics now requests a fresh read-only snapshot when opened.
+Head diagnostics say **non-pose replies**, not headphone rejection. The
+rewrite's protobuf schema identifies the earlier short responses as
+`start_ack`; that is not proof that sensor samples follow.
+
+## Previous checkpoint: alpha16 authorized ownership experiment
 
 The user authorized headphone ownership operations. Connection diagnostics in
 the debug build now offers one manual local-ownership request, with an explicit

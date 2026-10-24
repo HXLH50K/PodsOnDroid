@@ -754,7 +754,11 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
         return opcode + data
     }
 
-    fun createAlternateStartHeadTrackingPacket(): ByteArray {
+    fun createAlternateStartHeadTrackingPacket(): ByteArray = createHeadTrackingStartPacket(0x10)
+
+    fun createAirPods5StartHeadTrackingPacket(): ByteArray = createHeadTrackingStartPacket(0x4F)
+
+    private fun createHeadTrackingStartPacket(service: Byte): ByteArray {
         val opcode = byteArrayOf(Opcodes.HEADTRACKING, 0x00)
         val data = byteArrayOf(
             0x00,
@@ -768,7 +772,7 @@ class AACPManager(val socket: BluetoothSocket, private val writer: ((ByteArray) 
             0x42,
             0x0B,
             0x08,
-            0x10,
+            service,
             0x10,
             0x02,
             0x1A,

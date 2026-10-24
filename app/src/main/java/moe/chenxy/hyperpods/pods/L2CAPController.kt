@@ -34,6 +34,7 @@ import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AACPWriter
 import moe.chenxy.hyperpods.utils.AppPreferences
 import moe.chenxy.hyperpods.utils.AirPods5WCC
+import moe.chenxy.hyperpods.utils.AirPods5
 import moe.chenxy.hyperpods.utils.AirPodsInstance
 import moe.chenxy.hyperpods.utils.MediaControl
 import moe.chenxy.hyperpods.utils.HeadGestureCalls
@@ -143,17 +144,31 @@ object L2CAPController {
     private var lowBatterySettings = LowBatterySettings()
     private var batteryNotificationSettings = BatteryNotificationSettings()
     private var headGestures = false
+    private var allowUnfinishedFeatures = false
     private var headGestureCalls: HeadGestureCalls? = null
     private val headTrackingStream = HeadTrackingStream(
-        sendStandard = { start -> sendHeadTrackingCommand(start, standard = true) },
-    ) { start -> sendHeadTrackingCommand(start, standard = false) }
+        sendStandard = { start -> sendHeadTrackingCommand(start, HeadTrackingStream.Variant.STANDARD) },
+        sendAirPods5 = { start -> sendHeadTrackingCommand(start, HeadTrackingStream.Variant.AIRPODS5) },
+        selectVariant = {
+            when (currentPodsInfo?.modelNumber?.let(AirPodsModels::getModelByModelNumber)) {
+                is AirPods5, is AirPods5WCC -> HeadTrackingStream.Variant.AIRPODS5
+                else -> HeadTrackingStream.Variant.ALTERNATE
+            }
+        },
+    ) { start -> sendHeadTrackingCommand(start, HeadTrackingStream.Variant.ALTERNATE) }
 
-    private fun sendHeadTrackingCommand(start: Boolean, standard: Boolean): Boolean {
+    private fun sendHeadTrackingCommand(start: Boolean, variant: HeadTrackingStream.Variant): Boolean {
         val manager = aacpManager
         val packet = manager?.let {
-            if (standard) {
-                if (start) it.createStartHeadTrackingPacket() else it.createStopHeadTrackingPacket()
-            } else if (start) it.createAlternateStartHeadTrackingPacket() else it.createAlternateStopHeadTrackingPacket()
+            when (variant) {
+                // LibrePods' AP5 path starts CMA_COMMAND (79), but stops DEVMOTION6 (16).
+                HeadTrackingStream.Variant.AIRPODS5 -> if (start) it.createAirPods5StartHeadTrackingPacket()
+                    else it.createAlternateStopHeadTrackingPacket()
+                HeadTrackingStream.Variant.STANDARD -> if (start) it.createStartHeadTrackingPacket()
+                    else it.createStopHeadTrackingPacket()
+                HeadTrackingStream.Variant.ALTERNATE -> if (start) it.createAlternateStartHeadTrackingPacket()
+                    else it.createAlternateStopHeadTrackingPacket()
+            }
         }
         val sent = manager != null && packet != null && manager.sendDataPacket(packet)
         if (!sent) Log.w(TAG, "Head-tracking stream command was not sent")
@@ -664,6 +679,10 @@ object L2CAPController {
 
     @Synchronized
     private fun sendSetting(key: String, value: Int) {
+        if (key in PodsSettings.unfinished && !allowUnfinishedFeatures) {
+            sendSettingResult(key, false, status = "unimplemented")
+            return
+        }
         val model = currentPodsInfo?.modelNumber?.let(AirPodsModels::getModelByModelNumber)
         if (!PodsSettings.validValue(key, value, model, confirmedSettings()) || pendingSettings.containsKey(key)) {
             failedSettings[key] = value
@@ -1055,6 +1074,16 @@ object L2CAPController {
 
     @Synchronized
     private fun updateFeatureToggle(settings: AppPreferences.Snapshot) {
+        if (allowUnfinishedFeatures != settings.allowUnfinishedFeatures) {
+            allowUnfinishedFeatures = settings.allowUnfinishedFeatures
+            if (!allowUnfinishedFeatures) PodsSettings.unfinished.forEach { key ->
+                pendingSettings.remove(key)?.let {
+                    it.timeout.cancel()
+                    failedSettings.remove(key)
+                    sendSettingResult(key, false, status = "unimplemented")
+                }
+            }
+        }
         // A full snapshot must not replay unrelated audio or notification side effects.
         if (earDetection != settings.earDetection || autoSwitchToSpeaker != settings.switchSpeaker)
             updateEarDetectionSettings(settings.earDetection, settings.switchSpeaker)
