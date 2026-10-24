@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.ui.components.DashboardBattery
+import moe.chenxy.hyperpods.ui.components.ChimeVolumeSlider
 import moe.chenxy.hyperpods.ui.components.DashboardHero
 import moe.chenxy.hyperpods.ui.components.PageScaffold
 import moe.chenxy.hyperpods.ui.components.PageTransitionHost
@@ -140,9 +141,6 @@ fun PodDetailPage(
     val allowedModes = PodsSettings.allowedNoiseModes(model, settings)
     var adaptiveDraft by remember(settings[Key.ADAPTIVE_AUDIO_LEVEL], Key.ADAPTIVE_AUDIO_LEVEL in pendingSettings,
         settingFeedback[Key.ADAPTIVE_AUDIO_LEVEL]) { mutableFloatStateOf(adaptiveAudioLevel) }
-    var chimeDraft by remember(settings[Key.CHIME_VOLUME], settingFeedback[Key.CHIME_VOLUME]) {
-        mutableFloatStateOf((settings[Key.CHIME_VOLUME] ?: 0).toFloat())
-    }
     var detailPage by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(detailPage) {
         if (detailPage !in 0..2) {
@@ -335,18 +333,11 @@ fun PodDetailPage(
                             checked = conversationPhoneVolume,
                             onCheckedChange = onConversationPhoneVolumeChange,
                         )
-                        if (PodsSettings.supports(Key.CHIME_VOLUME, model)) Column(Modifier.padding(16.dp)) {
-                            Text(stringResource(R.string.control_chime_volume), fontWeight = FontWeight.Medium)
-                            Text(if (ready(Key.CHIME_VOLUME)) "${chimeDraft.toInt()}%" else
-                                stringResource(if (Key.CHIME_VOLUME in pendingSettings) R.string.setting_pending else R.string.settings_reading),
-                                fontSize = 13.sp)
-                            statusText(Key.CHIME_VOLUME)?.let { Text(it, fontSize = 12.sp) }
-                            Slider(value = chimeDraft, valueRange = 0f..100f,
-                                onValueChange = { chimeDraft = it },
-                                onValueChangeFinished = { onSettingChange(Key.CHIME_VOLUME, chimeDraft.toInt()) },
-                                enabled = ready(Key.CHIME_VOLUME), modifier = Modifier.fillMaxWidth()
-                                    .progressSemantics(chimeDraft, 0f..100f))
-                        }
+                        if (PodsSettings.supports(Key.CHIME_VOLUME, model)) ChimeVolumeSlider(
+                            value = settings[Key.CHIME_VOLUME], feedback = settingFeedback[Key.CHIME_VOLUME],
+                            enabled = ready(Key.CHIME_VOLUME), status = statusText(Key.CHIME_VOLUME),
+                            onChange = { onSettingChange(Key.CHIME_VOLUME, it) },
+                        )
                         if (Capability.LOUD_SOUND_REDUCTION in model?.capabilities.orEmpty()) SuperSwitch(
                             title = stringResource(R.string.loud_sound_reduction_title),
                             summary = stringResource(R.string.loud_sound_unavailable),

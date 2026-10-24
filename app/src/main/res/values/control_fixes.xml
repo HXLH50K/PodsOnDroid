@@ -1,4 +1,5 @@
 <resources>
+    <string name="chime_volume_reported">Headphones reported %1$d%%. The tone volume has been updated.</string>
     <string name="unfinished_features_title">Force unfinished features (debug)</string>
     <string name="unfinished_features_warning">Off by default. Unlocks the unfinished swipe interval and voice assistant controls for debugging. The assistant is still unavailable and only shows a notice. Turning this on does not change your headphones.</string>
     <string name="unfinished_feature_disabled">Not yet implemented. To try it anyway, enable the debug override in Settings → Advanced &amp; diagnostics.</string>

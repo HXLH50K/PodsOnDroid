@@ -24,6 +24,12 @@ and a separate explanation. The unsupported assistant row is disabled unless
 the existing debug override is enabled; even then it only explains that no
 assistant implementation exists and never pretends to change the headphones.
 
+Tone-volume dragging now keeps a local target until release and sends once.
+Headphone reports cannot move the thumb during a drag. A different real report
+after release updates the display with a short animation and a toast; sent-only
+optimistic state is not treated as confirmation. Failed writes animate back to
+the last real reading. This is an interaction fix, not an AirPods 5 readback fix.
+
 The online audit found a concrete AirPods 5 path in LibrePods'
 `android/rewrite` revision `80aa7461df414470f379ebdfe540b2e8889fcbe2`.
 After the user chose to try it, P.O.D.S. now selects CMA_COMMAND (79) for
