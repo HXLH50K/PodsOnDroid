@@ -1475,7 +1475,9 @@ The most recent window is available in Connection diagnostics and its normal
 copy report; it is cleared with the manager on disconnect. The debug log tag is
 `PODS-ProtocolEvidence`, gated by build type rather than `BuildConfig.DEBUG`.
 
-The host script is read-only and retrieves the recent matching log records:
+The host script is read-only and retrieves matching records from the last two
+minutes using the device clock. It does not tail a fixed number of global log
+entries, which could lose evidence under unrelated log traffic:
 
 ```powershell
 python -B tools\capture_protocol_evidence.py --serial $env:ANDROID_SERIAL --seconds 30 --output "$env:TEMP\pods-protocol-evidence.log"
@@ -1495,3 +1497,37 @@ duplicate/failed requests, timeout without retry, late reports and reset
 cancellation. The first local run passed **228 affected JVM tests**, app and
 AndroidTest assembly, Lint **0 errors / 130 warnings / 2 hints**, and **4 Python
 collector tests**. No new hardware behavior is claimed by those results.
+
+### Alpha16 package and next comparison
+
+- Application source: `7b3126e05afd3933a326f1d6ae57779bd52b577a`.
+- File: `dist/PODS-0.1.0-alpha.16-debug.apk`; **32,046,679 bytes**.
+- SHA-256: `8528d33783eeff33098506425e5d1af5920e7c1322d3448c12fa34c01ba0ec49`.
+- Final committed-source checks again passed **228 JVM tests** with no
+  failures/errors/skips, both APK assemblies and Lint **0 errors / 130 warnings /
+  2 hints**. The collector's four tests pass, including after the device-clock
+  query correction. The six previously established preference-test failures are
+  still outside this targeted run; there is no full-suite green claim.
+- Verified the P.O.D.S. label, debug package/code16/version, embedded source
+  revision, original debug certificate, API102 metadata and original three scopes.
+- Installed in place on `houji` at **2026-10-24 09:54:10**. The alpha15 predecessor
+  and installed alpha16 hashes were verified; the original first-install time was
+  preserved and the exact staging APK was removed.
+- The device accepted the collector's read-only device-clock log query. There
+  were zero current matching entries: no new ownership request or headset test
+  was initiated, and this is not hardware acceptance of the experiment.
+- The host script was corrected after the application build to use a bounded
+  device-time window rather than a global line tail. No application bytes changed.
+
+The user-operated full DEBUG scope reload is required to load the new Bluetooth
+code. Then, for the next bounded check, press **Request local control once
+(DEBUG)** in Connection diagnostics, wait at least three seconds and leave that
+page open. The script/retained diagnostic evidence can be read afterward; there
+is no need to leave a collector running or supply repeated screenshots.
+
+The user's ownership-operation authorization is recorded and need not be asked
+again for this comparison. Ownership-changing requests remain explicit rather
+than a new background policy. No scope restart, automatic pose test, swipe
+selection, audio transfer, wake/unlock/lock operation or radio capture was
+performed during packaging. Head/swipe effectiveness is still unverified and
+issues #2/#3 stay open. Source and delivery records are local; no push was requested.

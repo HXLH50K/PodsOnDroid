@@ -8,7 +8,10 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-COMMAND = "logcat -d -v raw -t 256 -s PODS-ProtocolEvidence:I '*:S'"
+COMMAND = (
+    'logcat -d -v raw -m 512 -T "$(($(date +%s)-120)).000" '
+    "-s PODS-ProtocolEvidence:I '*:S'"
+)
 RECORD = re.compile(
     r"PODS_TRACE t=\d+ event=(?:begin reason=(?:ownership|head|swipe)|"
     r"(?:rx|tx_queued|tx_failed) kind=(?:"
