@@ -14,8 +14,9 @@ for new and migrated preferences. The strict IPC decoder rejects a non-boolean
 value. The current unfinished setting is swipe interval. Its UI and controller
 are gated; disabling the override cancels a pending refresh/acknowledgement job
 without undoing a setting already sent. The override neither fabricates readback
-nor starts a test. The head trial remains separately available for the single
-user-approved upstream comparison.
+nor starts a test. The AP5 pose/head-tracking path passed the user-operated
+upstream comparison; #2 is closed at the user's request. This is separate from
+the unverified swipe interval and from any future incoming-call acceptance.
 
 ## Alpha15 bounded protocol evidence
 

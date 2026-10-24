@@ -1,11 +1,11 @@
 # 04 Delivery and acceptance plan
 
-**Current status, 2026-10-24:** #4's routing and #5's cycle auto-save are accepted;
-#4 is closed and #5 retains UI follow-up only. #2 still lacks a sensor stream.
-#3 has eventual real readback but unverified effectiveness. After the online
-audit in section 29, the user chose one trial of LibrePods' existing AP5-specific
-implementation. Swipe interval is default-disabled with a debug override;
-neither open issue is declared fixed.
+**Current status, 2026-10-24:** the user accepted alpha17's AP5 pose/head-tracking
+test and requested closing #2. #4's routing is also accepted/closed, and #5 retains
+only UI follow-up after auto-save acceptance. #3 remains open with real readback
+but unverified effectiveness; another upstream audit found no new interval fix,
+so its default-disabled/debug-overridable behavior stays unchanged. Section 30
+records acceptance and the requested publication.
 
 **Morning priority override, 2026-10-23:** the user returned and withdrew all further shutdown actions. Alpha4's UI-only restart cannot satisfy update/reload requirements; implement and locally validate full debug scope reload first, leaving actual process execution for a joint check. The user additionally requires earbud icons and a direct native animation without a normal notification. Icon and ordinary-expansion corrections are distinct from replacing the current notification-backed transport; do not claim the stricter pure-native route is complete merely because a notification is hidden.
 
@@ -1724,3 +1724,44 @@ If the label still shows a generic path, report that rather than repeating tests
 
 All changes and the receipt are local commits only. The AP5 candidate is not
 marked accepted and both issues remain open until the one agreed trial returns.
+
+## 30. Alpha17 user acceptance and final swipe-interval audit
+
+The user reported that the agreed AP5 test passed on 2026-10-24 and explicitly
+requested closing issue #2. The issue is closed as completed on that user
+acceptance. The accepted application remains alpha17, built from
+`60a8eb451a5deab00af44a723a633467aad69c11`; no new APK, ownership operation or
+headphone test is needed for this follow-up. Do not broaden the result into a
+claim that a separate incoming-call test was performed.
+
+### Swipe interval: preserve the current state
+
+Rechecked LibrePods main `89356c08cea3db0b6b54792d9329d09a87cc85fa` and
+`android/rewrite` `80aa7461df414470f379ebdfe540b2e8889fcbe2`:
+
+- Both accessibility screens use `VOLUME_SWIPE_INTERVAL`, identifier `0x23`,
+  values 1/2/3 and the generic control sender.
+- The rewrite's serializer emits the identifier plus the same zero-padded
+  four-byte value. Its read parser trims trailing zero padding; this changes
+  neither the first-byte interval value nor hardware support.
+- The rewrite updates its local control/UI selection before sending. That is
+  optimistic state, not an additional device acknowledgement or a fix for
+  uncertain physical effectiveness.
+- No AP5-specific interval negotiation, new getter, or ready timing fix was found.
+  [librepods-org/librepods#788](https://github.com/librepods-org/librepods/pull/788)
+  concerns model/capability exposure;
+  [librepods-org/librepods#793](https://github.com/librepods-org/librepods/pull/793)
+  concerns double/triple stem-press volume actions, not swipe timing.
+
+Per the user, do not continue experimenting or replace real reports with local
+memory. #3 stays open; the Not yet implemented label, disabled default and
+explicit debug override stay exactly as shipped.
+
+### Publication scope
+
+Only acceptance/audit documentation changes in this follow-up. The previously
+verified full JVM suite (561 passing tests), app/UI-test builds and Lint apply
+to unchanged runtime code. Documentation-only updates do not require a rebuild.
+The user requested publishing the accumulated local commits. Fetch showed no
+upstream commits to integrate; publication must use a normal push, preserve the
+private repository, and verify a clean tree and zero ahead/behind divergence.
