@@ -89,11 +89,12 @@ class IssueSettingsUiTest {
     @Test fun missingLongPressReportAllowsSelectingTwoModesButNeverSendsAnEmptyMask() {
         render()
         compose.revealSetting(text(R.string.set_noise_mode)).performScrollTo().performClick()
-        compose.onNodeWithContentDescription(text(android.R.string.ok)).assertIsNotEnabled()
+        compose.onNodeWithContentDescription(text(android.R.string.ok)).assertDoesNotExist()
+        compose.onNodeWithContentDescription(text(android.R.string.cancel)).assertDoesNotExist()
         assertEquals(emptyList<Pair<String, Int>>(), writes)
         compose.onNodeWithText(text(R.string.noise_cancellation_title)).performClick()
         compose.onNodeWithText(text(R.string.transparency_title)).performClick()
-        compose.onNodeWithContentDescription(text(android.R.string.ok)).assertIsEnabled().performClick()
+        Espresso.pressBack()
         compose.waitForIdle()
         assertEquals(listOf(Key.LISTENING_MODE_BYTE to 6), writes)
     }
@@ -123,12 +124,29 @@ class IssueSettingsUiTest {
         assertEquals(listOf(Key.LISTENING_MODE_BYTE to 6), writes)
     }
 
-    @Test fun longPressExplicitCancelStillDiscardsTheDraft() {
+    @Test fun invalidLongPressSelectionStaysOpenWithoutSending() {
         render()
         compose.revealSetting(text(R.string.set_noise_mode)).performScrollTo().performClick()
         compose.onNodeWithText(text(R.string.noise_cancellation_title)).performClick()
+        Espresso.pressBack()
+        compose.waitForIdle()
+        assertTrue(writes.isEmpty())
+        compose.onNodeWithText(text(R.string.long_press_select_two)).assertIsDisplayed()
         compose.onNodeWithText(text(R.string.transparency_title)).performClick()
-        compose.onNodeWithContentDescription(text(android.R.string.cancel)).performClick()
+        Espresso.pressBack()
+        compose.waitForIdle()
+        assertEquals(listOf(Key.LISTENING_MODE_BYTE to 6), writes)
+    }
+
+    @Test fun voiceAssistantIsDisabledUnlessDebugOverrideIsEnabled() {
+        allowUnfinished.value = false
+        render()
+        compose.revealSetting(text(R.string.set_noise_mode)).performScrollTo().performClick()
+        compose.onNodeWithText(text(R.string.voice_assist_unsupported)).assertIsNotEnabled()
+        compose.runOnIdle { allowUnfinished.value = true }
+        compose.onNodeWithText(text(R.string.voice_assist_unsupported)).assertIsEnabled().performClick()
+        compose.runOnIdle { assertTrue(writes.isEmpty()) }
+        Espresso.pressBack()
         compose.waitForIdle()
         assertTrue(writes.isEmpty())
     }

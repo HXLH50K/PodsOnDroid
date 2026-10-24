@@ -1,11 +1,14 @@
 <resources>
     <string name="unfinished_features_title">强行使用未实现功能（调试）</string>
-    <string name="unfinished_features_warning">默认关闭。仅供试验，解锁标记为“暂未实现”的控件，目前为滑动调音量间隔。不保证功能可用，打开时不会自动修改耳机设置。</string>
+    <string name="unfinished_features_warning">默认关闭。开启后可点击滑动调音量间隔和语音助手等未完成功能，仅供调试。语音助手仍未实现，点击只会显示提示。打开此开关不会修改耳机设置。</string>
     <string name="unfinished_feature_disabled">暂未实现。如需强行尝试，请在设置 → 高级与诊断中开启调试开关。</string>
     <string name="head_test_airpods5">采集方式：AirPods 5 专用</string>
-    <string name="long_press_autosave">有效修改会在返回或点击外部时发送；取消会放弃修改。</string>
-    <string name="long_press_select_two">请至少选择两种受支持的模式，或取消以放弃修改。</string>
+    <string name="long_press_autosave">至少选两种模式，返回或点击弹窗外部时自动保存。</string>
+    <string name="long_press_select_two">请至少选择两种可用模式后再退出。</string>
     <string name="long_press_unavailable">控制尚未就绪，当前选择未发送。</string>
+    <string name="long_press_unread">未读取</string>
+    <string name="long_press_waiting">等待中</string>
+    <string name="voice_assist_unavailable">此版本尚未实现语音助手，未修改耳机设置。</string>
     <string name="head_reply_short">最近拒绝的回复不足以容纳当前支持的传感器布局，不会被当作姿态数据。</string>
     <string name="head_reply_envelope">最近拒绝的回复使用了不同的传感器封装。</string>
     <string name="head_reply_marker">最近拒绝的回复中，第 10–11 字节封装字段尚不支持。</string>

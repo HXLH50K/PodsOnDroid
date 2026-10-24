@@ -285,6 +285,7 @@ fun PodDetailPage(
                         onListeningModeChange = onListeningModeChange, titleModifier = titleModifier, cardModifier = cardModifier,
                         confirmedMask = settings[Key.LISTENING_MODE_BYTE], allowedModes = allowedModes,
                         enabled = ready(Key.LISTENING_MODE_BYTE),
+                        allowUnfinishedFeatures = allowUnfinishedFeatures,
                         statusSummary = if (settingFeedback[Key.LISTENING_MODE_BYTE] == "sent")
                             stringResource(R.string.setting_sent) else statusText(Key.LISTENING_MODE_BYTE),
                     )

@@ -1,32 +1,23 @@
 package moe.chenxy.hyperpods.ui.components
 
 import android.widget.Toast
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -34,11 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
 import moe.chenxy.hyperpods.R
-import moe.chenxy.hyperpods.pods.LongPressEnableMode
-import moe.chenxy.hyperpods.pods.NoiseControlMode
-import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.ListeningCycleCommit
 import moe.chenxy.hyperpods.utils.AACPManager.Companion.ListeningMode
 import top.yukonga.miuix.kmp.basic.BasicComponent
@@ -46,15 +33,10 @@ import moe.chenxy.hyperpods.ui.components.DashboardGroup as Card
 import top.yukonga.miuix.kmp.basic.Checkbox
 import top.yukonga.miuix.kmp.basic.CheckboxColors
 import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.extra.SuperArrow
-import top.yukonga.miuix.kmp.extra.SuperDropdown
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.icons.useful.Cancel
-import top.yukonga.miuix.kmp.icon.icons.useful.Confirm
+import top.yukonga.miuix.kmp.icon.icons.basic.ArrowRight
 import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.experimental.and
@@ -109,13 +91,9 @@ fun PressAndHoldSettingPage(
     allowedModes: Set<Int>,
     enabled: Boolean,
     statusSummary: String? = null,
+    allowUnfinishedFeatures: Boolean = false,
 ) {
     val context = LocalContext.current
-    val settingMode = listOf(
-        stringResource(R.string.set_noise_mode),
-        stringResource(R.string.set_voice_assist)
-    )
-    var settingModeIndex by remember { mutableIntStateOf(0) }
     val allowedMask = allowedModes.fold(0) { mask, mode -> mask or (1 shl (mode - 1)) }
     val listeningModeConfigByte = rememberSaveable { mutableStateOf(0.toByte()) }
     var initialMask by rememberSaveable { mutableIntStateOf(0) }
@@ -136,8 +114,10 @@ fun PressAndHoldSettingPage(
                 invalidSelection = true
                 Toast.makeText(context, R.string.long_press_select_two, Toast.LENGTH_SHORT).show()
             }
-            ListeningCycleCommit.Action.UNAVAILABLE ->
+            ListeningCycleCommit.Action.UNAVAILABLE -> {
+                showBottomSheet.value = false
                 Toast.makeText(context, R.string.long_press_unavailable, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -145,10 +125,18 @@ fun PressAndHoldSettingPage(
     Card(
         modifier = cardModifier
     ) {
-        SuperArrow(stringResource(R.string.set_noise_mode),
-            summary = statusSummary,
-            rightText = if (!enabled) stringResource(R.string.settings_reading)
-                else if (confirmedMask == null) stringResource(R.string.setting_select_to_apply) else settingMode[0],
+        BasicComponent(stringResource(R.string.set_noise_mode),
+            summary = statusSummary ?: if (confirmedMask == null && enabled)
+                stringResource(R.string.setting_select_to_apply) else null,
+            rightActions = {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(if (!enabled) R.string.long_press_waiting
+                        else if (confirmedMask == null) R.string.long_press_unread else R.string.set_noise_mode),
+                        maxLines = 1, softWrap = false, fontSize = 14.sp,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+                    Icon(MiuixIcons.Basic.ArrowRight, null)
+                }
+            },
             enabled = enabled, onClick = {
                 listeningModeConfigByte.value = ((confirmedMask ?: 0) and allowedMask).toByte()
                 initialMask = listeningModeConfigByte.value.toInt() and 0xff
@@ -163,34 +151,13 @@ fun PressAndHoldSettingPage(
         show = showBottomSheet,
         backgroundColor = MiuixTheme.colorScheme.background,
         onDismissRequest = ::saveAndDismiss,
-        leftAction = {
-            IconButton(
-                onClick = { showBottomSheet.value = false },
-            ) {
-                Icon(
-                    imageVector = MiuixIcons.Useful.Cancel,
-                    contentDescription = stringResource(android.R.string.cancel)
-                )
-            }
-        },
-        rightAction = {
-            IconButton(
-                enabled = enabled && ListeningCycleCommit.valid(listeningModeConfigByte.value.toInt() and 0xff, allowedMask),
-                onClick = ::saveAndDismiss,
-            ) {
-                Text(stringResource(R.string.long_press_autosave), modifier = Modifier.padding(16.dp),
-                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary, fontSize = 13.sp)
-                if (invalidSelection && !ListeningCycleCommit.valid(listeningModeConfigByte.value.toInt() and 0xff, allowedMask))
-                    Text(stringResource(R.string.long_press_select_two), modifier = Modifier.padding(horizontal = 16.dp),
-                        color = MiuixTheme.colorScheme.onSurface, fontSize = 13.sp)
-                Icon(
-                    imageVector = MiuixIcons.Useful.Confirm,
-                    contentDescription = stringResource(android.R.string.ok)
-                )
-            }
-        },
         title = stringResource(R.string.long_press_shared)
     ) {
+        Text(stringResource(R.string.long_press_autosave), modifier = Modifier.padding(16.dp),
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary, fontSize = 13.sp)
+        if (invalidSelection && !ListeningCycleCommit.valid(listeningModeConfigByte.value.toInt() and 0xff, allowedMask))
+            Text(stringResource(R.string.long_press_select_two), modifier = Modifier.padding(horizontal = 16.dp),
+                color = MiuixTheme.colorScheme.onSurface, fontSize = 13.sp)
         val checkBoxColors = CheckboxColors(
             checkedForegroundColor = MiuixTheme.colorScheme.primary,
             uncheckedForegroundColor = MiuixTheme.colorScheme.secondary,
@@ -202,66 +169,33 @@ fun PressAndHoldSettingPage(
             disabledUncheckedBackgroundColor = Color.Transparent
         )
 
-        val targetAlpha = if (settingModeIndex == 0) 1f else 0f
-        val targetScale = if (settingModeIndex == 0) 1f else 0.9f
-        val targetTranslationY = if (settingModeIndex == 0) 0.dp else 16.dp
-
-        val animateAlpha by animateFloatAsState(
-            targetValue = targetAlpha,
-            animationSpec = spring(stiffness = Spring.StiffnessMedium, dampingRatio = Spring.DampingRatioNoBouncy),
-            label = "AlphaAnimation"
-        )
-
-        val animateScale by animateFloatAsState(
-            targetValue = targetScale,
-            animationSpec = spring(stiffness = Spring.StiffnessMedium, dampingRatio = Spring.DampingRatioNoBouncy),
-            label = "ScaleAnimation"
-        )
-
-        val animateY by animateDpAsState(
-            targetValue = targetTranslationY,
-            animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioLowBouncy),
-            label = "ScaleAnimation"
-        )
-
         Card {
             BasicComponent(
                 title = stringResource(R.string.set_noise_mode),
-                onClick = {
-                    settingModeIndex = 0
-                },
                 rightActions = {
                     Checkbox(
-                        checked = settingModeIndex == 0,
-                        onCheckedChange = {
-                            settingModeIndex = 0
-                        },
+                        checked = true,
+                        onCheckedChange = {},
                         colors = checkBoxColors
                     )
                 }
             )
             BasicComponent(
                 title = stringResource(R.string.voice_assist_unsupported),
-                onClick = {},
+                enabled = enabled && allowUnfinishedFeatures,
+                onClick = { Toast.makeText(context, R.string.voice_assist_unavailable, Toast.LENGTH_LONG).show() },
                 rightActions = {
                     Checkbox(
                         checked = false,
-                        enabled = false,
-                        onCheckedChange = {},
+                        enabled = enabled && allowUnfinishedFeatures,
+                        onCheckedChange = { Toast.makeText(context, R.string.voice_assist_unavailable, Toast.LENGTH_LONG).show() },
                         colors = checkBoxColors
                     )
                 }
             )
         }
 
-        SmallTitle(text = stringResource(R.string.set_noise_mode), insideMargin = PaddingValues(16.dp, 8.dp), modifier = Modifier.alpha(animateAlpha))
-
-        Box(
-            modifier = Modifier
-                .alpha(animateAlpha)
-                .offset(y = animateY)
-                .graphicsLayer(scaleX = animateScale, scaleY = animateScale)
-        ) {
+        SmallTitle(text = stringResource(R.string.set_noise_mode), insideMargin = PaddingValues(16.dp, 8.dp))
             Card(
                 modifier = Modifier.padding(0.dp)
             ) {
@@ -290,8 +224,7 @@ fun PressAndHoldSettingPage(
                     bytes = listeningModeConfigByte
                 )
             }
-        }
-        Text(stringResource(R.string.long_press_shared_summary), modifier = Modifier.padding(16.dp).alpha(animateAlpha).graphicsLayer(scaleX = animateScale, scaleY = animateScale), color = MiuixTheme.colorScheme.secondary, fontSize = 12.sp)
+        Text(stringResource(R.string.long_press_shared_summary), modifier = Modifier.padding(16.dp), color = MiuixTheme.colorScheme.secondary, fontSize = 12.sp)
 
         Spacer(modifier = Modifier.height(16.dp))
     }

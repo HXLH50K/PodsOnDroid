@@ -1,11 +1,14 @@
 <resources>
     <string name="unfinished_features_title">Force unfinished features (debug)</string>
-    <string name="unfinished_features_warning">Off by default. Unlocks controls marked “Not yet implemented” for experiments only; currently the volume swipe interval. Does not guarantee support or send settings automatically.</string>
+    <string name="unfinished_features_warning">Off by default. Unlocks the unfinished swipe interval and voice assistant controls for debugging. The assistant is still unavailable and only shows a notice. Turning this on does not change your headphones.</string>
     <string name="unfinished_feature_disabled">Not yet implemented. To try it anyway, enable the debug override in Settings → Advanced &amp; diagnostics.</string>
     <string name="head_test_airpods5">Motion capture: AirPods 5</string>
-    <string name="long_press_autosave">Valid changes are sent when you return or tap outside. Cancel discards changes.</string>
-    <string name="long_press_select_two">Select at least two supported modes, or cancel to discard changes.</string>
+    <string name="long_press_autosave">Choose at least two modes. Changes save when you go back or tap outside.</string>
+    <string name="long_press_select_two">Choose at least two available modes before leaving.</string>
     <string name="long_press_unavailable">The control is not ready. Your selection has not been sent.</string>
+    <string name="long_press_unread">Not read</string>
+    <string name="long_press_waiting">Waiting</string>
+    <string name="voice_assist_unavailable">Voice assistant is not implemented in this version. No headphone settings were changed.</string>
     <string name="head_reply_short">The last rejected reply is too short for the supported sensor layout; it is not treated as motion.</string>
     <string name="head_reply_envelope">The last rejected reply uses a different sensor envelope.</string>
     <string name="head_reply_marker">The last rejected reply has an unsupported envelope field at bytes 10–11.</string>
