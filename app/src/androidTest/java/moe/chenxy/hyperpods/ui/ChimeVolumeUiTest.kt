@@ -65,7 +65,18 @@ class ChimeVolumeUiTest {
         assertEquals(target, level(), .1f)
         compose.runOnIdle { feedback.value = "reported" }
         compose.waitForIdle()
-        assertEquals(10f, level(), .1f)
+        assertEquals(15f, level(), .1f)
+        compose.onNodeWithText("10%").assertExists()
         assertEquals(1, writes.size)
+    }
+
+    @Test fun lowerRealReadingIsShownWithoutAnAutomaticWrite() {
+        value.value = 10
+        show()
+        compose.onNodeWithText("10%").assertExists()
+        val info = slider().fetchSemanticsNode().config[SemanticsProperties.ProgressBarRangeInfo]
+        assertEquals(15f..100f, info.range)
+        assertEquals(15f, info.current, .1f)
+        assertTrue(writes.isEmpty())
     }
 }

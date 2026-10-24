@@ -11,11 +11,15 @@ internal data class ChimeVolumeState(
     data class Update(val state: ChimeVolumeState, val adjustedTo: Int? = null)
 
     fun drag(value: Float): ChimeVolumeState {
-        require(value.isFinite() && value in 0f..100f)
+        require(value.isFinite() && value in PodsSettings.MIN_CHIME_VOLUME.toFloat()..PodsSettings.MAX_CHIME_VOLUME.toFloat())
         return copy(target = value, dragging = true)
     }
 
-    fun finish(): ChimeVolumeState = copy(dragging = false, requested = target.roundToInt())
+    fun finish(): ChimeVolumeState {
+        val value = target.roundToInt().coerceIn(PodsSettings.MIN_CHIME_VOLUME, PodsSettings.MAX_CHIME_VOLUME)
+        return copy(target = target.coerceIn(PodsSettings.MIN_CHIME_VOLUME.toFloat(),
+            PodsSettings.MAX_CHIME_VOLUME.toFloat()), dragging = false, requested = value)
+    }
 
     fun report(value: Int): Update {
         require(value in 0..100)

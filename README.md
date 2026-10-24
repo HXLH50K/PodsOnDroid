@@ -65,6 +65,15 @@ confirmed both themed dialogs and the absence of a progress cancel/stop button.
 The simulated preview was stopped after checking; automated UI assertions
 remain unexecuted because of the device's idle-hierarchy blocker.
 
+The [non-UI readback audit](docs/01-research.md#10-setting-readback-audit-2026-10-24)
+found no ready upstream fix for missing initial long-press-cycle or microphone
+reports. These remain unresolved, rather than being hidden by defaults.
+LibrePods' released rewrite alpha.4 does contain a tone-volume minimum fix:
+P.O.D.S. now accepts user requests from 15 to 100 percent, while retaining actual
+lower reports and the existing second configuration byte. This addresses the
+known below-minimum case, not every AirPods 5 volume conflict; physical acceptance
+is still required. No live headphone operation was performed for this audit.
+
 The online audit found a concrete AirPods 5 path in LibrePods'
 `android/rewrite` revision `80aa7461df414470f379ebdfe540b2e8889fcbe2`.
 After the user chose to try it, P.O.D.S. now selects CMA_COMMAND (79) for

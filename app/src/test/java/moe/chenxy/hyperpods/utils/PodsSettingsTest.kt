@@ -5,6 +5,14 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PodsSettingsTest {
+    @Test fun toneWritesUseTheUpstreamMinimumWithoutDiscardingLowerActualReports() {
+        for (model in listOf(AirPods5(), AirPods5WCC(), AirPodsPro3(), AirPodsPro2USBC())) {
+            for (value in 0..14) assertFalse(PodsSettings.validValue(Key.CHIME_VOLUME, value, model, emptyMap()))
+            for (value in 15..100) assertTrue(PodsSettings.validValue(Key.CHIME_VOLUME, value, model, emptyMap()))
+        }
+        for (value in 0..100) assertTrue(PodsSettings.knownValue(Key.CHIME_VOLUME, value))
+    }
+
     @Test fun unreadSwipeIntervalCanBeExplicitlySetWithoutInventingAValue() {
         val values = emptyMap<String, Int>()
         assertFalse(PodsSettings.editable(Key.SWIPE_SPEED, AirPods5WCC(), values, emptySet(), true))

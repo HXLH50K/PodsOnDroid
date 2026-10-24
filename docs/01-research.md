@@ -165,3 +165,128 @@ Confidence is high that the foundation is worth extending. Native entry points h
 - Preserve pinned source provenance, copyright, modification notices, and applicable corresponding-source obligations. Independent Git history and private hosting do not relicense derived work or remove distribution duties.
 - Review assets independently. LibrePods distinguishes trademarks and mentions Apple fonts; use system fonts and original/clearly licensed art rather than unverified Apple renders or animations.
 - [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid) remains private until explicit visibility authorization. Review licensing/assets before any approved distribution. This is engineering guidance, not legal advice.
+
+## 10. Setting readback audit (2026-10-24)
+
+The user requested existing upstream solutions, not speculative protocol work.
+This audit covers the missing long-press cycle, missing microphone selection,
+and tone-volume conflicts. It did not operate the headphones, collect radio
+traffic, request ownership or restart a host.
+
+### Sources and evidence limits
+
+The GitHub API resolved these current public snapshots:
+
+| Source | Revision | Scope |
+| --- | --- | --- |
+| LibrePods `main` / `v1.0.4` | `89356c08cea3db0b6b54792d9329d09a87cc85fa` | Android control state, setting screens and generic AACP subscription |
+| LibrePods `android/rewrite` / `rewrite-v2.0.0-alpha.4` | `80aa7461df414470f379ebdfe540b2e8889fcbe2` | Rewritten Android parser/state and the released tone minimum correction |
+| OpenPods `master` | `9cd800875f594fa6eb7325dd33d9216c476a5782` | BLE battery/wear/model decoding, not AACP settings |
+
+The rewrite explicitly lists AirPods 5 and 5 WCC in
+[its model table](https://github.com/librepods-org/librepods/blob/80aa7461df414470f379ebdfe540b2e8889fcbe2/android/core/src/main/kotlin/me/kavishdevar/librepods/core/devices/AirPods.kt).
+That establishes model coverage, not acceptance of every setting on the user's
+earbuds. The [protocol notes](https://github.com/librepods-org/librepods/blob/80aa7461df414470f379ebdfe540b2e8889fcbe2/docs/AAP%20Definitions.md)
+are explicitly based on AirPods Pro 2 USB-C firmware 7A305, not an AirPods 5
+specification.
+
+### Long-press noise cycle: no ready readback fix found
+
+- Both Android branches use `LISTENING_MODE_CONFIGS` (`0x1A`) and the same
+  Off/ANC/Transparency/Adaptive mask bits `1/2/4/8`.
+- The [main screen](https://github.com/librepods-org/librepods/blob/89356c08cea3db0b6b54792d9329d09a87cc85fa/android/app/src/main/java/me/kavishdevar/librepods/presentation/screens/PressAndHoldSettingsScreen.kt)
+  and [rewrite screen](https://github.com/librepods-org/librepods/blob/80aa7461df414470f379ebdfe540b2e8889fcbe2/android/app/src/main/kotlin/me/kavishdevar/librepods/presentation/screens/apple/PressAndHoldSettingsScreen.kt)
+  read the first byte from the shared control-state map and fall back to zero
+  when it is absent.
+- That map is not exclusively a headphone report. Both
+  [main `sendControlCommand`](https://github.com/librepods-org/librepods/blob/89356c08cea3db0b6b54792d9329d09a87cc85fa/android/app/src/main/java/me/kavishdevar/librepods/bluetooth/AACPManager.kt)
+  and [rewrite `sendControlCommand`](https://github.com/librepods-org/librepods/blob/80aa7461df414470f379ebdfe540b2e8889fcbe2/android/core/src/main/kotlin/me/kavishdevar/librepods/core/bluetooth/aacp/AACPManager.kt)
+  update local state when submitting a write. A populated/selected upstream UI
+  therefore does not prove successful initial readback.
+- The inspected Android code provides the generic notification subscription,
+  but no distinct AirPods-5-specific query that reliably retrieves this mask.
+  P.O.D.S. already subscribes to those notifications.
+- [librepods-org/librepods#691](https://github.com/librepods-org/librepods/pull/691)
+  is a closed, unmerged reconnect/stem-configuration proposal tested on AirPods
+  Pro 3. Replaying stored settings is not a readback fix and would change the
+  user's headphone state. It is not adopted.
+
+**Decision:** leave this readback issue unresolved. Keep unknown and sent-only
+state distinguishable; allow the existing explicit manual selection without
+inventing a reported cycle.
+
+### Microphone selection: no ready readback fix found
+
+The [main microphone screen](https://github.com/librepods-org/librepods/blob/89356c08cea3db0b6b54792d9329d09a87cc85fa/android/app/src/main/java/me/kavishdevar/librepods/presentation/screens/MicrophoneSettingsScreen.kt)
+and [rewrite microphone screen](https://github.com/librepods-org/librepods/blob/80aa7461df414470f379ebdfe540b2e8889fcbe2/android/app/src/main/kotlin/me/kavishdevar/librepods/presentation/screens/apple/MicrophoneSettingsScreen.kt)
+use `MIC_MODE` (`0x01`), with wire values `0=automatic`, `1=right`, `2=left`.
+P.O.D.S. already has this mapping. Both upstream screens default an absent value
+to automatic, while using the same optimistic map described above. Copying that
+fallback would hide the unknown state, not retrieve a setting.
+
+[librepods-org/librepods#730](https://github.com/librepods-org/librepods/issues/730)
+reports reconnects and selection returning to automatic on AirPods Pro 2 USB-C.
+It was open with no published fix in the inspected discussion. It is neither
+AirPods 5 evidence nor a recipe for fixing missing initial microphone reports.
+The rewrite's high-resolution microphone recording work is a separate stream
+feature and does not solve `MIC_MODE` readback.
+
+**Decision:** leave initial readback unresolved. Do not display an assumed
+automatic selection or add an unverified query/takeover.
+
+### Tone volume: a released partial fix is available
+
+[librepods-org/librepods#865](https://github.com/librepods-org/librepods/issues/865)
+describes a setting reverting after leaving Accessibility on AirPods Pro 3.
+In the [maintainer response](https://github.com/librepods-org/librepods/issues/865#issuecomment-6350903110),
+values below 15 percent are identified as returning to the previous level.
+The promised rewrite fix is present in the released
+[`rewrite-v2.0.0-alpha.4`](https://github.com/librepods-org/librepods/releases/tag/rewrite-v2.0.0-alpha.4):
+the [pinned Accessibility screen](https://github.com/librepods-org/librepods/blob/80aa7461df414470f379ebdfe540b2e8889fcbe2/android/app/src/main/kotlin/me/kavishdevar/librepods/presentation/screens/apple/AccessibilitySettingsScreen.kt)
+uses `15f..100f`, whereas `main` still uses `0f..100f`.
+
+**Adopted locally:** restrict user-submitted tone values to 15-100 in both the
+slider and controller validation. Incoming 0-100 reports remain accepted:
+a real lower reading must not be rejected or relabeled as 15. Its number stays
+visible while the thumb is bounded by the writable range. Merely opening the
+control does not send a new setting. The existing animation/notice behavior
+continues to handle different later reports.
+
+Both upstream screens send `CHIME_VOLUME` (`0x1F`) with a hardcoded second byte
+of `0x50` and initialize a local slider value with a 75-percent fallback.
+Their `snapshotFlow` can submit that initial value after its debounce.
+Neither behavior is copied as a readback solution: P.O.D.S. already writes only
+after explicit user interaction and preserves the actual second configuration
+byte, including zero. Its parser retains all four control-value bytes instead
+of treating embedded zero bytes as padding.
+
+This is a conservative adoption of a released upstream range correction, not
+proof of every AirPods 5 firmware limit or a fix for all volume conflicts.
+The upstream issue's physical report is for Pro 3. Reversion of values within
+15-100 remains unresolved without an agreed AirPods 5 test round.
+
+### OpenPods does not supply these control fixes
+
+The pinned [README](https://github.com/adolfintel/OpenPods/blob/9cd800875f594fa6eb7325dd33d9216c476a5782/README.md)
+and [status decoder](https://github.com/adolfintel/OpenPods/blob/9cd800875f594fa6eb7325dd33d9216c476a5782/app/src/main/java/com/dosse/airpods/pods/PodsStatus.java)
+cover nearby BLE status: battery, charging, wear and model identity. The inspected
+implementation does not retrieve these three AACP settings. BLE estimates
+must not be used to manufacture microphone, cycle or tone-volume values.
+
+### Remaining acceptance
+
+No ready AirPods-5-specific fix for the two missing readbacks was found in the
+inspected sources/discussions. This does not prove such a query is impossible,
+or establish that the failures are unique to AirPods 5. No additional protocol
+write, ATT polling loop, firmware reset or ownership takeover is justified by
+the evidence above.
+
+Local validation passed: **122 focused JVM tests** for controller behavior,
+setting bounds, tone interaction state and AACP parsing; app/UI-test compilation;
+and Lint with **0 errors, 129 warnings and 2 hints**. UI instrumentation was
+compiled, not executed, because the earlier device idle blocker remains.
+
+Physical acceptance remains collaborative: only after agreeing on a round,
+connect the user's AirPods 5 and check one explicit
+15-percent selection and one ordinary value such as 60 percent. Compare actual
+reports without assuming that a sent command was accepted.

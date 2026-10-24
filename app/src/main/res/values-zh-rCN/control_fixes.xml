@@ -1,5 +1,6 @@
 <resources>
     <string name="chime_volume_reported">耳机回报的提示音音量为 %1$d%%，已更新显示。</string>
+    <string name="chime_volume_range">可设置范围：%1$d%% 至 %2$d%%。更低的值可能被耳机拒绝。</string>
     <string name="unfinished_features_title">强行使用未实现功能（调试）</string>
     <string name="unfinished_features_warning">默认关闭。开启后可点击滑动调音量间隔和语音助手等未完成功能，仅供调试。语音助手仍未实现，点击只会显示提示。打开此开关不会修改耳机设置。</string>
     <string name="unfinished_feature_disabled">暂未实现。如需强行尝试，请在设置 → 高级与诊断中开启调试开关。</string>

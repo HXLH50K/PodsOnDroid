@@ -4,6 +4,30 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ChimeVolumeStateTest {
+    @Test fun lowerActualReportsAreRetainedWithoutSendingAnInvalidRequest() {
+        for (value in 0..14) {
+            val update = ChimeVolumeState(30f, 30).report(value)
+            assertEquals(value.toFloat(), update.state.target, 0f)
+            assertEquals(value, update.state.reported)
+            assertNull(update.state.requested)
+            assertEquals(15, update.state.finish().requested)
+        }
+    }
+
+    @Test fun dragEndpointsMatchTheWritableRange() {
+        val initial = ChimeVolumeState(30f, 30)
+        assertEquals(15, initial.drag(15f).finish().requested)
+        assertEquals(100, initial.drag(100f).finish().requested)
+        val fractional = initial.drag(87.25f).finish()
+        assertEquals(87.25f, fractional.target, 0f)
+        assertEquals(87, fractional.requested)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun dragCannotSubmitBelowTheUpstreamMinimum() {
+        ChimeVolumeState(30f, 30).drag(14f)
+    }
+
     @Test fun reportsCannotMoveTheThumbWhileDragging() {
         val drag = ChimeVolumeState(30f, 30).drag(85f)
         val update = drag.report(40)

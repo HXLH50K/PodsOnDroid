@@ -7,6 +7,8 @@ import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey as Key
 object PodsSettings {
     const val NOISE_MODE = "noise_mode"
     const val RENAME = "rename"
+    const val MIN_CHIME_VOLUME = 15
+    const val MAX_CHIME_VOLUME = 100
     val identifiers = mapOf(
         NOISE_MODE to Id.LISTENING_MODE,
         Key.PERSONLIZED_VOLUME to Id.ADAPTIVE_VOLUME_CONFIG,
@@ -88,7 +90,7 @@ object PodsSettings {
             NOISE_MODE -> value in allowedNoiseModes(model, values)
             Key.MICROPHONE_MODE -> value in 0..2
             Key.ADAPTIVE_AUDIO_LEVEL -> value in 0..100
-            Key.CHIME_VOLUME -> value in 0..100
+            Key.CHIME_VOLUME -> value in MIN_CHIME_VOLUME..MAX_CHIME_VOLUME
             Key.PRESS_SPEED, Key.HOLD_DURATION -> value in 0..2
             Key.SWIPE_SPEED -> value in 1..3
             Key.LISTENING_MODE_BYTE -> {

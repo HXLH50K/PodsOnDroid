@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.utils.ChimeVolumeState
+import moe.chenxy.hyperpods.utils.PodsSettings
 import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.basic.Text
 import kotlin.math.roundToInt
@@ -31,7 +32,7 @@ internal fun ChimeVolumeSlider(
     onChange: (Int) -> Unit,
 ) {
     val context = LocalContext.current
-    var state by remember { mutableStateOf(ChimeVolumeState((value ?: 0).toFloat(),
+    var state by remember { mutableStateOf(ChimeVolumeState((value ?: PodsSettings.MIN_CHIME_VOLUME).toFloat(),
         value.takeUnless { feedback == "sent" })) }
     var submission by remember { mutableIntStateOf(0) }
     val failed = feedback in setOf("write_failed", "timeout", "invalid")
@@ -50,11 +51,15 @@ internal fun ChimeVolumeSlider(
     val animated by animateFloatAsState(state.target,
         animationSpec = if (state.dragging) snap() else tween(320), label = "ChimeVolume")
     val displayed = if (state.dragging) state.target else animated
+    val range = PodsSettings.MIN_CHIME_VOLUME.toFloat()..PodsSettings.MAX_CHIME_VOLUME.toFloat()
+    val sliderValue = displayed.coerceIn(range)
     Column(Modifier.padding(16.dp)) {
         Text(stringResource(R.string.control_chime_volume), fontWeight = FontWeight.Medium)
         Text(if (value != null) "${displayed.roundToInt()}%" else stringResource(R.string.settings_reading), fontSize = 13.sp)
+        Text(stringResource(R.string.chime_volume_range, PodsSettings.MIN_CHIME_VOLUME, PodsSettings.MAX_CHIME_VOLUME),
+            fontSize = 12.sp)
         status?.let { Text(it, fontSize = 12.sp) }
-        Slider(value = displayed, valueRange = 0f..100f,
+        Slider(value = sliderValue, valueRange = range,
             onValueChange = { state = state.drag(it) },
             onValueChangeFinished = {
                 state = state.finish()
@@ -62,6 +67,6 @@ internal fun ChimeVolumeSlider(
                 onChange(requireNotNull(state.requested))
             },
             enabled = enabled || state.dragging,
-            modifier = Modifier.fillMaxWidth().testTag("chime_volume_slider").progressSemantics(displayed, 0f..100f))
+            modifier = Modifier.fillMaxWidth().testTag("chime_volume_slider").progressSemantics(sliderValue, range))
     }
 }
