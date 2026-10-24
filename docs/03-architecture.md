@@ -85,7 +85,10 @@ earbud operations, changing live headphone values, or restarting module scopes.
 The user accepted ordinary blur as an interim material and prioritized overall
 UI structure. `PageScaffold` uses the compact Miuix 0.6.1 `SmallTopAppBar` for root
 and child pages; the child navigation icon is outside the scrolling viewport,
-not a list item. Status-bar insets are applied once. Content retains the
+not a list item. The frame-provided top padding is consumed before the toolbar:
+Miuix 0.6.1 unconditionally applies status-bar/caption insets even when
+`defaultWindowInsetsPadding` is false (that flag controls horizontal insets).
+Consuming the manual padding avoids a second status-bar gap. Content retains the
 floating-dock clearance and bring-into-view policy.
 
 `PageTransitionHost` is shared by settings and headphone navigation, including

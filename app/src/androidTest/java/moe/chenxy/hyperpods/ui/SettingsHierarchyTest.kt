@@ -5,6 +5,10 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -25,16 +29,24 @@ class SettingsHierarchyTest {
             SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
     }
 
-    @Test fun bothRootTabsUseCompactHeaders() {
-        fun checkHeader() {
-            val height = compose.onNodeWithTag("page_toolbar").fetchSemanticsNode().boundsInRoot.height
+    @Test fun bothRootTitlesStartJustBelowTheStatusBarWithoutDuplicatedInsets() {
+        fun checkHeader(title: Int) {
+            val toolbar = compose.onNodeWithTag("page_toolbar").fetchSemanticsNode().boundsInRoot
             val density = compose.activity.resources.displayMetrics.density
-            assertTrue("Root toolbar should not reserve expanded-title space", height / density <= 72f)
+            val statusBar = requireNotNull(ViewCompat.getRootWindowInsets(compose.activity.window.decorView))
+                .getInsets(WindowInsetsCompat.Type.statusBars()).top
+            val titleBounds = compose.onNode(hasText(text(title)) and hasAnyAncestor(hasTestTag("page_toolbar")))
+                .fetchSemanticsNode().boundsInRoot
+            assertEquals("The toolbar must apply the status-bar inset only once",
+                statusBar.toFloat(), toolbar.top, 1f)
+            assertTrue("Root toolbar should be compact", toolbar.height / density <= 60f)
+            val gap = (titleBounds.top - statusBar) / density
+            assertTrue("Title-to-status-bar gap was $gap dp", gap in 0f..24f)
         }
-        checkHeader()
+        checkHeader(R.string.dashboard_headphones)
         settingsTab()
         compose.waitForIdle()
-        checkHeader()
+        checkHeader(R.string.settings_title)
     }
 
     @Test fun rootOnlyShowsCategoriesAndToolsHaveTheirOwnMenu() {

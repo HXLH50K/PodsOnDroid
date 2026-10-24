@@ -45,7 +45,10 @@ internal fun PageScaffold(
 ) {
     Box(Modifier.fillMaxSize().background(MiuixTheme.colorScheme.background),
         contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 680.dp).fillMaxSize().padding(top = padding.calculateTopPadding())
+        val topPadding = PaddingValues(top = padding.calculateTopPadding())
+        Column(Modifier.widthIn(max = 680.dp).fillMaxSize().padding(topPadding)
+            // Miuix 0.6.1 always adds status-bar insets, even with its default padding disabled.
+            .consumeWindowInsets(topPadding)
             .semantics { paneTitle = title }) {
             val toolbar = Modifier.fillMaxWidth().testTag("page_toolbar")
             if (onBack == null) SmallTopAppBar(title = title, modifier = toolbar, defaultWindowInsetsPadding = false)

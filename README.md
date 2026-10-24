@@ -4,6 +4,15 @@ A private HyperPods-derived Android project for improving the AirPods 5 experien
 
 ## Current checkpoint: alpha17 accepted AirPods 5 head tracking
 
+UI follow-up corrections: the remaining root-title gap was a duplicated
+status-bar inset, not the title size. The page frame now consumes its manually
+applied top padding before Miuix adds its own insets. The UI regression measures
+the title-to-status-bar gap on both main tabs, not just toolbar height.
+App/UI-test compilation passed. Bounded direct screenshots of the synthetic
+headphone and settings tabs on the HyperOS 4 phone confirmed the reduced gap.
+UIAutomator still cannot obtain an idle hierarchy, so the automated spacing
+assertion is compiled but not claimed as executed.
+
 UI follow-up: both main tabs now use compact headers. App copy uses direct
 instructions rather than implementation language; detailed protocol identifiers
 remain in diagnostics. About lists the original and forked HyperPods repositories,
