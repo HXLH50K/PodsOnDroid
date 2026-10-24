@@ -13,6 +13,11 @@ App and UI-test APK compilation passed. The bounded phone instrumentation
 attempt exited during its first About test without a usable crash report;
 runtime UI acceptance is not claimed.
 
+Battery settings no longer show an app-card imitation of the Super Island.
+Reminder switches save immediately; valid threshold pairs save on field blur,
+leaving the page or backgrounding the app. Invalid edits show an error and keep
+the last saved thresholds; switches can still be saved independently.
+
 The online audit found a concrete AirPods 5 path in LibrePods'
 `android/rewrite` revision `80aa7461df414470f379ebdfe540b2e8889fcbe2`.
 After the user chose to try it, P.O.D.S. now selects CMA_COMMAND (79) for

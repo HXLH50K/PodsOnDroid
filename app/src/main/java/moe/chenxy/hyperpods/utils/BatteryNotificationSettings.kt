@@ -12,6 +12,12 @@ data class BatteryNotificationSettings(
 ) : Parcelable {
     val valid: Boolean get() = lowThreshold in 1..98 && mediumThreshold in 2..99 && lowThreshold < mediumThreshold
 
+    fun withThresholds(low: String, medium: String): BatteryNotificationSettings? {
+        val lowValue = low.toIntOrNull() ?: return null
+        val mediumValue = medium.toIntOrNull() ?: return null
+        return copy(lowThreshold = lowValue, mediumThreshold = mediumValue).takeIf { it.valid }
+    }
+
     enum class Band { UNKNOWN, LOW, MEDIUM, HIGH }
 
     fun band(level: Int?): Band {
