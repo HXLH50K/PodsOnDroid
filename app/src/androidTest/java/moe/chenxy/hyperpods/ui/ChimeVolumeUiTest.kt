@@ -39,6 +39,11 @@ class ChimeVolumeUiTest(private val theme: Int) {
         }
     }
 
+    @Test fun volumeHelpUsesTheRecommendedRangeCopy() {
+        show()
+        compose.onNodeWithText(compose.activity.getString(R.string.chime_volume_range, 15, 100)).assertIsDisplayed()
+    }
+
     @Test fun aReportDuringDragDoesNotMoveTheThumbOrSendEarly() {
         show()
         slider().performTouchInput {

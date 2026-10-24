@@ -251,8 +251,11 @@ slider and controller validation, while accepting actual 0-100 reports.
 **User-requested UI follow-up:** 15 percent is now a two-stage stop rather than
 a hard write minimum. A gesture starting above 15 stops there for that entire
 gesture. Release and start a new gesture from 15 or below to submit a lower
-value. The low range is orange-red in both themes and shows a warning toast on
-release. The controller allows explicit requests throughout 0-100; lower requests
+value. The low range is orange-red in both themes. Help text states the
+recommended range, without explaining the second gesture. The page-local release
+warning was removed in the copy follow-up because the common setting-result
+handler already reports rejected changes. The controller allows explicit
+requests throughout 0-100; lower requests
 can still be rejected by firmware. Cancelled gestures do not submit a setting
 or carry an unlocked drag into the next gesture.
 
@@ -263,7 +266,9 @@ user's request; it does not establish that lower values work on AirPods 5.
 The soft-stop follow-up passed 128 focused JVM tests, app/UI-test compilation
 and Lint. A bounded synthetic phone check confirmed a drag from 60 stopped at
 15, a new gesture reached 4, the track turned orange-red, and the release toast
-appeared. The preview used local callbacks only, not headphone commands.
+appeared. That release toast was removed in the later copy follow-up; the
+two-stage gesture, color and common error handling are unchanged. The preview
+used local callbacks only, not headphone commands.
 
 Both upstream screens send `CHIME_VOLUME` (`0x1F`) with a hardcoded second byte
 of `0x50` and initialize a local slider value with a 75-percent fallback.

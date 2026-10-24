@@ -72,14 +72,17 @@ LibrePods' released rewrite alpha.4 does contain a tone-volume minimum fix:
 P.O.D.S. initially restricted requests to 15-100 percent. The user-requested UI
 follow-up makes 15 percent a two-stage stop instead: a drag starting above it
 cannot cross it until release; a new drag from 15 or below can submit 0-14.
-Low values use an orange-red track and show a warning toast on release.
+Low values use an orange-red track. Help text states the recommended 15-100
+range without explaining the second gesture. The page-local release toast was
+removed to avoid duplicating the common setting-result error toast.
 The controller accepts those deliberate lower requests, while preserving real
 reports and the second configuration byte. Gesture cancellation does not write.
 This is an explicit override of the upstream recommendation, not a guarantee
 that AirPods 5 accepts the lower value. No live headphone operation was performed.
 The soft-stop follow-up passed 128 focused JVM regressions, app/UI-test
 compilation and Lint; bounded synthetic phone checks confirmed the stop,
-second-gesture low range, orange-red track and release warning.
+second-gesture low range and orange-red track. The original release warning
+was subsequently removed; common write-failure feedback remains enabled.
 
 The online audit found a concrete AirPods 5 path in LibrePods'
 `android/rewrite` revision `80aa7461df414470f379ebdfe540b2e8889fcbe2`.

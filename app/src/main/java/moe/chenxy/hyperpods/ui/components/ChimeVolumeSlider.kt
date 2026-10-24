@@ -74,7 +74,7 @@ internal fun ChimeVolumeSlider(
     Column(Modifier.padding(16.dp)) {
         Text(stringResource(R.string.control_chime_volume), fontWeight = FontWeight.Medium)
         Text(if (value != null) "${displayed.roundToInt()}%" else stringResource(R.string.settings_reading), fontSize = 13.sp)
-        Text(stringResource(R.string.chime_volume_range, PodsSettings.CHIME_VOLUME_THRESHOLD),
+        Text(stringResource(R.string.chime_volume_range, PodsSettings.CHIME_VOLUME_THRESHOLD, PodsSettings.MAX_CHIME_VOLUME),
             fontSize = 12.sp)
         status?.let { Text(it, fontSize = 12.sp) }
         Slider(value = sliderValue, valueRange = range,
@@ -83,7 +83,6 @@ internal fun ChimeVolumeSlider(
             onValueChangeFinished = {
                 state = state.finish()
                 submission++
-                if (state.belowThreshold) Toast.makeText(context, warning, Toast.LENGTH_LONG).show()
                 onChange(requireNotNull(state.requested))
             },
             enabled = enabled || state.dragging,

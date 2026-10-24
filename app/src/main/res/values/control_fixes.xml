@@ -1,6 +1,6 @@
 <resources>
     <string name="chime_volume_reported">Headphones reported %1$d%%. The tone volume has been updated.</string>
-    <string name="chime_volume_range">Dragging left stops at %1$d%%. Release and drag again from there to go lower.</string>
+    <string name="chime_volume_range">Volume range: %1$d%%~%2$d%%. Very low values may not be accepted by the headphones.</string>
     <string name="chime_volume_below_threshold">The headphones may reject tone volume below %1$d%% and return to the previous level.</string>
     <string name="unfinished_features_title">Force unfinished features (debug)</string>
     <string name="unfinished_features_warning">Off by default. Unlocks the unfinished swipe interval and voice assistant controls for debugging. The assistant is still unavailable and only shows a notice. Turning this on does not change your headphones.</string>
