@@ -1,7 +1,6 @@
 package moe.chenxy.hyperpods.pods
 
 import android.annotation.SuppressLint
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
 import android.bluetooth.BluetoothStatusCodes
@@ -14,7 +13,6 @@ import android.media.MediaRoute2Info
 import android.media.MediaRouter2
 import android.media.MediaRouter2.ScanToken
 import android.media.RouteDiscoveryPreference
-import android.os.ParcelUuid
 import android.os.Bundle
 import android.os.SystemClock
 import android.telephony.TelephonyManager
@@ -1350,56 +1348,6 @@ object L2CAPController {
             startRoutesScan()
         }
 
-        val uuid = ParcelUuid.fromString("74ec2172-0bad-4d01-8f77-997b2be0722a")
-
-        fun getBtSocket(): BluetoothSocket {
-            // Android 17 removed the six-argument convenience constructor on this
-            // build and added BluetoothAdapter before BluetoothDevice. Find its
-            // extended equivalent while keeping TYPE_L2CAP (3):
-            // BluetoothDevice.createL2capChannel() now creates TYPE_LE (4).
-            val prefix = arrayOf(
-                BluetoothAdapter::class.java,
-                BluetoothDevice::class.java,
-                Int::class.javaPrimitiveType,
-                Boolean::class.javaPrimitiveType,
-                Boolean::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType,
-                ParcelUuid::class.java,
-            )
-            val constructor = BluetoothSocket::class.java.declaredConstructors
-                .filter { it.parameterTypes.size >= prefix.size }
-                .filter { candidate ->
-                    prefix.indices.all { candidate.parameterTypes[it] == prefix[it] }
-                }
-                .minByOrNull { it.parameterCount }
-                ?: throw NoSuchMethodException(
-                    "No compatible classic L2CAP BluetoothSocket constructor: " +
-                        BluetoothSocket::class.java.declaredConstructors.joinToString { it.toString() }
-                )
-
-            val args = constructor.parameterTypes.mapIndexed { index, type ->
-                when (index) {
-                    0 -> BluetoothAdapter.getDefaultAdapter()
-                    1 -> device
-                    2 -> 3 // BluetoothSocket.TYPE_L2CAP (classic BR/EDR)
-                    3, 4 -> true // authenticated and encrypted
-                    5 -> 0x1001 // AirPods AAP PSM
-                    6 -> uuid
-                    else -> when (type) {
-                        Boolean::class.javaPrimitiveType -> false
-                        Int::class.javaPrimitiveType -> 0
-                        Long::class.javaPrimitiveType -> 0L
-                        String::class.java -> "HyperPods"
-                        android.content.AttributionSource::class.java -> context.attributionSource
-                        else -> null
-                    }
-                }
-            }.toTypedArray()
-            constructor.isAccessible = true
-            Log.i(TAG, "using BluetoothSocket constructor: $constructor")
-            return constructor.newInstance(*args) as BluetoothSocket
-        }
-
         val requestRevision = appSettingsRevision
         connectionJob = CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -1416,7 +1364,7 @@ object L2CAPController {
                     ensureActive()
                     if (sessionId != thisSession) throw CancellationException("Obsolete AirPods session")
                 }
-                recoverControlSession(context, device, thisSession, ::getBtSocket)
+                recoverControlSession(context, device, thisSession) { ClassicL2capSocket.create(context, device) }
             } finally {
                 synchronized(this@L2CAPController) {
                     if (sessionId == thisSession) {

@@ -1,5 +1,51 @@
 # 06 Signing, release delivery, and maintenance
 
+## 2026-10-24 0.2.2-beta publication authorization
+
+The user authorized committing/pushing the current changes and publishing the
+new GitHub Release. Publish `v0.2.2-beta` as a prerelease with the signed
+production APK and its SHA-256 sidecar, using the existing signing identity.
+The corresponding source tag must identify the exact committed build source.
+Rebuild after committing so the APK's revision and module self-check match
+that source; do not upload the earlier local-worktree APK recorded below.
+The release notes and uploaded checksum identify the publication artifact.
+Keep the matching R8 mapping locally, not as a public release asset.
+
+Publication checks cover package/version/minimum/target metadata, signature
+and alignment, the source tag, branch synchronization and downloaded asset
+bytes. Preserve the HyperPods attribution, pinned source provenance, GPL
+license and inherited file-level notices. The unrelated local issue document,
+signing credentials, system binaries and raw device logs remain excluded.
+No additional device installation, host restart or earbud acceptance is part
+of this publication request. Lenovo socket construction is verified; full
+AACP communication on the tablet remains a collaborative acceptance step.
+
+## 2026-10-24 local 0.2.2-beta hotfix build
+
+The user requested the smallest application-version increment and a rebuilt
+Release APK, not a higher minimum Android version. `0.2.2-beta` uses version
+code 21, retaining `com.hxlh50k.pods`, Android 15 / API 35 minimum, target API 36,
+and the existing production certificate. It includes the Lenovo Android 16
+classic L2CAP constructor correction recorded in the architecture document.
+
+- Signed APK: `dist/PODS-0.2.2-beta-release.apk`, 8,955,707 bytes.
+- APK SHA-256: `62efb5e7098f2d05c9cda443a91099f87e6168faba9cac0133ea892b98509bb9`.
+- The SHA-256 sidecar and matching R8 mapping are retained in the ignored
+  delivery directory.
+- APK Signature Scheme v3 verification passed with the existing certificate
+  SHA-256 `EB479AF1A543727D00152C6BA41DB237D38703AF08173272ED21BCBF7AB09FC2`.
+- Package/version/minimum/target metadata and the non-debuggable flag were
+  checked on the signed APK. `zipalign -c -P 16 4` passed.
+- The minified/resource-shrunk Release build, 27 focused Release JVM checks
+  covering socket compatibility, system profiles/integrations and version-aware
+  module reports, and Release Lint passed. Lint has zero errors, 130 warnings
+  and two hints.
+
+This is a local worktree build, not a tagged or published GitHub Release.
+No Git commit, device installation or host restart was performed for this
+version-bump request. The prior same-version hotfix deployment and Lenovo
+socket-construction check do not establish full earbud acceptance.
+
 ## 2026-10-24 public 0.2.1-beta
 
 The user explicitly authorized public repository visibility, pushing the

@@ -43,7 +43,17 @@ See [the extension guide](docs/03-architecture.md#compatibility-policies-and-ext
 This refactor does not lower the current Android 15 / API 35 minimum, remove
 the root/API 102 requirement, or implement another OEM's integration.
 
-## Current release: 0.2.1-beta
+## Current release: 0.2.2-beta
+
+`0.2.2-beta` increments the patch version and version code to 21, retaining
+the production package/signing identity and Android 15 / API 35 minimum.
+It includes the Lenovo Android 16 classic L2CAP socket-construction correction
+while preserving the Android 17 path and OEM feature boundaries. Socket creation
+was verified on the Lenovo tablet; full earbud acceptance remains pending.
+The signed prerelease APK and checksum are available from
+[the 0.2.2-beta release](https://github.com/HXLH50K/PodsOnDroid/releases/tag/v0.2.2-beta).
+
+## Previous release: 0.2.1-beta
 
 `0.2.1-beta` uses version code 20 and the existing production package/signing
 identity. It includes the accepted liquid-glass bottom navigation, platform/model

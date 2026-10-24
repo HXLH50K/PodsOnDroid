@@ -86,6 +86,45 @@ of this UI validation. The temporary emulator does not modify the user's phone.
 
 ## Compatibility policies and extension points (2026-10-24)
 
+### Lenovo Android 16 control-socket correction
+
+The connected Lenovo TB322FC (Android 16, API 36) persisted
+`socket_create_failed`, stage `NONE`, and zero received packets. Read-only
+reflection on that tablet found device-first `BluetoothSocket` constructors
+with 6, 8 and 13 parameters, plus listening/copy constructors. The previous
+factory matched only the adapter-first signature introduced on the Android 17
+HyperOS test phone. This was a transport API compatibility error, not an OEM
+feature gate: Lenovo already retains the shared Bluetooth hook.
+
+`ClassicL2capSocket` selects either the existing adapter-first family or the
+device-first family by actual parameter types, preferring the shortest matching
+constructor. Known extended parameters retain their defaults and attribution;
+unknown parameter types fail explicitly. Both paths retain authenticated,
+encrypted classic BR/EDR L2CAP, PSM `0x1001`, and the AirPods service UUID.
+The public LE L2CAP API is not a substitute. OEM presentation gates, audio
+sessions, protocol initialization and bounded recovery remain unchanged.
+
+Regression fixtures cover both constructor families, extended signatures,
+transport arguments and explicit rejection of incompatible shapes. A Lenovo
+profile regression separately ensures core Bluetooth remains enabled without
+Xiaomi integrations. Physical earbud acceptance requires the updated Bluetooth
+host to be loaded and a user-operated reconnect; socket construction alone
+does not establish successful AirPods communication.
+
+Verification: 125 focused Debug JVM checks and 51 Release JVM checks passed,
+along with Debug/Release builds and Release Lint (zero errors, 130 warnings,
+two hints). The existing ownership-experiment tests require Debug; their four
+Debug-only expectations do not apply to Release, which disables that experiment.
+One isolated instrumentation test passed on the Lenovo tablet with process-local
+hidden-API checks disabled to inspect the host-only constructor. It invoked the
+actual factory and checked classic transport, device identity, PSM, service UUID,
+authentication/encryption and the disconnected state, without calling `connect`.
+Temporary Debug/test packages and standalone probes were removed afterward.
+The same-certificate production hotfix was installed in place with app data
+preserved; its installed APK SHA-256 matched the local signed artifact.
+The Bluetooth host PID remained unchanged. No host restart, earbud operation or
+radio capture was performed; full AACP readiness remains a collaborative check.
+
 The long-term product goal covers Android phones and AirPods families. The
 accepted hardware baseline is still AP5/HyperOS 4. A declared implementation
 or upstream model capability is not a new hardware acceptance claim.

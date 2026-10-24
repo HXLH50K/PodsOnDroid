@@ -55,4 +55,14 @@ class SystemCompatibilityTest {
         assertNull(profile.hookFor("com.milink.service"))
         assertNull(profile.hookFor("com.android.systemui:unknown"))
     }
+
+    @Test fun lenovoRetainsCoreBluetoothWithoutXiaomiIntegrations() {
+        val profile = SystemProfile.detect("LENOVO", "Lenovo", "")
+        assertEquals(PhoneSystem.OTHER, profile.system)
+        assertEquals(SystemHook.BLUETOOTH_CONTROL, profile.hookFor(HyperPodsBroadcasts.BLUETOOTH))
+        assertEquals(listOf(HyperPodsBroadcasts.BLUETOOTH), profile.modulePackages)
+        SystemFeature.entries.forEach { assertFalse(profile.supports(it)) }
+        assertNull(profile.hookFor(HyperPodsBroadcasts.XIAOMI_BLUETOOTH))
+        assertNull(profile.hookFor(HyperPodsBroadcasts.SYSTEM_UI))
+    }
 }
