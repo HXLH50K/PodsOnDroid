@@ -24,7 +24,17 @@ See [the extension guide](docs/03-architecture.md#compatibility-policies-and-ext
 This refactor does not lower the current Android 15 / API 35 minimum, remove
 the root/API 102 requirement, or implement another OEM's integration.
 
-## Current checkpoint: alpha18 UI and tone-volume refinements
+## Current checkpoint: 0.2.0-beta release preparation
+
+Version name is `0.2.0-beta`, with monotonically increased version code 19.
+The release uses the production application ID `com.hxlh50k.pods`, with code
+minification and resource shrinking enabled. A dedicated P.O.D.S. signing key
+has been created; local delivery signs the Gradle artifact after packaging.
+An unsigned artifact must not replace the Debug installation. Release build,
+94 focused production-variant regressions and Lint passed. This version does
+not claim additional device or earbud acceptance.
+
+### Previous checkpoint: alpha18 UI and tone-volume refinements
 
 Alpha18 packages the UI corrections, simplified About page and two-stage
 tone-volume slider. Version code is 18. AirPods 5 head tracking was accepted

@@ -1,13 +1,62 @@
 # 06 Signing, private delivery, and maintenance
 
-Updated: 2026-10-22. Signing/release procedures below are plans, not completed operations. This documentation task does not inspect existing keys/passwords, generate keys, sign releases, commit, or push.
+## 2026-10-24 beta release signing
+
+The requested production version is `0.2.0-beta` (version code 19). The
+production ID remains `com.hxlh50k.pods`; Debug uses the separate
+`com.hxlh50k.pods.debug` ID, so Android cannot migrate its app data automatically.
+Uninstalling Debug removes that installation's data and requires explicit user
+authorization, which was provided for the final Release replacement.
+
+Preflight found no signing configuration, signing environment inputs or key at
+the approved P.O.D.S. path. The user subsequently authorized a new independent
+key under their OneDrive keys root; no Cowpea or other project's key was read
+or reused. A new RSA-3072 / SHA256withRSA PKCS12 key was generated on 2026-10-24,
+with alias `pods-release` and validity 10000 days:
+
+- Key: `C:\Users\25806\OneDrive\keys\PodsOnDroid\pods-release.p12`.
+- Public certificate: `pods-release-cert.pem` in the same folder.
+- Certificate SHA-256: `EB479AF1A543727D00152C6BA41DB237D38703AF08173272ED21BCBF7AB09FC2`.
+- Non-secret local metadata: `signing-info.json` in that folder.
+- Strong random password: Windows DPAPI encrypted at
+  `C:\Users\25806\AppData\Local\PodsOnDroid\signing\release-password.dpapi`,
+  outside OneDrive. No password was printed or committed.
+- Local signing helper: `Sign-Release.ps1` in the same local signing directory.
+  It decrypts only in memory, passes credentials via process environment, signs
+  an already-built APK, verifies it, and clears credentials afterward.
+
+**Custody limitation:** DPAPI depends on this Windows user's profile. Copying
+the encrypted password file alone is not a portable password backup. The user
+must separately export the password to a password manager and back up the key
+to independent encrypted storage before losing or replacing the Windows profile.
+OneDrive synchronization or an offline recovery rehearsal is not claimed here.
+Newly created signing directories have restricted local ACLs; this does not
+assert additional encryption of OneDrive content.
+
+The Gradle release remains explicitly unsigned by default. Local release
+delivery signs after minification/resource shrinking and verifies package,
+version and certificate before removing Debug. Never substitute the Debug
+certificate or uninstall Debug before a release-signed APK passes verification.
+
+The beta's minified/resource-shrunk Release build and 94 focused Release JVM
+regressions passed. Release Lint reports 0 errors, 130 warnings and 2 hints.
+Installing the production package does not automatically activate its module
+or migrate Debug's module scopes. The user must enable `com.hxlh50k.pods` and
+select the relevant hosts in the framework. No automatic host restart is
+authorized by package replacement.
+
+The older sections below describe historical planning checkpoints, not proof
+that a release key has since been created.
+
+Historical planning baseline: 2026-10-22. The older procedures below are plans;
+completed key creation and beta validation are recorded in the section above.
 
 **Privacy supersedes the earlier public intention:** [HXLH50K/PodsOnDroid](https://github.com/HXLH50K/PodsOnDroid) has been created private, with no initial push at this checkpoint. Keep it private until the user explicitly authorizes a visibility change. Private storage does not waive applicable GPL obligations when distributing a derivative.
 
 ## 1. Product and signing identity
 
 - Exact label: **P.O.D.S.**
-- Release application ID: `com.hxlh50k.pods`, currently unsigned; isolated debug application ID: `com.hxlh50k.pods.debug`.
+- Release application ID: `com.hxlh50k.pods`; isolated debug application ID: `com.hxlh50k.pods.debug`.
 - Retain Kotlin/Android namespace `moe.chenxy.hyperpods` for now. Source namespace is not installation/signing identity.
 - Independent release key: never reuse HyperPods, LibrePods, Android debug, Cowpea, or another project's certificate.
 - Preserve source provenance, authorship, and applicable GPL while maintaining independent P.O.D.S. Git history. A new certificate must not pretend to update the original HyperPods package.
