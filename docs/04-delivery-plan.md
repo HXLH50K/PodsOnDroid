@@ -1351,3 +1351,37 @@ was started. Next joint round after module reload: run the explicit pose test an
 record rejection reason/size/header plus variant/ownership; then make one deliberate
 swipe-interval request and read its raw reply in Connection diagnostics. Do not
 repeat reconnects or widen decoding before those observations are available.
+
+### Alpha15 package and joint-test handoff
+
+- Source: `99eec5eff564510b3ae0f593074ee3a6c92f8f35`.
+- File: `dist/PODS-0.1.0-alpha.15-debug.apk`; **32,027,791 bytes**.
+- SHA-256: `329d71b8d3cd3981d59c0127aaf126fe83ba2ebc10c3778d0eea4af5ebeea621`.
+- Final committed-source validation: **218 tests, zero failures/errors/skips**,
+  app and AndroidTest APK assembly, and Lint **0 errors / 130 warnings / 2 hints**.
+  This is not a full-suite pass; the six previously reproduced preference-test
+  baseline failures remain separate.
+- Verified the P.O.D.S. label, debug package ID, code 15/version alpha15, embedded
+  revision, API102 metadata, original three scopes and original debug signer.
+  Production signing remains unfinished.
+- Installed in place on the current `houji` device at **2026-10-24 09:11:14**.
+  The predecessor hash matched the known alpha14 APK; the installed replacement
+  hash matches the alpha15 artifact. The first-install time remains unchanged.
+  No uninstall/data reset was used; the exact device staging file was removed.
+- No scope reload, headphone-setting operation, pose session, call, routing test,
+  background logger, wake/unlock/lock operation or instrumentation run was
+  performed during this deployment.
+- Source and receipt are local commits only; no push was requested.
+
+Before the next joint test, the user must run the existing full DEBUG scope
+reload because Bluetooth-side code changed. With the earbuds worn and connected:
+
+1. Run the pose test once and retain a screenshot showing the rejection reason,
+   reply size/header, stream variant and reported ownership. Stop after this
+   bounded attempt even if it has no valid samples.
+2. Make one deliberate swipe-interval selection, wait at least three seconds,
+   then open Connection diagnostics and retain its last-request/raw-reply fields.
+   A missing reply or unchanged selected value is not a successful application.
+
+Issues #2 and #3 stay open pending these observations; #4 remains closed and #5's
+minor UI follow-up remains deferred.
