@@ -1,37 +1,48 @@
 package moe.chenxy.hyperpods.ui.components
 
-import android.app.AlertDialog
 import android.content.Context
 import android.util.Log
-import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
 import android.widget.Toast
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import moe.chenxy.hyperpods.BuildConfig
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import moe.chenxy.hyperpods.R
 import moe.chenxy.hyperpods.utils.InterfaceScopeRestart
 import moe.chenxy.hyperpods.utils.ScopeRestart
 import moe.chenxy.hyperpods.utils.ScopeRestartSelection
 import top.yukonga.miuix.kmp.basic.BasicComponent
+import top.yukonga.miuix.kmp.basic.Checkbox
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun ScopeRestartPanel(onFinished: () -> Unit) {
     val context = LocalContext.current
     val state by InterfaceScopeRestart.state.collectAsState()
-    val hosts = remember { ScopeRestartSelection.available(BuildConfig.BUILD_TYPE == "debug") }
+    val hosts = remember { ScopeRestartSelection.available() }
     val initialSelection = remember(context, hosts) {
         try {
             ScopeRestartSelection.read(context, hosts)
@@ -48,10 +59,9 @@ fun ScopeRestartPanel(onFinished: () -> Unit) {
         saveSelection = { ScopeRestartSelection.save(context, hosts, it) },
         start = { selected ->
             val mode = if (hosts.any { it.processName in selected && it.affectsControlIpc })
-                InterfaceScopeRestart.Mode.DEBUG_SELECTED else InterfaceScopeRestart.Mode.INTERFACE_ONLY
+                InterfaceScopeRestart.Mode.SELECTED else InterfaceScopeRestart.Mode.INTERFACE_ONLY
             InterfaceScopeRestart.start(context, mode, selected)
-        },
-        cancel = InterfaceScopeRestart::cancel)
+        })
 }
 
 @Composable
@@ -61,82 +71,75 @@ internal fun ScopeRestartControls(
     state: InterfaceScopeRestart.State,
     saveSelection: (Set<String>) -> Boolean,
     start: (Set<String>) -> Boolean,
-    cancel: () -> Unit,
 ) {
     val context = LocalContext.current
-    val density = LocalDensity.current.density
-    var selectionDialog by remember { mutableStateOf<AlertDialog?>(null) }
-    var progressDialog by remember { mutableStateOf<AlertDialog?>(null) }
-    var selected by remember { mutableStateOf(initialSelection) }
-    DisposableEffect(Unit) { onDispose { selectionDialog?.dismiss() } }
-    DisposableEffect(state.running) {
-        if (state.running) {
-            selectionDialog?.dismiss()
-            progressDialog = AlertDialog.Builder(context)
-                .setTitle(R.string.scope_restart_running)
-                .setMessage(R.string.scope_restart_do_not_operate)
-                .setCancelable(false)
-                .setNegativeButton(R.string.scope_reload_cancel, null)
-                .show().also { dialog ->
-                    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener { cancel() }
-                }
-        }
-        onDispose { progressDialog?.dismiss(); progressDialog = null }
+    var showSelection by rememberSaveable { mutableStateOf(false) }
+    var selected by rememberSaveable { mutableStateOf(initialSelection.toList()) }
+    var draft by rememberSaveable { mutableStateOf(initialSelection.toList()) }
+    val maxScrollHeight = LocalConfiguration.current.screenHeightDp.dp * .55f
+    LaunchedEffect(state.running) {
+        if (state.running) showSelection = false
     }
     val header = state.result?.let { resultText(context, it) }
-        ?: context.getString(if (state.cancelling) R.string.scope_reload_cancelling
-            else R.string.scope_restart_progress, state.processName ?: context.getString(R.string.scope_reload_preflight))
+        ?: context.getString(R.string.scope_restart_progress,
+            state.processName ?: context.getString(R.string.scope_reload_preflight))
     val details = (listOf(header) + state.hosts.map { hostText(context, it) }).joinToString("\n")
-    SideEffect {
-        progressDialog?.setMessage(context.getString(R.string.scope_restart_do_not_operate) + "\n\n" + details)
-        progressDialog?.getButton(AlertDialog.BUTTON_NEGATIVE)?.isEnabled = !state.cancelling
-    }
     BasicComponent(
         title = stringResource(R.string.scope_restart_title),
         summary = stringResource(R.string.scope_restart_summary),
         enabled = !state.running,
         onClick = {
-            val draft = selected.toMutableSet()
-            val labels = hosts.map { context.getString(scopeHostTitle(it.processName)) + "\n" + it.processName }
-            val warning = TextView(context).apply {
-                text = context.getString(R.string.scope_selection_warning)
-                val inset = (20 * density).toInt()
-                setPadding(inset, inset / 2, inset, 0)
-            }
-            val warningPanel = LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL
-                addView(ScrollView(context).apply { addView(warning) },
-                    LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                        (160 * density).toInt()))
-            }
-            selectionDialog = AlertDialog.Builder(context)
-                .setTitle(R.string.scope_selection_title)
-                .setMultiChoiceItems(labels.toTypedArray(), hosts.map { it.processName in draft }.toBooleanArray()) { dialog, index, checked ->
-                    val name = hosts[index].processName
-                    if (checked) draft.add(name) else draft.remove(name)
-                    (dialog as AlertDialog).getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = draft.isNotEmpty()
-                }
-                .setView(warningPanel)
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.scope_restart_confirm, null)
-                .show().also { dialog ->
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).apply {
-                        isEnabled = draft.isNotEmpty()
-                        setOnClickListener {
-                            val confirmed = draft.toSet()
-                            if (!saveSelection(confirmed)) {
-                                Log.e("PODS-ScopeSelection", "Could not persist scope choices")
-                                Toast.makeText(context, R.string.scope_selection_save_failed, Toast.LENGTH_LONG).show()
-                            } else {
-                                selected = confirmed
-                                if (start(confirmed)) dialog.dismiss()
-                                else Toast.makeText(context, R.string.scope_restart_start_failed, Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
-                }
+            draft = selected
+            showSelection = true
         }
     )
+    if (showSelection && !state.running) ScopeRestartDialog(
+        title = stringResource(R.string.scope_selection_title),
+        tag = "scope_selection_dialog",
+        onDismiss = { showSelection = false },
+    ) {
+        Column(Modifier.heightIn(max = maxScrollHeight).verticalScroll(rememberScrollState())) {
+            Text(stringResource(R.string.scope_selection_warning), fontSize = 14.sp, lineHeight = 21.sp,
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary)
+            hosts.forEach { host ->
+                val checked = host.processName in draft
+                fun toggle() {
+                    draft = if (checked) draft - host.processName else draft + host.processName
+                }
+                BasicComponent(title = stringResource(scopeHostTitle(host.processName)),
+                    summary = host.processName, onClick = ::toggle,
+                    rightActions = { Checkbox(checked = checked, onCheckedChange = { toggle() },
+                        modifier = Modifier.testTag("scope_choice_${host.name}")) })
+            }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TextButton(text = stringResource(android.R.string.cancel), modifier = Modifier.weight(1f),
+                onClick = { showSelection = false })
+            TextButton(text = stringResource(R.string.scope_restart_confirm), modifier = Modifier.weight(1f),
+                enabled = draft.isNotEmpty(), onClick = {
+                    val confirmed = draft.toSet()
+                    if (!saveSelection(confirmed)) {
+                        Log.e("PODS-ScopeSelection", "Could not persist scope choices")
+                        Toast.makeText(context, R.string.scope_selection_save_failed, Toast.LENGTH_LONG).show()
+                    } else {
+                        selected = draft
+                        if (start(confirmed)) showSelection = false
+                        else Toast.makeText(context, R.string.scope_restart_start_failed, Toast.LENGTH_LONG).show()
+                    }
+                })
+        }
+    }
+    if (state.running) ScopeRestartDialog(
+        title = stringResource(R.string.scope_restart_running),
+        tag = "scope_progress_dialog",
+        onDismiss = null,
+    ) {
+        CircularProgressIndicator(progress = null, modifier = Modifier.align(Alignment.CenterHorizontally).size(32.dp))
+        Text(stringResource(R.string.scope_restart_do_not_operate), fontSize = 14.sp, lineHeight = 21.sp)
+        Text(details, fontSize = 13.sp, lineHeight = 19.sp,
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            modifier = Modifier.heightIn(max = maxScrollHeight).verticalScroll(rememberScrollState()))
+    }
     if (state.result != null) {
         BasicComponent(
             title = stringResource(R.string.scope_reload_status_title),
@@ -145,6 +148,25 @@ internal fun ScopeRestartControls(
     }
 }
 
+@Composable
+private fun ScopeRestartDialog(
+    title: String,
+    tag: String,
+    onDismiss: (() -> Unit)?,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Dialog(onDismissRequest = { onDismiss?.invoke() },
+        properties = DialogProperties(dismissOnBackPress = onDismiss != null,
+            dismissOnClickOutside = onDismiss != null)) {
+        DashboardGroup(Modifier.widthIn(max = 420.dp).testTag(tag)) {
+            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(title, fontSize = MiuixTheme.textStyles.title4.fontSize, fontWeight = FontWeight.Medium,
+                    modifier = Modifier.semantics { heading() })
+                content()
+            }
+        }
+    }
+}
 internal fun scopeHostTitle(processName: String): Int = when (processName) {
     ScopeRestart.Host.BLUETOOTH.processName -> R.string.module_bluetooth
     ScopeRestart.Host.SYSTEM_UI.processName -> R.string.module_system_ui

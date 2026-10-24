@@ -80,7 +80,7 @@ fun SettingsPage(padding: PaddingValues, diagnostics: Bundle? = null, isActive: 
                             SettingsDestination.CONNECTION -> DashboardGroup {
                                 ConnectionDiagnostics(diagnostics, includeModuleCheck = false, knownModuleReport = moduleReport)
                             }
-                            SettingsDestination.MODULES -> DashboardGroup { ModuleSelfCheck { moduleReport = it } }
+                            SettingsDestination.MODULES -> ModuleSettings { moduleReport = it }
                             SettingsDestination.HEAD_TRACKING -> DashboardGroup { HeadTrackingPage(current) }
                             SettingsDestination.LID_OBSERVATION -> if (BuildConfig.BUILD_TYPE == "debug")
                                 DashboardGroup { LidObservationPanel(current) }

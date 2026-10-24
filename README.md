@@ -18,8 +18,8 @@ instructions rather than implementation language; detailed protocol identifiers
 remain in diagnostics. About lists the original and forked HyperPods repositories,
 LibrePods and OpenPods with visible, clickable addresses. Attribution, the pinned
 source revision and license notices are retained; the repository remains private.
-All 156 affected JVM regressions pass; app and UI-test APK compilation and Lint
-pass. Both APKs installed on the HyperOS 4 phone without clearing app data.
+The original UI batch passed 156 affected JVM regressions, app/UI-test
+compilation and Lint. Both APKs installed on the HyperOS 4 phone without clearing app data.
 The first phone instrumentation attempt exited in its first About test;
 the final 42-case round stalled in that first case for 600 seconds with no
 completed result. The runner and test app were stopped. Runtime UI acceptance
@@ -42,14 +42,25 @@ after release updates the display with a short animation and a toast; sent-only
 optimistic state is not treated as confirmation. Failed writes animate back to
 the last real reading. This is an interaction fix, not an AirPods 5 readback fix.
 
-Module settings put one restart entry first. A checkbox dialog defaults every
-registered scope to selected and remembers each choice locally; new scopes
-default to selected. A non-dismissible progress dialog asks the user not to
-operate the phone and retains a stop-remaining-steps action. Debug builds allow
-an explicitly selected subset of control scopes; release builds retain their
-interface-only restriction. PID/UID checks, call-state checks, provider-first
-ordering and current-build verification remain enforced. Tests use fake process
-executors; no real scope restart is part of this UI validation.
+Module settings separate scope restart and module status into independent cards.
+Themed Compose dialogs use the same Miuix colors, cards, checkboxes and buttons
+as the rest of the app. Choices are still retained locally, but ordinary copy
+only explains the operation and its effects. After confirmation the progress
+dialog cannot be dismissed and offers no cancel/stop button; it closes when
+the bounded operation completes or fails.
+
+All registered scopes, including Bluetooth, are now available in both debug and
+release builds. Explicit approval, authenticated reports, root PID/UID checks,
+call-state checks, provider-first ordering and current-build verification still
+apply. The normal non-approved control-shutdown guard is unchanged. Debug-only
+fixture mode `scope_restart_preview` simulates selection and progress without
+preference writes, root commands or process restarts. JVM tests exercise fake
+executors in both build variants; no real scope restart is part of UI validation.
+The follow-up passed all 574 Debug JVM tests and 52 focused Release JVM tests,
+app/UI-test compilation and Lint. Direct synthetic screenshots on HyperOS 4
+confirmed both themed dialogs and the absence of a progress cancel/stop button.
+The simulated preview was stopped after checking; automated UI assertions
+remain unexecuted because of the device's idle-hierarchy blocker.
 
 The online audit found a concrete AirPods 5 path in LibrePods'
 `android/rewrite` revision `80aa7461df414470f379ebdfe540b2e8889fcbe2`.

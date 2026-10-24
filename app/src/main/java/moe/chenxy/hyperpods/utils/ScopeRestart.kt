@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.runInterruptible
-import moe.chenxy.hyperpods.BuildConfig
 
 /**
  * Explicit, user-confirmed recovery only. The caller authenticates module reports, obtains each
@@ -60,19 +59,19 @@ class ScopeRestart(private val runner: CommandRunner = RootCommandRunner()) {
     }
 
     /** Explicit process-exit approval is not evidence of cooperative control-channel shutdown. */
-    sealed interface DebugProcessExitPlan {
+    sealed interface ProcessExitPlan {
         val targets: List<Target>
     }
 
-    sealed interface DebugDiscoveryResult {
-        data class Ready(val plan: DebugProcessExitPlan) : DebugDiscoveryResult
-        data class Rejected(val failure: Failure) : DebugDiscoveryResult
+    sealed interface ProcessExitDiscoveryResult {
+        data class Ready(val plan: ProcessExitPlan) : ProcessExitDiscoveryResult
+        data class Rejected(val failure: Failure) : ProcessExitDiscoveryResult
     }
 
     enum class FailureCode {
         NO_VERIFIED_TARGETS, UNAUTHORIZED_HOST, INVALID_EVIDENCE, INVALID_PID, INVALID_UID,
         DUPLICATE_TARGET, INVALID_PLAN, PLAN_ALREADY_USED, CONTROL_IPC_NOT_STOPPED,
-        DEBUG_PROCESS_EXIT_NOT_APPROVED, MISSING_REQUIRED_HOST,
+        PROCESS_EXIT_NOT_APPROVED, MISSING_REQUIRED_HOST,
         ROOT_DENIED, ROOT_UNAVAILABLE, TIMEOUT, OUTPUT_LIMIT, IO_ERROR, INTERRUPTED,
         UNKNOWN_RESULT, MALFORMED_SNAPSHOT, PROCESS_VANISHED, PROCESS_NAME_MISMATCH,
         UID_MISMATCH, PID_REUSED, SIGNAL_FAILED
@@ -166,39 +165,36 @@ class ScopeRestart(private val runner: CommandRunner = RootCommandRunner()) {
         return DiscoveryResult.Ready(ApprovedPlan(owner, immutable(targets)))
     }
 
-    suspend fun discoverDebugProcessExit(
+    suspend fun discoverProcessExit(
         verifiedHosts: List<VerifiedHost>,
         explicitUserApproval: Boolean,
         confirmedHosts: Set<Host>? = null,
-    ): DebugDiscoveryResult {
-        if (!debugProcessExitAllowed(BuildConfig.BUILD_TYPE, explicitUserApproval)) {
-            return DebugDiscoveryResult.Rejected(Failure(FailureCode.DEBUG_PROCESS_EXIT_NOT_APPROVED))
+    ): ProcessExitDiscoveryResult {
+        if (!explicitUserApproval) {
+            return ProcessExitDiscoveryResult.Rejected(Failure(FailureCode.PROCESS_EXIT_NOT_APPROVED))
         }
         val evidence = verifiedHosts.toList()
         if (confirmedHosts != null && (confirmedHosts.isEmpty() ||
             evidence.any { Host.exact(it.packageName, it.processName) !in confirmedHosts })) {
-            return DebugDiscoveryResult.Rejected(Failure(FailureCode.UNAUTHORIZED_HOST))
+            return ProcessExitDiscoveryResult.Rejected(Failure(FailureCode.UNAUTHORIZED_HOST))
         }
         val required = confirmedHosts?.filter { it != Host.XIAOMI_UI } ?: requiredReloadHosts
         for (host in required) {
             if (evidence.none { Host.exact(it.packageName, it.processName) == host }) {
-                return DebugDiscoveryResult.Rejected(Failure(FailureCode.MISSING_REQUIRED_HOST, host))
+                return ProcessExitDiscoveryResult.Rejected(Failure(FailureCode.MISSING_REQUIRED_HOST, host))
             }
         }
         return when (val discovered = discover(Preset.ALL_VERIFIED, evidence, allowAbsentOptionalUi = true)) {
-            is DiscoveryResult.Rejected -> DebugDiscoveryResult.Rejected(discovered.failure)
-            is DiscoveryResult.Ready -> DebugDiscoveryResult.Ready(ApprovedDebugProcessExitPlan(
+            is DiscoveryResult.Rejected -> ProcessExitDiscoveryResult.Rejected(discovered.failure)
+            is DiscoveryResult.Ready -> ProcessExitDiscoveryResult.Ready(ApprovedProcessExitPlan(
                 owner, immutable(discovered.plan.targets.sortedBy { reloadOrder.indexOf(it.host) })
             ))
         }
     }
 
     /** Signals one preflight-approved identity; callers must verify it before advancing. */
-    suspend fun signalDebugProcessExit(plan: DebugProcessExitPlan, target: Target): SignalResult {
-        if (!debugProcessExitAllowed(BuildConfig.BUILD_TYPE, true)) {
-            return stopped(emptyList(), Failure(FailureCode.DEBUG_PROCESS_EXIT_NOT_APPROVED, target.host))
-        }
-        val approved = plan as? ApprovedDebugProcessExitPlan
+    suspend fun signalProcessExit(plan: ProcessExitPlan, target: Target): SignalResult {
+        val approved = plan as? ApprovedProcessExitPlan
         if (approved == null || approved.owner !== owner || target !in approved.targets) {
             return stopped(emptyList(), Failure(FailureCode.INVALID_PLAN, target.host))
         }
@@ -259,8 +255,6 @@ class ScopeRestart(private val runner: CommandRunner = RootCommandRunner()) {
         ))
         val reloadOrder: List<Host> = immutable(requiredReloadHosts + Host.XIAOMI_UI)
 
-        internal fun debugProcessExitAllowed(buildType: String, explicitUserApproval: Boolean) =
-            buildType == "debug" && explicitUserApproval
     }
 }
 
@@ -274,10 +268,10 @@ private class ApprovedPlan(
     override val requiresControlIpcStop = targets.any { it.host.affectsControlIpc }
 }
 
-private class ApprovedDebugProcessExitPlan(
+private class ApprovedProcessExitPlan(
     val owner: Any,
     override val targets: List<ScopeRestart.Target>,
-) : ScopeRestart.DebugProcessExitPlan {
+) : ScopeRestart.ProcessExitPlan {
     private val used = HashSet<ScopeRestart.Target>()
     @Synchronized fun claim(target: ScopeRestart.Target): Boolean = used.add(target)
 }

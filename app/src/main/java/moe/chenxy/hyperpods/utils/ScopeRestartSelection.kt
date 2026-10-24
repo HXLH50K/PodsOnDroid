@@ -6,8 +6,7 @@ import android.content.Context
 internal object ScopeRestartSelection {
     private const val PREFERENCES = "scope_restart_selection"
 
-    fun available(debug: Boolean): List<ScopeRestart.Host> =
-        ScopeRestart.reloadOrder.filter { debug || !it.affectsControlIpc }
+    fun available(): List<ScopeRestart.Host> = ScopeRestart.reloadOrder
 
     fun selected(hosts: List<ScopeRestart.Host>, saved: Map<String, *>): Set<String> =
         hosts.filter { host ->

@@ -26,79 +26,82 @@ class ScopeRestartTest {
         }
     }
 
-    @Test fun explicitExitUsesTheVariantNotTheDisabledAndroidDebuggableFlag() {
-        assertEquals("debug", BuildConfig.BUILD_TYPE)
-        assertFalse(BuildConfig.DEBUG)
-        assertTrue(ScopeRestart.debugProcessExitAllowed("debug", true))
-        assertFalse(ScopeRestart.debugProcessExitAllowed("debug", false))
-        assertFalse(ScopeRestart.debugProcessExitAllowed("release", true))
-        assertFalse(ScopeRestart.debugProcessExitAllowed("Debug", true))
+    @Test fun explicitExitRemainsOptInInEveryBuildVariant() = runBlocking {
+        val runner = Runner()
+        val core = ScopeRestart(runner)
+        val evidence = listOf(host(Host.BLUETOOTH))
+        val selected = setOf(Host.BLUETOOTH)
+        val denied = core.discoverProcessExit(evidence, false, selected) as ScopeRestart.ProcessExitDiscoveryResult.Rejected
+        assertEquals(FailureCode.PROCESS_EXIT_NOT_APPROVED, denied.failure.code)
+        assertTrue(runner.commands.isEmpty())
+        val ready = core.discoverProcessExit(evidence, true, selected) as ScopeRestart.ProcessExitDiscoveryResult.Ready
+        assertTrue(core.signalProcessExit(ready.plan, ready.plan.targets.single()) is SignalResult.Completed)
     }
 
-    @Test fun selectedDebugApprovalCannotAddAnUnselectedHost() = runBlocking {
+    @Test fun selectedApprovalCannotAddAnUnselectedHost() = runBlocking {
         val runner = Runner()
         val core = ScopeRestart(runner)
         val selected = setOf(Host.BLUETOOTH)
-        val rejected = core.discoverDebugProcessExit(
+        val rejected = core.discoverProcessExit(
             listOf(host(Host.BLUETOOTH), host(Host.SYSTEM_UI)), true, selected)
-            as ScopeRestart.DebugDiscoveryResult.Rejected
+            as ScopeRestart.ProcessExitDiscoveryResult.Rejected
         assertEquals(FailureCode.UNAUTHORIZED_HOST, rejected.failure.code)
         assertTrue(runner.commands.isEmpty())
-        val plan = (core.discoverDebugProcessExit(listOf(host(Host.BLUETOOTH)), true, selected)
-            as ScopeRestart.DebugDiscoveryResult.Ready).plan
+        val plan = (core.discoverProcessExit(listOf(host(Host.BLUETOOTH)), true, selected)
+            as ScopeRestart.ProcessExitDiscoveryResult.Ready).plan
         assertEquals(listOf(Host.BLUETOOTH), plan.targets.map { it.host })
-        assertTrue(core.signalDebugProcessExit(plan, plan.targets.single()) is SignalResult.Completed)
+        assertTrue(core.signalProcessExit(plan, plan.targets.single()) is SignalResult.Completed)
     }
 
-    @Test fun explicitDebugExitNeedsImmutableApprovalAndAllThreeRequiredHosts() = runBlocking {
+    @Test fun explicitExitNeedsImmutableApprovalAndAllThreeRequiredHosts() = runBlocking {
         val runner = Runner()
         val core = ScopeRestart(runner)
         val required = ScopeRestart.requiredReloadHosts.map { host(it) }
-        val unapproved = core.discoverDebugProcessExit(required, false) as ScopeRestart.DebugDiscoveryResult.Rejected
-        assertEquals(FailureCode.DEBUG_PROCESS_EXIT_NOT_APPROVED, unapproved.failure.code)
+        val unapproved = core.discoverProcessExit(required, false) as ScopeRestart.ProcessExitDiscoveryResult.Rejected
+        assertEquals(FailureCode.PROCESS_EXIT_NOT_APPROVED, unapproved.failure.code)
         for (missing in ScopeRestart.requiredReloadHosts) {
-            val rejected = core.discoverDebugProcessExit(required.filter { it.processName != missing.processName }, true)
-                as ScopeRestart.DebugDiscoveryResult.Rejected
+            val rejected = core.discoverProcessExit(required.filter { it.processName != missing.processName }, true)
+                as ScopeRestart.ProcessExitDiscoveryResult.Rejected
             assertEquals(FailureCode.MISSING_REQUIRED_HOST, rejected.failure.code)
         }
         assertTrue(runner.commands.isEmpty())
-        val plan = (core.discoverDebugProcessExit(required, true) as ScopeRestart.DebugDiscoveryResult.Ready).plan
+        val plan = (core.discoverProcessExit(required, true) as ScopeRestart.ProcessExitDiscoveryResult.Ready).plan
         assertEquals(ScopeRestart.requiredReloadHosts, plan.targets.map { it.host })
         try {
             (plan.targets as MutableList<*>).clear()
-            fail("Debug approval must be immutable")
+            fail("Process-exit approval must be immutable")
         } catch (_: UnsupportedOperationException) {
             assertEquals(3, plan.targets.size)
         }
         val target = plan.targets.first()
         assertEquals(FailureCode.INVALID_PLAN,
-            (ScopeRestart(runner).signalDebugProcessExit(plan, target) as SignalResult.Stopped).failure.code)
+            (ScopeRestart(runner).signalProcessExit(plan, target) as SignalResult.Stopped).failure.code)
         assertEquals(3, runner.commands.size)
-        assertTrue(core.signalDebugProcessExit(plan, target) is SignalResult.Completed)
+        assertTrue(core.signalProcessExit(plan, target) is SignalResult.Completed)
         assertEquals(FailureCode.PLAN_ALREADY_USED,
-            (core.signalDebugProcessExit(plan, target) as SignalResult.Stopped).failure.code)
+            (core.signalProcessExit(plan, target) as SignalResult.Stopped).failure.code)
     }
 
-    @Test fun debugExitDoesNotBypassNormalControlShutdownGuardOrAuthorizeUnapprovedIdentity() = runBlocking {
+    @Test fun explicitExitDoesNotBypassNormalControlShutdownGuardOrAuthorizeUnapprovedIdentity() = runBlocking {
         val runner = Runner()
         val core = ScopeRestart(runner)
         val evidence = ScopeRestart.requiredReloadHosts.map { host(it) }
         val normal = (core.discover(Preset.ALL_VERIFIED, evidence) as DiscoveryResult.Ready).plan
         assertEquals(FailureCode.CONTROL_IPC_NOT_STOPPED, (core.signal(normal) as SignalResult.Stopped).failure.code)
-        val debug = (core.discoverDebugProcessExit(evidence, true) as ScopeRestart.DebugDiscoveryResult.Ready).plan
-        val changed = debug.targets.first().copy(pid = 900)
+        val approved = (core.discoverProcessExit(evidence, true) as ScopeRestart.ProcessExitDiscoveryResult.Ready).plan
+        val changed = approved.targets.first().copy(pid = 900)
         assertEquals(FailureCode.INVALID_PLAN,
-            (core.signalDebugProcessExit(debug, changed) as SignalResult.Stopped).failure.code)
+            (core.signalProcessExit(approved, changed) as SignalResult.Stopped).failure.code)
         assertTrue(runner.commands.none { it.phase == Phase.SIGNAL })
     }
 
-    @Test fun debugSignalsRevalidateOriginalStartTimeAndNeverResnapshotToAuthorizePidReuse() = runBlocking {
+    @Test fun signalsRevalidateOriginalStartTimeAndNeverResnapshotToAuthorizePidReuse() = runBlocking {
         val runner = Runner { if (it.phase == Phase.SIGNAL) response(it, start = 999) else response(it) }
         val core = ScopeRestart(runner)
-        val plan = (core.discoverDebugProcessExit(ScopeRestart.requiredReloadHosts.map { host(it) }, true)
-            as ScopeRestart.DebugDiscoveryResult.Ready).plan
+        val plan = (core.discoverProcessExit(ScopeRestart.requiredReloadHosts.map { host(it) }, true)
+            as ScopeRestart.ProcessExitDiscoveryResult.Ready).plan
         assertEquals(FailureCode.PID_REUSED,
-            (core.signalDebugProcessExit(plan, plan.targets.first()) as SignalResult.Stopped).failure.code)
+            (core.signalProcessExit(plan, plan.targets.first()) as SignalResult.Stopped).failure.code)
     }
 
     @Test fun rejectsUnauthorizedNamesAndInjectionBeforeStartingRoot() = runBlocking {

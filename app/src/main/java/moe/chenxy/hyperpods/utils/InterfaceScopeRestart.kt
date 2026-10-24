@@ -16,13 +16,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
-import moe.chenxy.hyperpods.BuildConfig
 
-/** Application-owned, bounded work: leaving or scrolling About does not cancel verification. */
+/** Application-owned, bounded work: leaving the page does not cancel verification. */
 object InterfaceScopeRestart {
-    enum class Mode { INTERFACE_ONLY, DEBUG_ALL, DEBUG_SELECTED }
+    enum class Mode { INTERFACE_ONLY, ALL, SELECTED }
     enum class Failure {
-        ALREADY_RUNNING, DEBUG_ONLY, NO_VERIFIED_HOSTS, HOST_UNAVAILABLE, ACTIVE_CALL,
+        ALREADY_RUNNING, NO_VERIFIED_HOSTS, HOST_UNAVAILABLE, ACTIVE_CALL,
         CALL_STATE_UNKNOWN, AUDIO_STATE_UNAVAILABLE, IDENTITY_CHANGED, ROOT_COMMAND_FAILED,
         MODULE_OUTDATED, RELOAD_TIMEOUT, PROCESS_DID_NOT_EXIT, PERMISSION_DENIED,
         OPERATION_CANCELLED, VERIFICATION_INTERRUPTED, OPERATION_TIMED_OUT, UNEXPECTED_ERROR
@@ -78,7 +77,7 @@ object InterfaceScopeRestart {
 
     @Synchronized
     fun start(context: Context, mode: Mode, confirmedProcesses: Set<String>): Boolean {
-        if (state.value.running || mode != Mode.INTERFACE_ONLY && BuildConfig.BUILD_TYPE != "debug") return false
+        if (state.value.running) return false
         val application = context.applicationContext
         val confirmed = confirmedProcesses.toSet()
         mutableState.value = State(operationId = state.value.operationId + 1, running = true)
@@ -145,9 +144,8 @@ internal class ScopeReloadOperation(
         confirmed.sortedBy { name -> ScopeRestart.reloadOrder.indexOfFirst { it.processName == name } }
             .forEach { hosts[it] = InterfaceScopeRestart.HostResult(it, full && it == ScopeRestart.Host.XIAOMI_UI.processName) }
         try {
-            if (full && BuildConfig.BUILD_TYPE != "debug") return finish(InterfaceScopeRestart.Failure.DEBUG_ONLY)
             if (confirmed.isEmpty() || !allowed.containsAll(confirmed) ||
-                mode == InterfaceScopeRestart.Mode.DEBUG_ALL && !confirmed.containsAll(required)) {
+                mode == InterfaceScopeRestart.Mode.ALL && !confirmed.containsAll(required)) {
                 return finish(InterfaceScopeRestart.Failure.NO_VERIFIED_HOSTS)
             }
             currentCoroutineContext().ensureActive()
@@ -171,15 +169,15 @@ internal class ScopeReloadOperation(
                 }
                 evidence.add(report.evidence())
             }
-            var debugPlan: ScopeRestart.DebugProcessExitPlan? = null
+            var exitPlan: ScopeRestart.ProcessExitPlan? = null
             val targets = if (full) {
-                val selectedHosts = if (mode == InterfaceScopeRestart.Mode.DEBUG_SELECTED)
+                val selectedHosts = if (mode == InterfaceScopeRestart.Mode.SELECTED)
                     ScopeRestart.Host.entries.filter { it.processName in confirmed }.toSet() else null
-                when (val discovered = executor.discoverDebugProcessExit(evidence, explicitUserApproval = true,
+                when (val discovered = executor.discoverProcessExit(evidence, explicitUserApproval = true,
                     confirmedHosts = selectedHosts)) {
-                    is ScopeRestart.DebugDiscoveryResult.Rejected -> return rootFailed(discovered.failure)
-                    is ScopeRestart.DebugDiscoveryResult.Ready -> {
-                        debugPlan = discovered.plan
+                    is ScopeRestart.ProcessExitDiscoveryResult.Rejected -> return rootFailed(discovered.failure)
+                    is ScopeRestart.ProcessExitDiscoveryResult.Ready -> {
+                        exitPlan = discovered.plan
                         discovered.plan.targets
                     }
                 }
@@ -256,7 +254,7 @@ internal class ScopeReloadOperation(
                 currentCoroutineContext().ensureActive()
                 update(target.host.processName, InterfaceScopeRestart.HostState.SIGNAL_PENDING)
                 mayHaveSignalled = true
-                val signal = if (full) executor.signalDebugProcessExit(requireNotNull(debugPlan), target)
+                val signal = if (full) executor.signalProcessExit(requireNotNull(exitPlan), target)
                     else executor.signal(requireNotNull(uiPlan))
                 when (signal) {
                     is ScopeRestart.SignalResult.Stopped -> return rootFailed(signal.failure)

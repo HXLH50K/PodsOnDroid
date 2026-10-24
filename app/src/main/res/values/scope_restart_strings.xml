@@ -1,16 +1,18 @@
 <resources>
     <string name="scope_restart_title">Restart module scopes</string>
     <string name="scope_restart_summary">Choose which system processes to restart and reload the module. Requires root.</string>
+    <string name="scope_restart_section">Scope restart</string>
+    <string name="scope_module_status">Module status</string>
     <string name="scope_selection_title">Choose scopes to restart</string>
-    <string name="scope_selection_warning">Your choices will be remembered. Bluetooth scopes are available in debug builds only.\n\nRestarting Bluetooth disconnects audio and connected devices briefly. Restarting System UI may hide the status bar and control center briefly. Only the selected processes are asked to restart, but Android may also restart dependent processes.\n\nThe app checks process identities and call status before restarting, then checks that the current module loaded. Optional Xiaomi Bluetooth UI may wait until it opens normally. No data is cleared and the phone is not rebooted. Cancel stops later steps; a restart already sent cannot be undone.</string>
+    <string name="scope_selection_warning">Restarting Bluetooth briefly disconnects audio and connected devices. The status bar and control center may also disappear briefly.\n\nAfter you confirm, wait for the restart to finish. Android may also restart related processes. No data is cleared and the phone is not rebooted.</string>
     <string name="scope_selection_read_failed">Could not read saved choices. Select the scopes again.</string>
     <string name="scope_selection_save_failed">Could not save your choices. Nothing was restarted. Try again.</string>
     <string name="scope_restart_start_failed">Could not start. Another restart may already be running.</string>
     <string name="scope_restart_running">Restarting selected scopes</string>
-    <string name="scope_restart_do_not_operate">Please wait and do not use the phone while the module reloads. Bluetooth or the system interface may disappear briefly.\nCancel stops later steps, but cannot undo a restart already started.</string>
+    <string name="scope_restart_do_not_operate">Please wait and do not use the phone while the module reloads. Bluetooth or the system interface may disappear briefly. This dialog closes when the task finishes.</string>
     <string name="scope_failure_call">a call is active, or call status could not be checked</string>
     <string name="scope_failure_old_module">a process loaded an older module; check framework caching</string>
-    <string name="scope_failure_cancelled">you cancelled the restart</string>
+    <string name="scope_failure_cancelled">the restart was interrupted</string>
     <string name="scope_failure_root">root access or process checks failed</string>
     <string name="scope_failure_timeout">a process did not restart or load the module in time</string>
     <string name="scope_failure_report">a required module report is missing or has changed</string>
@@ -21,8 +23,6 @@
     <string name="scope_restart_unknown_outcome">Stopped after checking %1$d process(es). A restart may have started, but recovery could not be confirmed. Check module loading before trying again.</string>
     <string name="scope_reload_status_title">Last restart result</string>
     <string name="scope_reload_preflight">selected processes</string>
-    <string name="scope_reload_cancel">Stop remaining steps</string>
-    <string name="scope_reload_cancelling">Cancelling; waiting for pending root work to close…</string>
     <string name="scope_reload_pending">Not verified / pending: %1$s</string>
     <string name="scope_host_pending">pending; not signalled</string>
     <string name="scope_host_preflighted">PID, UID and start time preflighted; not signalled</string>

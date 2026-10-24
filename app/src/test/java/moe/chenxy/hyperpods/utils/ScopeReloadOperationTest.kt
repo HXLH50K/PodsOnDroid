@@ -23,7 +23,7 @@ class ScopeReloadOperationTest {
             setOf(Host.XIAOMI_BLUETOOTH, Host.SYSTEM_UI))) {
             val fake = Fake()
             val names = selection.map { it.processName }.toSet()
-            val result = fake.operation().run(Mode.DEBUG_SELECTED, names)
+            val result = fake.operation().run(Mode.SELECTED, names)
             assertNull(result.failure)
             assertEquals(ScopeRestart.reloadOrder.filter { it in selection }, fake.signals.map { it.host })
             assertEquals(names, result.completed.toSet())
@@ -36,19 +36,19 @@ class ScopeReloadOperationTest {
         val busy = Fake().apply {
             reports[Host.BLUETOOTH.processName] = reports.getValue(Host.BLUETOOTH.processName).copy(callState = "busy")
         }
-        assertEquals(Failure.ACTIVE_CALL, busy.operation().run(Mode.DEBUG_SELECTED, selected).failure)
+        assertEquals(Failure.ACTIVE_CALL, busy.operation().run(Mode.SELECTED, selected).failure)
         assertTrue(busy.commands.isEmpty())
         val absent = Fake().apply { reports.remove(Host.SYSTEM_UI.processName) }
-        assertEquals(Failure.HOST_UNAVAILABLE, absent.operation().run(Mode.DEBUG_SELECTED, selected).failure)
+        assertEquals(Failure.HOST_UNAVAILABLE, absent.operation().run(Mode.SELECTED, selected).failure)
         assertTrue(absent.commands.isEmpty())
         val empty = Fake()
-        assertEquals(Failure.NO_VERIFIED_HOSTS, empty.operation().run(Mode.DEBUG_SELECTED, emptySet()).failure)
+        assertEquals(Failure.NO_VERIFIED_HOSTS, empty.operation().run(Mode.SELECTED, emptySet()).failure)
         assertTrue(empty.commands.isEmpty())
     }
 
     @Test fun oldBuildsReloadAllThreeProvidersBeforeConsumersAndVerifyBetweenEverySignal() = runBlocking {
         val fake = Fake()
-        val result = fake.operation().run(Mode.DEBUG_ALL, required)
+        val result = fake.operation().run(Mode.ALL, required)
         assertNull(result.failure)
         assertEquals(ScopeRestart.requiredReloadHosts.map { it.processName }, result.completed)
         assertTrue(result.pending.isEmpty())
@@ -69,16 +69,16 @@ class ScopeReloadOperationTest {
     @Test fun everyRequiredReportAndActualPackageUidMustPassBeforeAnyRootOrSignal() = runBlocking {
         for (host in ScopeRestart.requiredReloadHosts) {
             val absent = Fake().apply { reports.remove(host.processName) }
-            assertEquals(Failure.HOST_UNAVAILABLE, absent.operation().run(Mode.DEBUG_ALL, required).failure)
+            assertEquals(Failure.HOST_UNAVAILABLE, absent.operation().run(Mode.ALL, required).failure)
             assertTrue(absent.commands.isEmpty())
             val wrongUid = Fake().apply {
                 reports[host.processName] = reports.getValue(host.processName).copy(uid = 9999)
             }
-            assertEquals(Failure.IDENTITY_CHANGED, wrongUid.operation().run(Mode.DEBUG_ALL, required).failure)
+            assertEquals(Failure.IDENTITY_CHANGED, wrongUid.operation().run(Mode.ALL, required).failure)
             assertTrue(wrongUid.commands.isEmpty())
             val unconfirmed = Fake()
             assertEquals(Failure.NO_VERIFIED_HOSTS,
-                unconfirmed.operation().run(Mode.DEBUG_ALL, required - host.processName).failure)
+                unconfirmed.operation().run(Mode.ALL, required - host.processName).failure)
             assertTrue(unconfirmed.commands.isEmpty())
         }
     }
@@ -89,7 +89,7 @@ class ScopeReloadOperationTest {
                 if (command.phase == Phase.SNAPSHOT && command.host == Host.BLUETOOTH) error(FailureCode.UID_MISMATCH) else null
             }
         }
-        val result = fake.operation().run(Mode.DEBUG_ALL, required)
+        val result = fake.operation().run(Mode.ALL, required)
         assertEquals(FailureCode.UID_MISMATCH, result.rootFailure)
         assertEquals(3, fake.commands.size)
         assertTrue(fake.signals.isEmpty())
@@ -108,14 +108,14 @@ class ScopeReloadOperationTest {
                 reports[Host.BLUETOOTH.processName] = reports.getValue(Host.BLUETOOTH.processName).copy(callState = call)
                 normalAudio = audio
             }
-            assertEquals(expected, fake.operation().run(Mode.DEBUG_ALL, required).failure)
+            assertEquals(expected, fake.operation().run(Mode.ALL, required).failure)
             assertTrue(fake.commands.isEmpty())
         }
     }
 
     @Test fun aCallStartingAfterPreflightStopsBeforeAnySignal() = runBlocking {
         val fake = Fake().apply { beforeReports = { count -> if (count == 2) normalAudio = false } }
-        assertEquals(Failure.ACTIVE_CALL, fake.operation().run(Mode.DEBUG_ALL, required).failure)
+        assertEquals(Failure.ACTIVE_CALL, fake.operation().run(Mode.ALL, required).failure)
         assertEquals(3, fake.commands.size)
         assertTrue(fake.signals.isEmpty())
     }
@@ -124,7 +124,7 @@ class ScopeReloadOperationTest {
         val fake = Fake().apply {
             beforeReports = { count -> if (count == 2) reports.remove(Host.SYSTEM_UI.processName) }
         }
-        val result = fake.operation().run(Mode.DEBUG_ALL, required)
+        val result = fake.operation().run(Mode.ALL, required)
         assertEquals(Failure.HOST_UNAVAILABLE, result.failure)
         assertTrue(result.completed.isEmpty())
         assertTrue(fake.signals.isEmpty())
@@ -140,14 +140,14 @@ class ScopeReloadOperationTest {
         )
         for (mutate in mutations) {
             val fake = Fake().apply { afterSignal = { replace(it.host, mutate = mutate) } }
-            val result = fake.operation().run(Mode.DEBUG_ALL, required)
+            val result = fake.operation().run(Mode.ALL, required)
             assertNotNull(result.failure)
             assertTrue(result.completed.isEmpty())
             assertEquals(listOf(Host.BLUETOOTH), fake.signals.map { it.host })
             assertEquals(required, result.pending.toSet())
         }
         val ignoredSignal = Fake().apply { afterSignal = {} }
-        val result = ignoredSignal.operation().run(Mode.DEBUG_ALL, required)
+        val result = ignoredSignal.operation().run(Mode.ALL, required)
         assertEquals(Failure.PROCESS_DID_NOT_EXIT, result.failure)
         assertEquals(HostState.OLD_PROCESS_PRESENT, result.hosts.first().state)
         assertEquals(1, ignoredSignal.signals.size)
@@ -161,7 +161,7 @@ class ScopeReloadOperationTest {
                     if (exited) identities.remove(command.pid)
                 }
             }
-            val result = fake.operation().run(Mode.DEBUG_ALL, required)
+            val result = fake.operation().run(Mode.ALL, required)
             assertEquals(Failure.RELOAD_TIMEOUT, result.failure)
             assertEquals(if (exited) HostState.ORIGINAL_PROCESS_ABSENT else HostState.MISSING_MODULE_REPORT,
                 result.hosts.first().state)
@@ -177,7 +177,7 @@ class ScopeReloadOperationTest {
                 if (command.host == Host.BLUETOOTH) reports.remove(Host.XIAOMI_BLUETOOTH.processName)
             }
         }
-        val result = fake.operation().run(Mode.DEBUG_ALL, required)
+        val result = fake.operation().run(Mode.ALL, required)
         assertEquals(Failure.HOST_UNAVAILABLE, result.failure)
         assertEquals(listOf(Host.BLUETOOTH.processName), result.completed)
         assertEquals(setOf(Host.XIAOMI_BLUETOOTH.processName, Host.SYSTEM_UI.processName), result.pending.toSet())
@@ -194,7 +194,7 @@ class ScopeReloadOperationTest {
                     } else replace(command.host)
                 }
             }
-            val result = fake.operation().run(Mode.DEBUG_ALL, required + Host.XIAOMI_UI.processName)
+            val result = fake.operation().run(Mode.ALL, required + Host.XIAOMI_UI.processName)
             assertNull(result.failure)
             assertEquals(required, result.completed.toSet())
             assertEquals(listOf(Host.XIAOMI_UI.processName), result.pending)
@@ -214,7 +214,7 @@ class ScopeReloadOperationTest {
                     }
                 }
             }
-            val result = fake.operation().run(Mode.DEBUG_ALL, required + Host.XIAOMI_UI.processName)
+            val result = fake.operation().run(Mode.ALL, required + Host.XIAOMI_UI.processName)
             assertNull(result.failure)
             assertEquals(required, result.completed.toSet())
             assertEquals(HostState.AWAITING_NORMAL_RELAUNCH, result.hosts.last().state)
@@ -230,7 +230,7 @@ class ScopeReloadOperationTest {
                     if (command.host == Host.BLUETOOTH) replace(Host.XIAOMI_BLUETOOTH, current = currentBuild)
                 }
             }
-            val result = fake.operation().run(Mode.DEBUG_ALL, required)
+            val result = fake.operation().run(Mode.ALL, required)
             if (currentBuild) {
                 assertNull(result.failure)
                 assertEquals(required, result.completed.toSet())
@@ -253,7 +253,7 @@ class ScopeReloadOperationTest {
                 }
             }
         }
-        val result = fake.operation().run(Mode.DEBUG_ALL, required)
+        val result = fake.operation().run(Mode.ALL, required)
         assertEquals(FailureCode.PID_REUSED, result.rootFailure)
         assertTrue(result.completed.isEmpty())
         assertEquals(1, fake.signals.size)
@@ -266,7 +266,7 @@ class ScopeReloadOperationTest {
                 if (command.phase == Phase.SIGNAL) CommandResult.Failed(ScopeRestart.CommandFailure.TIMEOUT) else null
             }
         }
-        val result = fake.operation().run(Mode.DEBUG_ALL, required)
+        val result = fake.operation().run(Mode.ALL, required)
         assertEquals(FailureCode.TIMEOUT, result.rootFailure)
         assertTrue(result.signalOutcomeUnknown)
         assertEquals(HostState.OUTCOME_UNKNOWN, result.hosts.first().state)
@@ -279,7 +279,7 @@ class ScopeReloadOperationTest {
         fake.beforeReports = {
             if (fake.signals.size == 3 && ++finalQueries == 2) fake.reports.remove(Host.BLUETOOTH.processName)
         }
-        val result = fake.operation().run(Mode.DEBUG_ALL, required)
+        val result = fake.operation().run(Mode.ALL, required)
         assertEquals(Failure.HOST_UNAVAILABLE, result.failure)
         assertFalse(result.completed.contains(Host.BLUETOOTH.processName))
         assertTrue(result.pending.contains(Host.BLUETOOTH.processName))
@@ -299,7 +299,7 @@ class ScopeReloadOperationTest {
             beforeReports = { if (it == 2) { entered.complete(Unit); awaitCancellation() } }
         }
         val operation = fake.operation()
-        val job = launch { operation.run(Mode.DEBUG_ALL, required) }
+        val job = launch { operation.run(Mode.ALL, required) }
         entered.await()
         job.cancelAndJoin()
         assertEquals(Failure.OPERATION_CANCELLED, operation.result?.failure)
@@ -320,7 +320,7 @@ class ScopeReloadOperationTest {
                 }
             }
             val operation = fake.operation()
-            val job = launch { operation.run(Mode.DEBUG_ALL, required) }
+            val job = launch { operation.run(Mode.ALL, required) }
             entered.await()
             job.cancelAndJoin()
             assertEquals(Failure.VERIFICATION_INTERRUPTED, operation.result?.failure)

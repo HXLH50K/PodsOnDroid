@@ -33,7 +33,7 @@ class InterfaceScopeRestartTest {
             version = 4, buildInstance = "old-alpha4", callState = if (it == ScopeRestart.Host.BLUETOOTH) "idle" else "unknown"
         ) }
         assertEquals(ScopeRestart.reloadOrder.map { it.processName },
-            InterfaceScopeRestart.eligible(reports, InterfaceScopeRestart.Mode.DEBUG_ALL).map { it.processName })
+            InterfaceScopeRestart.eligible(reports, InterfaceScopeRestart.Mode.ALL).map { it.processName })
     }
 
     @Test fun fullReloadRequiresExactProcessesValidPidUidAndModernApi() {
@@ -41,7 +41,7 @@ class InterfaceScopeRestartTest {
         for (invalid in listOf(valid.copy(processName = "${valid.processName}:other"),
             valid.copy(pid = 1), valid.copy(uid = 0), valid.copy(frameworkApi = 101),
             valid.copy(frameworkApi = 1001), valid.copy(packageName = "system_server"))) {
-            assertTrue(InterfaceScopeRestart.eligible(listOf(invalid), InterfaceScopeRestart.Mode.DEBUG_ALL).isEmpty())
+            assertTrue(InterfaceScopeRestart.eligible(listOf(invalid), InterfaceScopeRestart.Mode.ALL).isEmpty())
         }
     }
 }

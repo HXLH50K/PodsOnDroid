@@ -4,14 +4,18 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.delay
 import moe.chenxy.hyperpods.BuildConfig
@@ -23,9 +27,24 @@ import top.yukonga.miuix.kmp.basic.BasicComponent
 import java.util.UUID
 
 @Composable
-fun ModuleSelfCheck(onReport: (String) -> Unit) {
+internal fun ModuleSettings(onReport: (String) -> Unit) {
+    var refreshToken by remember { mutableIntStateOf(0) }
+    Column {
+        DashboardSection(stringResource(R.string.scope_restart_section))
+        DashboardGroup(Modifier.testTag("scope_restart_section")) {
+            ScopeRestartPanel { refreshToken++ }
+        }
+        DashboardSection(stringResource(R.string.scope_module_status))
+        DashboardGroup(Modifier.testTag("module_status_section")) {
+            ModuleSelfCheck(refreshToken, onReport)
+        }
+    }
+}
+
+@Composable
+fun ModuleSelfCheck(refreshToken: Int = 0, onReport: (String) -> Unit) {
     val context = LocalContext.current
-    var request by remember { mutableStateOf(UUID.randomUUID().toString()) }
+    var request by remember(refreshToken) { mutableStateOf(UUID.randomUUID().toString()) }
     var reports by remember { mutableStateOf(emptyMap<String, ModuleStatus.Report>()) }
     var waiting by remember { mutableStateOf(true) }
     DisposableEffect(context, request) {
@@ -43,7 +62,6 @@ fun ModuleSelfCheck(onReport: (String) -> Unit) {
         onDispose { context.unregisterReceiver(receiver) }
     }
     LaunchedEffect(request) { delay(2500); waiting = false }
-    ScopeRestartPanel { request = UUID.randomUUID().toString() }
     BasicComponent(title = stringResource(R.string.module_self_check),
         summary = stringResource(R.string.module_installed, BuildConfig.VERSION_CODE, BuildConfig.BUILD_REVISION))
     val processNames = ModuleStatus.packages + reports.keys.filter { it !in ModuleStatus.packages }.sorted()

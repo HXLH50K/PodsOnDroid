@@ -104,6 +104,19 @@ in use. This does not implement finger-progress-driven predictive back or
 claim measured visual acceptance. The previous research below motivated this
 framework; special glass/refraction work stays deferred.
 
+### User-facing scope restart
+
+The module settings page renders restart controls in their own card above
+module status. Selection and non-dismissible progress use one Compose dialog
+container with the app's Miuix theme, not platform `AlertDialog` styling.
+Confirmation starts a bounded operation with no subsequent stop button.
+The internal cancellation/timeout cleanup remains available to the coordinator.
+
+Registered scopes are offered in both build variants. Promotion from a debug
+experiment does not remove explicit approval, allowlisted process identities,
+fresh report/UID checks, idle-call checks or verification of the loaded build.
+Unit tests run the same fake-executor sequence in debug and release.
+
 ## App design and material survey (2026-10-23)
 
 Scope: research first, following the user's rejection of alpha11 and clarification

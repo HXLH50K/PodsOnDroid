@@ -58,6 +58,19 @@ class SettingsHierarchyTest {
             compose.revealSetting(text(id)).assertIsDisplayed()
     }
 
+    @Test fun restartAndModuleStatusHaveSeparateCards() {
+        settingsTab()
+        compose.revealSetting(text(R.string.settings_tools)).performClick()
+        compose.revealSetting(text(R.string.settings_modules)).performClick()
+        val restart = compose.onNodeWithTag("scope_restart_section").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val status = compose.onNodeWithTag("module_status_section").fetchSemanticsNode().boundsInRoot
+        assertTrue("Restart should be its own card above module status", restart.bottom < status.top)
+        compose.onNode(hasText(text(R.string.scope_restart_title)) and
+            hasAnyAncestor(hasTestTag("scope_restart_section"))).assertExists()
+        compose.onNode(hasText(text(R.string.module_self_check)) and
+            hasAnyAncestor(hasTestTag("module_status_section"))).assertExists()
+    }
+
     @Test fun notificationsAreAppSettingsAndBackReturnsToSettings() {
         settingsTab()
         compose.revealSetting(text(R.string.battery_notifications_title)).performClick()

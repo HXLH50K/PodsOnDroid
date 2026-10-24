@@ -7,10 +7,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.background
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import moe.chenxy.hyperpods.ui.components.DashboardGroup
+import moe.chenxy.hyperpods.ui.components.ScopeRestartControls
+import moe.chenxy.hyperpods.utils.InterfaceScopeRestart
+import moe.chenxy.hyperpods.utils.ScopeRestartSelection
 import moe.chenxy.hyperpods.pods.EarDetectionStatus
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AACPManager
@@ -21,6 +30,7 @@ import moe.chenxy.hyperpods.utils.data.BatteryParams
 import moe.chenxy.hyperpods.utils.data.EarDetectionParams
 import moe.chenxy.hyperpods.utils.data.PodBatteryParams
 import top.yukonga.miuix.kmp.basic.*
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 /** Renders the production page with synthetic data, without Bluetooth or preference writes. */
 class DashboardPreviewActivity : ComponentActivity() {
@@ -39,6 +49,10 @@ class DashboardPreviewActivity : ComponentActivity() {
         setContent {
             AppTheme(colorMode = intent.getIntExtra("theme", 1)) {
                 AppAppearanceProvider {
+                if (intent.getBooleanExtra("scope_restart_preview", false)) {
+                    ScopeRestartPreview()
+                    return@AppAppearanceProvider
+                }
                 var anc by remember { mutableStateOf(NoiseControlMode.NOISE_CANCELLATION) }
                 var personalized by remember { mutableStateOf(intent.getBooleanExtra("personalized", false)) }
                 var conversation by remember { mutableStateOf(false) }
@@ -105,9 +119,27 @@ class DashboardPreviewActivity : ComponentActivity() {
                                 Key.SWIPE_SPEED to 1, Key.CHIME_VOLUME to 50,
                             ))
                     }
+
                 }
             }
         }
     }
+    }
+
+    @Composable
+    private fun ScopeRestartPreview() {
+        val hosts = remember { ScopeRestartSelection.available() }
+        var state by remember { mutableStateOf(InterfaceScopeRestart.State()) }
+        Column(Modifier.fillMaxSize().background(MiuixTheme.colorScheme.background).statusBarsPadding().padding(16.dp)) {
+            DashboardGroup {
+                ScopeRestartControls(hosts, hosts.map { it.processName }.toSet(), state,
+                    saveSelection = { true },
+                    start = { selected ->
+                        state = InterfaceScopeRestart.State(running = true, processName = selected.first(),
+                            hosts = selected.map { InterfaceScopeRestart.HostResult(it, optional = false) })
+                        true
+                    })
+            }
+        }
     }
 }
