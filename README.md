@@ -24,7 +24,7 @@ See [the extension guide](docs/03-architecture.md#compatibility-policies-and-ext
 This refactor does not lower the current Android 15 / API 35 minimum, remove
 the root/API 102 requirement, or implement another OEM's integration.
 
-## Current checkpoint: 0.2.0-beta release preparation
+## Current checkpoint: 0.2.0-beta signed Release
 
 Version name is `0.2.0-beta`, with monotonically increased version code 19.
 The release uses the production application ID `com.hxlh50k.pods`, with code
@@ -33,6 +33,16 @@ has been created; local delivery signs the Gradle artifact after packaging.
 An unsigned artifact must not replace the Debug installation. Release build,
 94 focused production-variant regressions and Lint passed. This version does
 not claim additional device or earbud acceptance.
+
+The signed APK from source revision `3582eb6` is
+`dist/PODS-0.2.0-beta-release.apk` (8,996,724 bytes). APK SHA-256:
+`eabdcf1716dde5c983fbe312f2a2bf0973caee9cb546c372cff4cecb630aae1c`.
+The requested test-phone replacement completed: Debug and its test package
+were uninstalled, and production `com.hxlh50k.pods` version 19 / `0.2.0-beta`
+was installed. Installed bytes and certificate match the signed artifact;
+the production launcher resolves. The user must enable the production package
+and select its scopes in the module manager. No scope process was restarted,
+no earbud operation was performed, and runtime acceptance is not claimed.
 
 ### Previous checkpoint: alpha18 UI and tone-volume refinements
 

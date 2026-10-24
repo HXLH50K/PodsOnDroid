@@ -45,6 +45,30 @@ or migrate Debug's module scopes. The user must enable `com.hxlh50k.pods` and
 select the relevant hosts in the framework. No automatic host restart is
 authorized by package replacement.
 
+### Beta delivery receipt
+
+- Source revision: `3582eb6`; `versionCode=19`, `versionName=0.2.0-beta`.
+- Artifact: `dist/PODS-0.2.0-beta-release.apk`, 8,996,724 bytes.
+- APK SHA-256: `eabdcf1716dde5c983fbe312f2a2bf0973caee9cb546c372cff4cecb630aae1c`.
+- Signature: APK Signature Scheme v3, one RSA-3072 P.O.D.S. signer with the
+  certificate fingerprint recorded above. `apksigner verify` passed.
+- Alignment: `zipalign -c -P 16 -v 4` passed.
+- Production package: `com.hxlh50k.pods`; minimum API 35, target API 36;
+  non-debuggable, minified, resources shrunk, all existing ABI libraries retained.
+- Module audit: API 102 metadata and `HookEntry` preserved after R8, no legacy
+  entry and no Debug preview activity. Existing static host scopes retained.
+- R8 mapping and an APK checksum sidecar are retained next to the APK in the
+  ignored delivery directory. Neither binaries nor signing material are committed.
+- Device `ccab6460`: verified staged APK hash, uninstalled exactly
+  `com.hxlh50k.pods.debug.test` and `com.hxlh50k.pods.debug`, then installed
+  Release through the authorized root package-manager workflow. All returned
+  `Success`. No other package was removed.
+- Post-install: only production P.O.D.S. remains; installed version/code, APK
+  bytes and signing certificate match the delivery artifact; launcher resolves.
+- No phone reboot, host restart, radio capture, headphone command or acceptance
+  automation was performed. Module activation and user-operated acceptance
+  remain separate from successful package installation.
+
 The older sections below describe historical planning checkpoints, not proof
 that a release key has since been created.
 
