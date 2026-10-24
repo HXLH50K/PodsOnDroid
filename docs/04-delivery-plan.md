@@ -1694,3 +1694,33 @@ Only one AP5 hardware trial is planned. If it still cannot produce valid samples
 stop protocol work and put the head controls behind the same unfinished-feature
 policy rather than repeating variants or ownership requests. #2/#3 remain open;
 #4 and #5's accepted behavior are unchanged.
+
+### Alpha17 package and bounded handoff
+
+- Source: `60a8eb451a5deab00af44a723a633467aad69c11`.
+- File: `dist/PODS-0.1.0-alpha.17-debug.apk`; **32,064,207 bytes**.
+- SHA-256: `961f5172005ca8a0cd6a8da7a75a56d9def0dbcfc9df8693e1d6e60f8e9f3441`.
+- Final committed-source validation: the **complete JVM suite passes:
+  561 tests in 57 classes, zero failures/errors/skips**. The six previously
+  documented preference-test failures are resolved by the related expectation/
+  fixture updates. Remote CI has not been rerun because no push was requested.
+- App and AndroidTest APK assembly pass; Lint remains **0 errors / 130 warnings /
+  2 hints**. These are local checks, not earbud acceptance or on-device
+  instrumentation results.
+- Verified the label, debug identity/code17/version, embedded revision, original
+  debug signer and API102 metadata with the original three scopes.
+- Installed in place on `houji` at **2026-10-24 10:51:48**. Both predecessor and
+  installed hashes were checked; first-install time is preserved. The exact
+  staging APK was removed. No scope restart, ownership request, pose session,
+  swipe-setting operation or power operation was performed during deployment.
+
+Next user-operated round: run the full DEBUG scope reload, wear/connect both
+earbuds, and start the pose test once. Confirm that the request label says
+**AirPods 5 upstream CMA path**, then check whether valid sample counts increase.
+Stop and return to Connection diagnostics for the now-fresh retained evidence.
+Do not request ownership again or enable the unfinished-feature override for
+this test; that switch is currently only needed for the deferred swipe interval.
+If the label still shows a generic path, report that rather than repeating tests.
+
+All changes and the receipt are local commits only. The AP5 candidate is not
+marked accepted and both issues remain open until the one agreed trial returns.
