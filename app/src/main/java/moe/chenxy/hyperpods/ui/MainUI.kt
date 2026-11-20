@@ -34,6 +34,8 @@ import moe.chenxy.hyperpods.ui.components.rememberAppPreferences
 import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AppPreferences
+import moe.chenxy.hyperpods.utils.CustomEq
+import moe.chenxy.hyperpods.utils.CustomEqState
 import moe.chenxy.hyperpods.utils.HyperPodsBroadcasts
 import moe.chenxy.hyperpods.utils.PodsSettings
 import moe.chenxy.hyperpods.utils.data.BatteryParams
@@ -71,6 +73,7 @@ fun MainUI() {
     val autoSwitchToSpeaker = remember { mutableStateOf(initialPolicy.switchSpeaker) }
     val settings = remember { mutableStateMapOf<String, Int>() }
     var pendingSettings by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var customEqState by remember { mutableStateOf(CustomEqState()) }
     val settingFeedback = remember { mutableStateMapOf<String, String>() }
     var conversationPhoneVolume by remember { mutableStateOf(initialPolicy.conversationVolume) }
     var headGestures by remember { mutableStateOf(initialPolicy.headGestures) }
@@ -101,15 +104,16 @@ fun MainUI() {
 
                     HyperPodsAction.ACTION_EAR_DETECTION_STATUS_CHANGED -> {
                         earDetectionParams.value =
-                            p1.getParcelableExtra("status", EarDetectionParams::class.java) ?: return
+                            HyperPodsBroadcasts.readParcelable(p1, "status", EarDetectionParams::class.java) ?: return
                     }
 
                     HyperPodsAction.ACTION_PODS_BATTERY_CHANGED -> {
-                        batteryParams.value = p1.getParcelableExtra("status", BatteryParams::class.java) ?: return
+                        batteryParams.value = HyperPodsBroadcasts.readParcelable(p1, "status", BatteryParams::class.java) ?: return
                     }
 
                     HyperPodsAction.ACTION_PODS_CONNECTED -> {
-                        val deviceInfo = p1.getParcelableExtra("device_info", AACPManager.Companion.AirPodsInformation::class.java)
+                        val deviceInfo = HyperPodsBroadcasts.readParcelable(
+                            p1, "device_info", AACPManager.Companion.AirPodsInformation::class.java)
                         val deviceName = p1.getStringExtra("device_name")
                         mainTitle.value = deviceInfo?.name ?: (deviceName ?: "")
                         canShowDetailPage.value = true
@@ -118,6 +122,8 @@ fun MainUI() {
 
                     HyperPodsAction.ACTION_PODS_SETTINGS_STATE -> {
                         val bundle = p1.getBundleExtra("settings") ?: return
+                        customEqState = HyperPodsBroadcasts.readParcelable(
+                            p1, CustomEqState.EXTRA, CustomEqState::class.java) ?: CustomEqState()
                         settings.clear()
                         bundle.keySet().filter { it in PodsSettings.identifiers }.forEach { settings[it] = bundle.getInt(it) }
                         // A recovered channel starts with an empty cache; do not
@@ -163,6 +169,7 @@ fun MainUI() {
                         canShowDetailPage.value = false
                         settings.clear()
                         pendingSettings = emptySet()
+                        customEqState = CustomEqState()
                         settingFeedback.clear()
                         if (p0 is MainActivity && !p1.getBooleanExtra("initialization_failed", false)) {
                             p0.finish()
@@ -296,6 +303,13 @@ fun MainUI() {
             onSettingChange = { key, value -> sendPodsSetting(context, key, value) },
             diagnostics = diagnostics,
             allowUnfinishedFeatures = appPolicy.allowUnfinishedFeatures,
+            customEqState = customEqState,
+            onCustomEqChange = { value, state ->
+                HyperPodsBroadcasts.send(context, Intent(HyperPodsAction.ACTION_PODS_CUSTOM_EQ_CHANGED)
+                    .putExtra(CustomEqState.EXTRA_VALUE, value)
+                    .putExtra(CustomEqState.EXTRA_CONNECTION, state.connectionId)
+                    .putExtra(CustomEqState.EXTRA_REVISION, state.revision), HyperPodsBroadcasts.BLUETOOTH)
+            },
         )
     }
 }
@@ -340,6 +354,8 @@ fun AppHorizontalPager(
     onSettingChange: (String, Int) -> Unit = { _, _ -> },
     diagnostics: Bundle? = null,
     allowUnfinishedFeatures: Boolean = false,
+    customEqState: CustomEqState = CustomEqState(),
+    onCustomEqChange: (CustomEq, CustomEqState) -> Unit = { _, _ -> },
 ) {
     HorizontalPager(
         state = pagerState,
@@ -355,6 +371,7 @@ fun AppHorizontalPager(
                                 headGestures = headGestures, onHeadGesturesChange = onHeadGesturesChange,
                                 onSettingChange = onSettingChange, diagnostics = diagnostics,
                                 allowUnfinishedFeatures = allowUnfinishedFeatures,
+                                customEqState = customEqState, onCustomEqChange = onCustomEqChange,
                                 padding = padding,
                                 batteryParams = batteryParams,
                                 earDetectionParams = earDetectionParams,

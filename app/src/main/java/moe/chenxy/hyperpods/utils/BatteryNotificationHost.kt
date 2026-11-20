@@ -121,8 +121,9 @@ internal class BatteryNotificationHost(private val context: Context) {
 
     private fun update(intent: Intent) {
         val device = intent.getParcelableExtra("device", BluetoothDevice::class.java) ?: return
-        val params = intent.getParcelableExtra("batteryParams", BatteryParams::class.java) ?: return
-        val settings = intent.getParcelableExtra(BatteryIslandContract.SETTINGS, BatteryNotificationSettings::class.java)
+        val params = HyperPodsBroadcasts.readParcelable(intent, "batteryParams", BatteryParams::class.java) ?: return
+        val settings = HyperPodsBroadcasts.readParcelable(
+            intent, BatteryIslandContract.SETTINGS, BatteryNotificationSettings::class.java)
         if (settings == null || !settings.valid) {
             Log.w(TAG, "Rejecting missing or invalid battery notification configuration")
             return

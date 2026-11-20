@@ -1,0 +1,19 @@
+<resources>
+    <string name="eq_title">均衡器</string>
+    <string name="eq_summary">调节耳机的低频、中频和高频</string>
+    <string name="eq_mode">调音模式</string>
+    <string name="eq_recommended">推荐</string>
+    <string name="eq_custom">自定义</string>
+    <string name="eq_low">低频</string>
+    <string name="eq_mid">中频</string>
+    <string name="eq_high">高频</string>
+    <string name="eq_band_value">%1$s：%2$d</string>
+    <string name="eq_neutral">%1$d 为中性值。点按「应用」将调整发送到耳机。</string>
+    <string name="eq_reset">重置频段</string>
+    <string name="eq_apply">应用</string>
+    <string name="eq_unknown">尚未收到耳机的调音回报。选择模式时，各频段将使用中性值。</string>
+    <string name="eq_disconnected">连接耳机后即可调节均衡器。</string>
+    <string name="eq_unsupported">此耳机型号尚未表明支持此均衡器。</string>
+    <string name="eq_firmware_unknown">尚未收到可识别的固件版本或调音回报，无法判断是否支持均衡器。</string>
+    <string name="eq_firmware_required">耳机原生均衡器需要第 9 代或更新的固件。请更新 AirPods 固件后重新连接。</string>
+</resources>

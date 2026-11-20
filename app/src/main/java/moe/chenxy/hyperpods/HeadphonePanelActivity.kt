@@ -89,12 +89,13 @@ private fun Panel(activity: HeadphonePanelActivity, maxHeightDp: Float) {
                 if (!HyperPodsBroadcasts.isTrusted(context, this, HyperPodsBroadcasts.BLUETOOTH)) return
                 when (intent.action) {
                     HyperPodsAction.ACTION_PODS_CONNECTED -> {
-                        info = intent.getParcelableExtra("device_info", AACPManager.Companion.AirPodsInformation::class.java)
+                        info = HyperPodsBroadcasts.readParcelable(
+                            intent, "device_info", AACPManager.Companion.AirPodsInformation::class.java)
                         name = intent.getStringExtra("device_name")
                     }
                     HyperPodsAction.ACTION_PODS_DISCONNECTED -> activity.finish()
                     HyperPodsAction.ACTION_PODS_BATTERY_CHANGED ->
-                        intent.getParcelableExtra("status", BatteryParams::class.java)?.let { battery = it }
+                        HyperPodsBroadcasts.readParcelable(intent, "status", BatteryParams::class.java)?.let { battery = it }
                     HyperPodsAction.ACTION_PODS_DIAGNOSTICS -> {
                         diagnostics = intent.getBundleExtra("diagnostics")
                         modeState = modeState.report(diagnostics?.getInt("noise_mode_reported", 0) ?: 0)

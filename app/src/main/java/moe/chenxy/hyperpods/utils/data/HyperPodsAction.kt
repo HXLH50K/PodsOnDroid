@@ -15,6 +15,7 @@ object HyperPodsAction {
     const val ACTION_GET_PODS_MAC = "com.hxlh50k.pods.action.get_pods_mac"
     const val ACTION_PODS_MAC_RECEIVED = "com.hxlh50k.pods.action.got_pods_mac"
     const val ACTION_PODS_SETTINGS_CHANGED = "com.hxlh50k.pods.action.preference_changed"
+    const val ACTION_PODS_CUSTOM_EQ_CHANGED = "com.hxlh50k.pods.action.custom_eq_changed"
     const val ACTION_APP_SETTINGS_CHANGED = "com.hxlh50k.pods.action.app_settings_changed"
     const val ACTION_PODS_SETTINGS_STATE = "com.hxlh50k.pods.action.settings_state"
     const val ACTION_PODS_SETTING_RESULT = "com.hxlh50k.pods.action.setting_result"

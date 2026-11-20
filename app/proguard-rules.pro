@@ -33,6 +33,11 @@
     native <methods>;
 }
 
+# Android marshals Parcelable class names; injected hosts can outlive an APK update.
+-keep,allowoptimization class moe.chenxy.hyperpods.** implements android.os.Parcelable {
+    public static final android.os.Parcelable$Creator CREATOR;
+}
+
 -assumenosideeffects class kotlin.jvm.internal.Intrinsics {
     public static void check*(...);
     public static void throw*(...);

@@ -119,6 +119,17 @@ or migrate Debug's module scopes. The user must enable `com.hxlh50k.pods` and
 select the relevant hosts in the framework. No automatic host restart is
 authorized by package replacement.
 
+### Release IPC compatibility
+
+Injected Bluetooth and System UI processes may continue running the previous
+module after a same-signature update. Keep P.O.D.S. Parcelable class names and
+creators stable in Release, and use `HyperPodsBroadcasts.readParcelable` for app
+types (for example `EarDetectionParams`) instead of allowing an incompatible
+legacy extra to crash the receiver. A host running the older build may still need a
+user-approved reload before battery, wear, or EQ state is available. Include
+an in-place Release update with the Bluetooth host left running in startup
+regression checks.
+
 ### Beta delivery receipt
 
 - Source revision: `3582eb6`; `versionCode=19`, `versionName=0.2.0-beta`.

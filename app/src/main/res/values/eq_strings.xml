@@ -1,0 +1,19 @@
+<resources>
+    <string name="eq_title">Equalizer</string>
+    <string name="eq_summary">Tune the headphones’ low, mid and high bands</string>
+    <string name="eq_mode">Tuning mode</string>
+    <string name="eq_recommended">Recommended</string>
+    <string name="eq_custom">Custom</string>
+    <string name="eq_low">Low</string>
+    <string name="eq_mid">Mid</string>
+    <string name="eq_high">High</string>
+    <string name="eq_band_value">%1$s: %2$d</string>
+    <string name="eq_neutral">%1$d is neutral. Select Apply to send your changes to the headphones.</string>
+    <string name="eq_reset">Reset bands</string>
+    <string name="eq_apply">Apply</string>
+    <string name="eq_unknown">No tuning report received. Selecting a mode will use neutral band values.</string>
+    <string name="eq_disconnected">Connect your headphones to change their equalizer.</string>
+    <string name="eq_unsupported">This headphone model does not advertise support for this equalizer.</string>
+    <string name="eq_firmware_unknown">Cannot determine equalizer support until a recognized firmware version or tuning report is received.</string>
+    <string name="eq_firmware_required">The native equalizer requires generation 9 or later firmware. Update your AirPods and reconnect.</string>
+</resources>

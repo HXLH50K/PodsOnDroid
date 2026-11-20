@@ -4,6 +4,7 @@
 - Support English and Simplified Chinese only. Keep user-facing strings in Android resources.
 - Keep independent P.O.D.S. Git history. Preserve the HyperPods license, attribution, and pinned source provenance without importing its commit ancestry.
 - Use modern libxposed API 102 only; do not introduce legacy Xposed or YukiHook runtime calls.
+- For cross-process Parcelable extras, follow the [Release IPC compatibility contract](docs/06-signing-and-maintenance.md#release-ipc-compatibility) instead of reading them directly with `Intent.getParcelableExtra`.
 - Keep the GitHub repository private unless the user explicitly changes its visibility.
 - Never commit signing keys, passwords, captured system APKs, raw device logs, or local environment configuration.
 - Target the current HyperOS 4 test device first. Do not claim earbud functionality without testing the user's AirPods 5.

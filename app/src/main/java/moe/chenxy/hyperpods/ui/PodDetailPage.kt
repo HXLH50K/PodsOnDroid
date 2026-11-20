@@ -57,6 +57,7 @@ import moe.chenxy.hyperpods.ui.components.DashboardLink
 import moe.chenxy.hyperpods.ui.components.DashboardNoise
 import moe.chenxy.hyperpods.ui.components.DashboardSection
 import moe.chenxy.hyperpods.ui.components.DashboardToggle
+import moe.chenxy.hyperpods.ui.components.EqualizerSettings
 import moe.chenxy.hyperpods.ui.components.DashboardGroup as Card
 import moe.chenxy.hyperpods.ui.components.PodsInfoPage
 import moe.chenxy.hyperpods.ui.components.PressAndHoldSettingPage
@@ -65,6 +66,8 @@ import moe.chenxy.hyperpods.ui.components.headGestureStatus
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AirPodsModels.getModelByModelNumber
 import moe.chenxy.hyperpods.utils.Capability
+import moe.chenxy.hyperpods.utils.CustomEq
+import moe.chenxy.hyperpods.utils.CustomEqState
 import moe.chenxy.hyperpods.utils.PodsSettings
 import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey as Key
 import moe.chenxy.hyperpods.utils.data.BatteryParams
@@ -115,6 +118,8 @@ fun PodDetailPage(
     onSettingChange: (String, Int) -> Unit = { _, _ -> },
     diagnostics: Bundle? = null,
     allowUnfinishedFeatures: Boolean = false,
+    customEqState: CustomEqState = CustomEqState(),
+    onCustomEqChange: (CustomEq, CustomEqState) -> Unit = { _, _ -> },
 ) {
     val model = podsInfo?.let { getModelByModelNumber(it.modelNumber) }
     fun ready(key: String) = PodsSettings.editable(key, model, settings, pendingSettings,
@@ -143,21 +148,22 @@ fun PodDetailPage(
         settingFeedback[Key.ADAPTIVE_AUDIO_LEVEL]) { mutableFloatStateOf(adaptiveAudioLevel) }
     var detailPage by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(detailPage) {
-        if (detailPage !in 0..2) {
+        if (detailPage !in 0..3) {
             Log.i("PODS-Navigation", "Retired headphone debug route reset to overview")
             detailPage = 0
         }
     }
-    fun back() { detailPage = 0 }
+    fun back() { detailPage = if (detailPage == 3) 1 else 0 }
     BackHandler(enabled = isActive && detailPage != 0) { back() }
     // Keep every page's saveable state outside the animated content. Switching the
     // content key must not discard the previous page's scroll position.
-    val listStates = listOf(rememberLazyListState(), rememberLazyListState(), rememberLazyListState())
-    PageTransitionHost(detailPage.takeIf { it in 0..2 } ?: 0,
-        { if (it == 0) 0 else 1 }, isActive) { page, current ->
+    val listStates = listOf(rememberLazyListState(), rememberLazyListState(), rememberLazyListState(), rememberLazyListState())
+    PageTransitionHost(detailPage.takeIf { it in 0..3 } ?: 0,
+        { if (it == 3) 2 else if (it == 0) 0 else 1 }, isActive) { page, current ->
         val pageTitle = stringResource(when (page) {
             1 -> R.string.dashboard_more
             2 -> R.string.dashboard_device_info
+            3 -> R.string.eq_title
             else -> R.string.dashboard_headphones
         })
         PageScaffold(pageTitle, padding, if (page == 0) null else ::back, current) { bodyPadding ->
@@ -251,6 +257,20 @@ fun PodDetailPage(
                     }
                     return@LazyColumn
                 }
+                if (page == 3) {
+                    item(key = "equalizer") {
+                        EqualizerSettings(
+                            state = customEqState,
+                            model = model,
+                            firmware = podsInfo?.version3,
+                            connected = diagnostics?.getString("connection") == "connected",
+                            active = current,
+                            onChange = onCustomEqChange,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                    return@LazyColumn
+                }
                 val cardModifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                 val titleModifier = Modifier.padding(top = 12.dp)
 
@@ -327,6 +347,10 @@ fun PodDetailPage(
                     Card(
                         modifier = cardModifier
                     ) {
+                        if (CustomEq.supportsModel(model) || customEqState.value != null) {
+                            DashboardLink(stringResource(R.string.eq_title),
+                                stringResource(R.string.eq_summary)) { detailPage = 3 }
+                        }
                         if (PodsSettings.supports(Key.CONVERSATION_AWARENESS, model)) SuperSwitch(
                             title = stringResource(R.string.conversation_phone_volume_title),
                             summary = stringResource(R.string.conversation_phone_volume_summary),

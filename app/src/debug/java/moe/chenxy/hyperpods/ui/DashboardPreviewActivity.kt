@@ -34,6 +34,8 @@ import moe.chenxy.hyperpods.pods.NoiseControlMode
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.PodsSettings
 import moe.chenxy.hyperpods.utils.AirPodsModels
+import moe.chenxy.hyperpods.utils.CustomEq
+import moe.chenxy.hyperpods.utils.CustomEqState
 import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey as Key
 import moe.chenxy.hyperpods.utils.data.BatteryParams
 import moe.chenxy.hyperpods.utils.data.EarDetectionParams
@@ -55,6 +57,7 @@ class DashboardPreviewActivity : ComponentActivity() {
         val caseConnected = intent.getBooleanExtra("case_connected", inCase)
         val leftBattery = intent.getIntExtra("left_battery", 92)
         val modelNumber = intent.getStringExtra("model_number") ?: "A3049"
+        val equalizerPreview = intent.getBooleanExtra("equalizer_preview", false)
         setContent {
             AppTheme(colorMode = intent.getIntExtra("theme", 1)) {
                 AppAppearanceProvider {
@@ -83,6 +86,10 @@ class DashboardPreviewActivity : ComponentActivity() {
                 var microphone by remember { mutableIntStateOf(0) }
                 var name by remember { mutableStateOf(if (modelNumber == "A3049") "AirPods Pro"
                     else AirPodsModels.getModelByModelNumber(modelNumber)?.name ?: "AirPods") }
+                var equalizer by remember {
+                    mutableStateOf(if (equalizerPreview) CustomEqState(CustomEq(CustomEq.CUSTOM),
+                        connectionId = "preview") else CustomEqState())
+                }
                 val pager = rememberPagerState(pageCount = { 2 })
                 AppFrame(pager) { padding ->
                     HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
@@ -115,7 +122,11 @@ class DashboardPreviewActivity : ComponentActivity() {
                             onListeningModeChange = {}, ancMode = anc, onAncModeChange = { anc = it },
                             podsInfo = if (unknown) null else AACPManager.Companion.AirPodsInformation(
                                 name, modelNumber, "Apple Inc.", "DEMO-NOT-REAL", "0", "0", "1.0.0",
-                                "DEMO", "DEMO-LEFT", "DEMO-RIGHT", "DEMO"),
+                                "DEMO", "DEMO-LEFT", "DEMO-RIGHT", if (equalizerPreview) "9441861" else "DEMO"),
+                            customEqState = equalizer,
+                            onCustomEqChange = { value, state ->
+                                equalizer = state.copy(value = value, revision = state.revision + 1)
+                            },
                             onNameChange = { name = it }, microphoneMode = microphone,
                             onMicrophoneModeChange = { microphone = it },
                             noiseCancellationSingleAirPod = single, onNoiseCancellationSingleAirPodChange = { single = it },

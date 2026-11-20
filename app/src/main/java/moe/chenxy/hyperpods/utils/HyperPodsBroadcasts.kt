@@ -5,6 +5,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.BadParcelableException
+import android.os.Parcelable
+import android.util.Log
 import moe.chenxy.hyperpods.BuildConfig
 
 /** Cross-UID module messages disclose their real sender and target one package. */
@@ -31,4 +34,12 @@ object HyperPodsBroadcasts {
             }
         }
     }
+
+    fun <T : Parcelable> readParcelable(intent: Intent, key: String, type: Class<T>): T? =
+        try {
+            intent.getParcelableExtra(key, type)
+        } catch (_: BadParcelableException) {
+            Log.w("PODS-Broadcasts", "Ignoring incompatible parcelable '$key' in ${intent.action}")
+            null
+        }
 }

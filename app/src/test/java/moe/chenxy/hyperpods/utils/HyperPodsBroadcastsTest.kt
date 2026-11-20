@@ -5,8 +5,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.BadParcelableException
 import android.os.Bundle
 import moe.chenxy.hyperpods.BuildConfig
+import moe.chenxy.hyperpods.utils.data.EarDetectionParams
 import org.junit.Assert.*
 import org.junit.Test
 import org.mockito.Mockito.*
@@ -43,6 +45,16 @@ class HyperPodsBroadcastsTest {
         `when`(packages.getPackageUid(BuildConfig.APPLICATION_ID, 0))
             .thenThrow(PackageManager.NameNotFoundException())
         assertFalse(HyperPodsBroadcasts.isTrusted(context, receiver, BuildConfig.APPLICATION_ID))
+    }
+
+    @Test fun oldHostParcelableIsIgnoredAndNewReportStillDecodes() {
+        val intent = mock(Intent::class.java)
+        val report = EarDetectionParams(0, 1)
+        `when`(intent.getParcelableExtra("status", EarDetectionParams::class.java))
+            .thenThrow(BadParcelableException("Old host class name")).thenReturn(report)
+
+        assertNull(HyperPodsBroadcasts.readParcelable(intent, "status", EarDetectionParams::class.java))
+        assertSame(report, HyperPodsBroadcasts.readParcelable(intent, "status", EarDetectionParams::class.java))
     }
 
     @Test fun sendsArePackageScopedAndExposeTheirActualUidToTheReceiver() {

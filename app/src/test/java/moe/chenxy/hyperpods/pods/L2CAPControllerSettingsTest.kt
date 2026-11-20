@@ -17,6 +17,8 @@ import kotlinx.coroutines.withTimeout
 import moe.chenxy.hyperpods.utils.AACPManager
 import moe.chenxy.hyperpods.utils.AirPods5
 import moe.chenxy.hyperpods.utils.AppPreferences
+import moe.chenxy.hyperpods.utils.CustomEq
+import moe.chenxy.hyperpods.utils.CustomEqState
 import moe.chenxy.hyperpods.utils.PodsSettings
 import moe.chenxy.hyperpods.utils.SystemIntegrations
 import moe.chenxy.hyperpods.utils.SystemProfile
@@ -103,6 +105,35 @@ class L2CAPControllerSettingsTest {
 
     private fun receive(identifier: Byte, value: Byte) = synchronized(controller) {
         manager.receivePacket(byteArrayOf(4, 0, 4, 0, 9, 0, identifier, value, 0, 0, 0))
+    }
+
+    private fun requestEq(value: CustomEq, id: String, revision: Long = manager.customEqState.revision) {
+        val intent = mock(Intent::class.java)
+        `when`(intent.action).thenReturn(HyperPodsAction.ACTION_PODS_CUSTOM_EQ_CHANGED)
+        `when`(intent.getStringExtra(CustomEqState.EXTRA_CONNECTION)).thenReturn(id)
+        `when`(intent.getLongExtra(CustomEqState.EXTRA_REVISION, -1)).thenReturn(revision)
+        `when`(intent.getParcelableExtra(CustomEqState.EXTRA_VALUE, CustomEq::class.java)).thenReturn(value)
+        controller.handleUIEvent(intent)
+    }
+
+    @Test fun equalizerRejectsOldSocketAndDraftAndAcceptsOnlyAValidFirmwareOrReport() {
+        field("customEqConnectionId").set(controller, "current-socket")
+        field("connectionState").set(controller, "connected")
+        controller.currentPodsInfo = controller.currentPodsInfo!!.copy(version3 = "8454592")
+        val change = CustomEq(CustomEq.CUSTOM, 60, 50, 40)
+        requestEq(change, "current-socket")
+        assertEquals("invalid", field("lastSettingStatus").get(controller))
+        val report = byteArrayOf(4, 0, 4, 0, 0x63, 0, 5, 0, 1, 1, 50, 50, 50)
+        synchronized(controller) { manager.receivePacket(report) }
+        requestEq(change, "retired-socket")
+        requestEq(change, "current-socket", revision = 0)
+        assertEquals(0, output.size())
+        requestEq(change, "current-socket")
+        assertArrayEquals(byteArrayOf(4, 0, 4, 0, 0x63, 0, 5, 0, 1, 2, 60, 50, 40), output.toByteArray())
+        assertEquals("sent", field("lastSettingStatus").get(controller))
+        synchronized(controller) { manager.receivePacket(report) }
+        assertEquals("reported", field("lastSettingStatus").get(controller))
+        assertEquals(CustomEq(CustomEq.RECOMMENDED), manager.customEqState.value)
     }
 
     @Test fun unfinishedSwipeIsBlockedInTheControllerUntilExplicitlyAllowed() {

@@ -7,6 +7,7 @@ import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey as Key
 object PodsSettings {
     const val NOISE_MODE = "noise_mode"
     const val RENAME = "rename"
+    const val CUSTOM_EQ = "custom_eq"
     const val MIN_CHIME_VOLUME = 0
     const val CHIME_VOLUME_THRESHOLD = 15
     const val MAX_CHIME_VOLUME = 100

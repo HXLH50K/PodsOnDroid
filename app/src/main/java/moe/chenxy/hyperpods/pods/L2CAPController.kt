@@ -38,6 +38,8 @@ import moe.chenxy.hyperpods.utils.HeadTrackingStream
 import moe.chenxy.hyperpods.utils.HeadTrackingPreview
 import moe.chenxy.hyperpods.utils.Capability
 import moe.chenxy.hyperpods.utils.PodsSettings
+import moe.chenxy.hyperpods.utils.CustomEq
+import moe.chenxy.hyperpods.utils.CustomEqState
 import moe.chenxy.hyperpods.utils.PodsIslandData
 import moe.chenxy.hyperpods.utils.AirPodsModels
 import moe.chenxy.hyperpods.utils.ConversationVolume
@@ -56,6 +58,7 @@ import moe.chenxy.hyperpods.utils.data.HyperPodsPrefsKey
 import moe.chenxy.hyperpods.utils.data.PodBatteryParams
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.UUID
 import kotlin.collections.get
 import kotlin.experimental.or
 
@@ -73,6 +76,7 @@ object L2CAPController {
     private var appSettingsRevision = 0L
 
     private var aacpManager: AACPManager? = null
+    private var customEqConnectionId = ""
     private var connectionJob: Job? = null
     private var sessionId = 0L
     private var connectionState = "disconnected"
@@ -88,7 +92,7 @@ object L2CAPController {
     private var lastTimelineState = ""
     private var lastTimelineStage = ""
     private var lastPrimaryComponent: Int? = null
-    private var lastSettingsState: Triple<Map<String, Int>, Set<String>, Set<String>>? = null
+    private var lastSettingsState: Pair<Triple<Map<String, Int>, Set<String>, Set<String>>, CustomEqState>? = null
 
 //    private lateinit var mAirPodsInstance: AirPodsInstance
 
@@ -478,6 +482,27 @@ object L2CAPController {
                     intent.getBooleanExtra("disconnect_audio", true)
                 )
             }
+            HyperPodsAction.ACTION_PODS_CUSTOM_EQ_CHANGED -> {
+                val manager = aacpManager
+                val id = intent.getStringExtra(CustomEqState.EXTRA_CONNECTION)
+                // Recovery can replace the socket without changing the device session.
+                if (manager == null || connectionState != "connected" || !manager.socket.isConnected ||
+                    id.isNullOrEmpty() || id != customEqConnectionId) {
+                    Log.w(TAG, "Ignoring EQ request for an inactive control connection")
+                    sendSettingsState(force = true)
+                    return
+                }
+                val value = HyperPodsBroadcasts.readParcelable(intent, CustomEqState.EXTRA_VALUE, CustomEq::class.java)
+                val info = currentPodsInfo
+                val model = info?.modelNumber?.let(AirPodsModels::getModelByModelNumber)
+                if (value == null || intent.getLongExtra(CustomEqState.EXTRA_REVISION, -1) != manager.customEqState.revision ||
+                    !CustomEq.available(model, info?.version3, manager.customEqState.value)) {
+                    sendSettingResult(PodsSettings.CUSTOM_EQ, false, status = "invalid")
+                    return
+                }
+                val queued = manager.sendCustomEq(value)
+                sendSettingResult(PodsSettings.CUSTOM_EQ, queued, status = if (queued) "sent" else "write_failed")
+            }
             HyperPodsAction.ACTION_PODS_SETTINGS_CHANGED -> {
                 intent.getStringExtra("key")?.let {
                     if (it == HyperPodsPrefsKey.EAR_DETECTION || it == HyperPodsPrefsKey.EAR_DETECTION_SWITCH_SPEAKER) {
@@ -488,12 +513,13 @@ object L2CAPController {
                     } else if (it == HyperPodsPrefsKey.CONVERSATION_PHONE_VOLUME && intent.hasExtra("enabled")) {
                         updateConversationPhoneVolume(intent.getBooleanExtra("enabled", true))
                     } else if (it == HyperPodsPrefsKey.LOW_BATTERY_EARS) {
-                        intent.getParcelableExtra("lowBatterySettings", LowBatterySettings::class.java)?.takeIf { it.valid }?.let { settings ->
-                            lowBatterySettings = settings
-                            if (::currentBatteryParams.isInitialized)
-                                systemIntegrations.updateBattery(mContext, currentBatteryParams, mDevice, lowBatterySettings,
-                                    modelNumber = currentPodsInfo?.modelNumber, batteryNotificationSettings = batteryNotificationSettings, controlGeneration = sessionId)
-                        }
+                        HyperPodsBroadcasts.readParcelable(intent, "lowBatterySettings", LowBatterySettings::class.java)
+                            ?.takeIf { it.valid }?.let { settings ->
+                                lowBatterySettings = settings
+                                if (::currentBatteryParams.isInitialized)
+                                    systemIntegrations.updateBattery(mContext, currentBatteryParams, mDevice, lowBatterySettings,
+                                        modelNumber = currentPodsInfo?.modelNumber, batteryNotificationSettings = batteryNotificationSettings, controlGeneration = sessionId)
+                            }
                     } else if (intent.hasExtra("value")) {
                         sendSetting(it, intent.getIntExtra("value", -1))
                     }
@@ -522,8 +548,10 @@ object L2CAPController {
         val values = confirmedSettings()
         val pending = (pendingSettings.keys + listOfNotNull(pendingRename?.let { PodsSettings.RENAME },
             PodsSettings.NOISE_MODE.takeIf { pendingOffSelection })).toSet()
-        val unconfirmed = PodsSettings.identifiers.filterValues { aacpManager?.isAwaitingReport(it) == true }.keys.toSet()
-        val state = Triple(values, pending, unconfirmed)
+        val eq = aacpManager?.customEqState?.copy(connectionId = customEqConnectionId) ?: CustomEqState()
+        val unconfirmed = PodsSettings.identifiers.filterValues { aacpManager?.isAwaitingReport(it) == true }.keys +
+            listOfNotNull(PodsSettings.CUSTOM_EQ.takeIf { eq.unconfirmed })
+        val state = Triple(values, pending, unconfirmed) to eq
         if (!force && lastSettingsState == state) {
             sendDiagnostics()
             return
@@ -533,6 +561,7 @@ object L2CAPController {
             putExtra("settings", Bundle().apply { values.forEach { (key, value) -> putInt(key, value) } })
             putStringArrayListExtra("pending", ArrayList(pending))
             putStringArrayListExtra("unconfirmed", ArrayList(unconfirmed))
+            putExtra(CustomEqState.EXTRA, eq)
             HyperPodsBroadcasts.send(mContext, this)
         }
         sendDiagnostics()
@@ -565,7 +594,7 @@ object L2CAPController {
         putStringArrayList("missing_setting_keys", ArrayList(missingSettings()))
         putStringArrayList("unconfirmed_settings", ArrayList(PodsSettings.identifiers.filterValues {
             aacpManager?.isAwaitingReport(it) == true
-        }.keys + pendingSettings.keys))
+        }.keys + pendingSettings.keys + listOfNotNull(PodsSettings.CUSTOM_EQ.takeIf { aacpManager?.customEqState?.unconfirmed == true })))
         putInt("noise_mode_reported", aacpManager?.reportedControlValue(
             AACPManager.Companion.ControlCommandIdentifiers.LISTENING_MODE) ?: 0)
         putInt("single_anc_reported", aacpManager?.reportedControlValue(
@@ -1236,6 +1265,14 @@ object L2CAPController {
             }
         }
 
+        override fun onCustomEqReceived() {
+            if (lastSettingKey == PodsSettings.CUSTOM_EQ && lastSettingStatus == "sent") {
+                lastSettingStatus = "reported"
+                recordEvent("setting", "reported", PodsSettings.CUSTOM_EQ)
+            }
+            sendSettingsState()
+        }
+
         override fun onDeviceInformationReceived(deviceInformation: AACPManager.Companion.AirPodsInformation) {
             val previousModelNumber = currentPodsInfo?.modelNumber
             currentPodsInfo = deviceInformation
@@ -1333,6 +1370,7 @@ object L2CAPController {
             this.addAction(HyperPodsAction.ACTION_EAR_DETECTION_SWITCH_CHANGED)
             this.addAction(HyperPodsAction.ACTION_GET_PODS_MAC)
             this.addAction(HyperPodsAction.ACTION_PODS_SETTINGS_CHANGED)
+            this.addAction(HyperPodsAction.ACTION_PODS_CUSTOM_EQ_CHANGED)
             this.addAction(HyperPodsAction.ACTION_PODS_RENAME)
             this.addAction(HyperPodsAction.ACTION_PODS_STATUS_RETRY)
             this.addAction(HyperPodsAction.ACTION_PODS_DIAGNOSTICS_REQUEST)
@@ -1495,6 +1533,7 @@ object L2CAPController {
                 ensureActive()
                 if (sessionId != thisSession) throw CancellationException("Obsolete AirPods session")
                 aacpManager = manager
+                customEqConnectionId = UUID.randomUUID().toString()
                 connectionState = "connected"
                 lastStatusFailure = ""
                 manager.setPacketCallback(packetCallback)
