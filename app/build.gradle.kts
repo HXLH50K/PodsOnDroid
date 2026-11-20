@@ -22,8 +22,8 @@ android {
         applicationId = "com.hxlh50k.pods"
         minSdk = 35
         targetSdk = 36
-        versionCode = 21
-        versionName = "0.2.2-beta"
+        versionCode = 22
+        versionName = "0.2.3-beta"
         resourceConfigurations += listOf("en", "zh-rCN")
         buildConfigField("String", "BUILD_REVISION", "\"$sourceRevision\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

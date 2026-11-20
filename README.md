@@ -54,7 +54,9 @@ on the same connection. The app distinguishes queued changes from headset report
 
 The control requires a recognized supported model with generation 9 or later
 firmware (`version3`), or a valid equalizer report on the current connection.
-Physical EQ operation on the target AirPods 5 is not yet verified.
+The user confirmed that EQ changes took effect on the HyperOS 4 test setup.
+The updated slider behavior has emulator coverage and still awaits on-device
+confirmation.
 
 The native AACP `0x63` format and support rules were adapted from
 [HyperPods `os4-dev` at `90064bd`](https://github.com/Mo-SeTian/HyperPods/tree/90064bdc2f18215ecb5e34c5eec791ef14e5e6db)
@@ -63,7 +65,16 @@ and cross-checked against
 (GPL-3.0). This is separate from the legacy phone/media accommodation packets and
 does not import either repository's Git history.
 
-## Current release: 0.2.2-beta
+## Current release: 0.2.3-beta
+
+`0.2.3-beta` uses version code 22 and keeps the production package, signing
+identity, and Android 15 / API 35 minimum. It adds the native three-band
+equalizer and fixes a startup crash when a Bluetooth host keeps the old
+module loaded after an in-place update.
+Download the signed APK and checksum from
+[the 0.2.3-beta prerelease](https://github.com/HXLH50K/PodsOnDroid/releases/tag/v0.2.3-beta).
+
+## Previous release: 0.2.2-beta
 
 `0.2.2-beta` increments the patch version and version code to 21, retaining
 the production package/signing identity and Android 15 / API 35 minimum.
